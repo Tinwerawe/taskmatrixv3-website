@@ -837,10 +837,10 @@ body {
 .dial-wrap::before {
   content: ""; position: absolute; inset: 8.4%; border-radius: 50%; pointer-events: none;
   background: conic-gradient(from 0deg, transparent 0deg, transparent 280deg, rgba(var(--accent-rgb), 0.05) 300deg, rgba(var(--accent-rgb), 0.24) 359deg, transparent 360deg);
-  animation: radar 6s linear infinite;
+  will-change: transform; transform: translateZ(0); backface-visibility: hidden;
 }
-@keyframes radar { to { transform: rotate(360deg); } }
-.dial-wrap.jump::before { transition: none; }
+.dial-wrap.sweep-on::before { animation: radar 6s linear infinite; }
+@keyframes radar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* audio */
 .prog-name { font-family: var(--font-display), sans-serif; font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -1123,6 +1123,27 @@ body.reduce-motion .boot-ring, body.reduce-motion .boot-ring2 { animation: none;
   .notes-panel { left: calc(8px + var(--safe-l)); right: calc(8px + var(--safe-r)); top: auto; bottom: calc(76px + var(--safe-b)); width: auto; height: max(240px, 33.333vh); animation-name: notesUp; }
   @keyframes notesUp { from { opacity: 0; transform: translateY(14px); } }
 }
+/* ================= 1.4.1 fixes ================= */
+.panel { -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (min-width: 901px) { .nav-timer { display: none; } }
+.bottom-nav .tab.live { color: var(--accent); }
+.bottom-nav .tab.live span { font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) {
+  .bottom-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding-left: calc(4px + var(--safe-l)); padding-right: calc(4px + var(--safe-r)); }
+  .bottom-nav .tab { min-width: 0; padding: 6px 2px; }
+  .bottom-nav .tab span { max-width: 100%; white-space: normal; text-align: center; line-height: 1.15; overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) { .bottom-nav .tab { font-size: 0.5rem; letter-spacing: 0.02em; } }
+@media (max-width: 900px) and (max-height: 520px) {
+  :root { --nav-h: 46px; }
+  .bottom-nav { padding-top: 3px; padding-bottom: calc(3px + var(--safe-b)); }
+  .bottom-nav .tab { flex-direction: row; gap: 6px; min-height: 40px; font-size: 0.56rem; }
+  .bottom-nav .tab svg { width: 17px; height: 17px; }
+  .bottom-nav .tab[aria-selected="true"]::after { top: -4px; }
+  .notes-panel { left: auto; right: calc(8px + var(--safe-r)); top: calc(8px + var(--safe-t)); bottom: calc(54px + var(--safe-b)); width: clamp(260px, 36vw, 420px); height: auto; animation-name: notesIn; }
+  .mini { bottom: calc(54px + var(--safe-b)); }
+  .toasts { bottom: calc(54px + var(--safe-b)); }
+}
 </style>
 </head>
 <body>
@@ -1393,6 +1414,7 @@ body.reduce-motion .boot-ring, body.reduce-motion .boot-ring2 { animation: none;
   <button class="tab" role="tab" data-tab="schedule" aria-selected="true" data-sfx="none"></button>
   <button class="tab" role="tab" data-tab="audio" aria-selected="false" data-sfx="none"></button>
   <button class="tab" role="tab" data-tab="typing" aria-selected="false" data-sfx="none"></button>
+  <button class="tab nav-timer" type="button" id="nav-timer" aria-label="Quick timer" data-sfx="none"></button>
   <button class="tab nav-theme" type="button" id="nav-theme" aria-label="Themes and shortcuts" data-sfx="none"></button>
   <button class="tab nav-notes" type="button" id="nav-notes" aria-label="Notes" aria-expanded="false" data-sfx="none"></button>
 </nav>
@@ -2086,12 +2108,24 @@ var Music = (function () {
   }
 
   function impulse(c, secs, decay) {
-    var len = Math.floor(c.sampleRate * secs), buf = c.createBuffer(2, len, c.sampleRate);
+    var rate = c.sampleRate, len = Math.floor(rate * secs), pre = Math.floor(rate * 0.02), buf = c.createBuffer(2, len, rate);
     for (var ch = 0; ch < 2; ch++) {
-      var d = buf.getChannelData(ch);
-      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      var d = buf.getChannelData(ch), lp = 0;
+      for (var i = 0; i < len; i++) {
+        if (i < pre) { d[i] = 0; continue; }
+        var t = (i - pre) / (len - pre), damp = 0.55 + 0.42 * t;
+        lp = lp * damp + (Math.random() * 2 - 1) * (1 - damp);
+        d[i] = lp * Math.pow(1 - t, decay) * (1.6 + 2.4 * t);
+      }
     }
     return buf;
+  }
+
+  function softClip(c, k) {
+    var ws = c.createWaveShaper(), n = 2048, curve = new Float32Array(n), norm = Math.tanh(k);
+    for (var i = 0; i < n; i++) { var x = i / (n - 1) * 2 - 1; curve[i] = Math.tanh(k * x) / norm; }
+    ws.curve = curve; ws.oversample = '2x';
+    return ws;
   }
 
   function build() {
@@ -2099,41 +2133,58 @@ var Music = (function () {
     if (!c) return null;
     if (g) return g;
     g = {};
+    var hasPan = typeof c.createStereoPanner === 'function';
+    g.hasPan = hasPan;
     g.master = c.createGain(); g.master.gain.value = 0;
+    g.drive = softClip(c, 1.25);
+    g.lowCut = c.createBiquadFilter(); g.lowCut.type = 'highpass'; g.lowCut.frequency.value = 32; g.lowCut.Q.value = 0.6;
+    g.air = c.createBiquadFilter(); g.air.type = 'highshelf'; g.air.frequency.value = 7500; g.air.gain.value = -3.5;
     g.comp = c.createDynamicsCompressor();
-    g.comp.threshold.value = -16; g.comp.knee.value = 12; g.comp.ratio.value = 4; g.comp.attack.value = 0.01; g.comp.release.value = 0.25;
+    g.comp.threshold.value = -18; g.comp.knee.value = 14; g.comp.ratio.value = 3; g.comp.attack.value = 0.02; g.comp.release.value = 0.3;
     g.analyser = c.createAnalyser(); g.analyser.fftSize = 1024; g.analyser.smoothingTimeConstant = 0.8;
-    g.master.connect(g.comp); g.comp.connect(g.analyser); g.analyser.connect(c.destination);
+    g.trim = c.createGain(); g.trim.gain.value = Math.tanh(1.25) / 1.25;
+    g.master.connect(g.drive); g.drive.connect(g.trim); g.trim.connect(g.lowCut); g.lowCut.connect(g.air); g.air.connect(g.comp);
+    g.comp.connect(g.analyser); g.analyser.connect(c.destination);
 
-    // tonal bus -> filter -> dry + sends
     g.tone = c.createGain();
     g.filter = c.createBiquadFilter(); g.filter.type = 'lowpass';
     g.tone.connect(g.filter);
     g.filter.connect(g.master);
-    // filter LFO ("drift")
     g.lfo = c.createOscillator(); g.lfo.frequency.value = 0.07;
     g.lfoGain = c.createGain(); g.lfo.connect(g.lfoGain); g.lfoGain.connect(g.filter.frequency); g.lfo.start();
-    // delay
-    g.delaySend = c.createGain(); g.delay = c.createDelay(2.0); g.fb = c.createGain(); g.fb.gain.value = 0.38;
+
+    g.delaySend = c.createGain(); g.delay = c.createDelay(2.0); g.delay2 = c.createDelay(2.0); g.fb = c.createGain(); g.fb.gain.value = 0.38;
     g.delayTone = c.createBiquadFilter(); g.delayTone.type = 'lowpass'; g.delayTone.frequency.value = 2600;
-    g.filter.connect(g.delaySend); g.delaySend.connect(g.delay); g.delay.connect(g.delayTone); g.delayTone.connect(g.fb); g.fb.connect(g.delay);
-    g.delayTone.connect(g.master);
-    // reverb
+    var dHp = c.createBiquadFilter(); dHp.type = 'highpass'; dHp.frequency.value = 240;
+    g.filter.connect(g.delaySend); g.delaySend.connect(dHp); dHp.connect(g.delay);
+    g.delay.connect(g.delayTone); g.delayTone.connect(g.delay2); g.delay2.connect(g.fb); g.fb.connect(g.delay);
+    var dl = hasPan ? c.createStereoPanner() : c.createGain(), dr = hasPan ? c.createStereoPanner() : c.createGain();
+    if (hasPan) { dl.pan.value = -0.75; dr.pan.value = 0.75; }
+    g.delayTone.connect(dl); g.delay2.connect(dr); dl.connect(g.master); dr.connect(g.master);
+
     g.revSend = c.createGain(); g.revSend.gain.value = 1;
-    g.conv = c.createConvolver(); g.conv.buffer = impulse(c, 3.6, 2.6);
+    g.revPre = c.createBiquadFilter(); g.revPre.type = 'highpass'; g.revPre.frequency.value = 180;
+    g.conv = c.createConvolver(); g.conv.buffer = impulse(c, 4.2, 2.4);
     g.revOut = c.createGain();
-    g.revSend.connect(g.conv); g.conv.connect(g.revOut); g.revOut.connect(g.master);
+    g.revSend.connect(g.revPre); g.revPre.connect(g.conv); g.conv.connect(g.revOut); g.revOut.connect(g.master);
     g.filter.connect(g.revSend); g.delayTone.connect(g.revSend);
 
-    // layer gains
     ['pad', 'arp', 'lead'].forEach(function (k) { g[k] = c.createGain(); g[k].connect(g.tone); });
+    g.chorusIn = c.createGain(); g.chorusIn.gain.value = 0.6;
+    g.pad.connect(g.chorusIn);
+    [[-0.85, 0.0117, 0.19], [0.85, 0.0161, 0.27], [0, 0.0223, 0.13]].forEach(function (v) {
+      var d = c.createDelay(0.06), lfo = c.createOscillator(), lg = c.createGain(), wet = c.createGain();
+      d.delayTime.value = v[1]; lfo.frequency.value = v[2]; lg.gain.value = 0.0032; wet.gain.value = 0.55;
+      lfo.connect(lg); lg.connect(d.delayTime); lfo.start();
+      g.chorusIn.connect(d); d.connect(wet);
+      if (hasPan) { var p = c.createStereoPanner(); p.pan.value = v[0]; wet.connect(p); p.connect(g.tone); } else wet.connect(g.tone);
+    });
     g.bass = c.createGain(); g.bass.connect(g.master);
     g.bassRev = c.createGain(); g.bassRev.gain.value = 0.12; g.bass.connect(g.bassRev); g.bassRev.connect(g.revSend);
     g.drums = c.createGain(); g.drums.connect(g.master);
     g.drumRev = c.createGain(); g.drumRev.gain.value = 0.1; g.drums.connect(g.drumRev); g.drumRev.connect(g.revSend);
     g.atmos = c.createGain(); g.atmos.connect(g.master); g.atmos.connect(g.revSend);
     g.bin = c.createGain(); g.bin.connect(g.master);
-    g.hasPan = typeof c.createStereoPanner === 'function';
     applyAll(true);
     return g;
   }
@@ -2168,7 +2219,7 @@ var Music = (function () {
     set(g.lfo.frequency, 0.04 + A.drift * 0.12, now);
     set(g.revOut.gain, A.reverb * 1.15, now);
     set(g.delaySend.gain, A.delay * 0.7, now);
-    set(g.delay.delayTime, clamp(stepDur() * 3, 0.05, 1.9), now);
+    set(g.delay.delayTime, clamp(stepDur() * 3, 0.05, 1.9), now); if (g.delay2) set(g.delay2.delayTime, clamp(stepDur() * 3, 0.05, 1.9), now);
     set(g.fb.gain, 0.25 + A.delay * 0.35, now);
     if (cont.bin) { set(cont.bin.l.frequency, A.binCarrier, now); set(cont.bin.r.frequency, A.binCarrier + A.binBeat, now); }
   }
@@ -2220,14 +2271,34 @@ var Music = (function () {
     gn.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel);
     return t + a + hold + rel;
   }
+  var PAD_VOICES = IS_IOS || (navigator.hardwareConcurrency || 4) <= 4 ? 3 : 5;
   function padNote(m, t, dur) {
-    var c = AC.ctx, f = mtof(m), gn = c.createGain();
-    var atk = Math.min(1.2, dur * 0.3), end = env(gn, t, atk, 0.07, Math.max(0.05, dur - atk), 1.8);
-    [-8, 8].forEach(function (dt) {
-      var o = c.createOscillator(); o.type = A.padWave; o.frequency.value = f; o.detune.value = dt + rand(-3, 3);
-      o.connect(gn); o.start(t); o.stop(end + 0.1);
-    });
-    gn.connect(g.pad);
+    var c = AC.ctx, f = mtof(m), out = c.createGain(), lp = c.createBiquadFilter();
+    var atk = Math.min(1.8, dur * 0.35), rel = 2.6, end = t + dur + rel;
+    var bright = A.padWave === 'sine' ? 3.5 : A.padWave === 'triangle' ? 5 : 7;
+    lp.type = 'lowpass'; lp.Q.value = 0.8;
+    lp.frequency.setValueAtTime(f * 1.3 + 120, t);
+    lp.frequency.linearRampToValueAtTime(Math.min(9000, f * bright + 500), t + atk);
+    lp.frequency.setTargetAtTime(f * 1.6 + 160, t + dur, rel / 3);
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.linearRampToValueAtTime(0.1, t + atk);
+    out.gain.setValueAtTime(0.1, t + dur);
+    out.gain.setTargetAtTime(0.0001, t + dur, rel / 4);
+    for (var i = 0; i < PAD_VOICES; i++) {
+      var spread = PAD_VOICES > 1 ? i / (PAD_VOICES - 1) * 2 - 1 : 0;
+      var o = c.createOscillator(), vg = c.createGain();
+      o.type = A.padWave; o.frequency.value = f;
+      o.detune.setValueAtTime(spread * 12 + rand(-2, 2), t);
+      o.detune.linearRampToValueAtTime(spread * 15 + rand(-3, 3), end);
+      vg.gain.value = 1 / Math.sqrt(PAD_VOICES);
+      o.connect(vg);
+      if (g.hasPan) { var p = c.createStereoPanner(); p.pan.value = spread * 0.8; vg.connect(p); p.connect(lp); } else vg.connect(lp);
+      o.start(t + rand(0, 0.03)); o.stop(end + 0.1);
+    }
+    var sub = c.createOscillator(), sg = c.createGain();
+    sub.type = 'sine'; sub.frequency.value = f / 2; sg.gain.value = 0.3;
+    sub.connect(sg); sg.connect(lp); sub.start(t); sub.stop(end + 0.1);
+    lp.connect(out); out.connect(g.pad);
   }
   function bassNote(m, t, dur) {
     var c = AC.ctx, f = mtof(m), gn = c.createGain(), lp = c.createBiquadFilter();
@@ -2267,9 +2338,13 @@ var Music = (function () {
   }
   function kick(t, vel) {
     var c = AC.ctx, o = c.createOscillator(), gn = c.createGain();
-    o.frequency.setValueAtTime(155, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
-    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.95 * vel, t + 0.004); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
-    o.connect(gn); gn.connect(g.drums); o.start(t); o.stop(t + 0.45);
+    o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(44, t + 0.12);
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.95 * vel, t + 0.003); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    o.connect(gn); gn.connect(g.drums); o.start(t); o.stop(t + 0.48);
+    var n = c.createBufferSource(), hp = c.createBiquadFilter(), ng = c.createGain();
+    n.buffer = noiseBuffer(); hp.type = 'bandpass'; hp.frequency.value = 3200; hp.Q.value = 0.9;
+    ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.22 * vel, t + 0.001); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.012);
+    n.connect(hp); hp.connect(ng); ng.connect(g.drums); n.start(t, Math.random()); n.stop(t + 0.02);
   }
   function snare(t, vel) {
     var c = AC.ctx, n = c.createBufferSource(); n.buffer = noiseBuffer();
@@ -3833,7 +3908,7 @@ var App = (function () {
     try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// in some browsers */ }
     if (!opt.silent) SFX.play('tab');
     if (prev !== null) window.scrollTo(0, 0);
-    if (id === 'schedule') Sched.render();
+    if (id === 'schedule') { Sched.render(); restartSweep(); }
     if (id === 'typing') Typing.onShow();
     AudioUI.onTab(id === 'audio');
     Mini.update();
@@ -3846,18 +3921,11 @@ var App = (function () {
     if (S.settings.clock24) return pad2(h) + ':' + m + ':' + s;
     return (h % 12 || 12) + ':' + m + ':' + s + ' ' + (h < 12 ? 'AM' : 'PM');
   }
-  var sweepBase = Math.floor(Date.now() / 1000), sweepSec0 = new Date(sweepBase * 1000).getSeconds(), sweepLast = null;
-  function tickSweep() {
-    var wrap = $('.dial-wrap'); if (!wrap || document.hidden) return;
-    // 6 degrees per second, always counting upward so 59 -> 0 does not swing backwards
-    var angle = (Math.floor(Date.now() / 1000) - sweepBase + sweepSec0) * 6;
-    var jump = sweepLast === null || angle - sweepLast > 12 || S.settings.reduceMotion;
-    wrap.classList.toggle('jump', jump);
-    wrap.style.setProperty('--sweep', angle + 'deg');
-    sweepLast = angle;
+  function restartSweep() {
+    var wrap = $('.dial-wrap'); if (!wrap) return;
+    wrap.classList.remove('sweep-on'); void wrap.offsetWidth; wrap.classList.add('sweep-on');
   }
   function tickClock() {
-    tickSweep();
     var d = new Date();
     $('#clock-time').textContent = fmtClock(d);
     $('#clock-date').textContent = DAY_NAMES[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3) + ' ' + d.getFullYear();
@@ -4383,7 +4451,7 @@ var App = (function () {
     renderRank();
     setInterval(function () { tickClock(); dockStatus(); }, 1000);
     setInterval(function () { Sched.minuteTick(); greeting(); }, 30000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { tickClock(); Sched.minuteTick(); } });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { tickClock(); Sched.minuteTick(); if (current === 'schedule') restartSweep(); } });
     window.addEventListener('hashchange', function () { var h = location.hash.slice(1); if (h && h !== current) show(h); });
     var h = location.hash.slice(1);
     show(TABS.some(function (t) { return t.id === h; }) ? h : S.ui.tab, { silent: true });
@@ -4912,6 +4980,9 @@ var QTimer = (function () {
     var b = $('#dock-timer'); if (!b) return;
     var on = active(), txt = on ? fmt(remaining()) : 'Timer';
     var t = $('#dock-timer-text'); if (t.textContent !== txt) t.textContent = txt;
+    var nt = $('#nav-timer'), ns = nt && $('span', nt);
+    if (ns && ns.textContent !== txt) ns.textContent = txt;
+    if (nt) nt.classList.toggle('live', on);
     b.classList.toggle('live', on); b.classList.toggle('paused', on && !running());
     var frac = on ? remaining() / Q.run.total : 0;
     $('#dock-timer-arc').style.strokeDashoffset = String(SMALL * (1 - frac));
@@ -5011,6 +5082,8 @@ var QTimer = (function () {
 
   function init() {
     $('#dock-timer').addEventListener('click', function () { this.blur(); openPop(); });
+    var navT = $('#nav-timer');
+    if (navT) { navT.innerHTML = I.clock + '<span>Timer</span>'; navT.addEventListener('click', function () { openModal(); }); }
     window.addEventListener('resize', function () { if (pop && !pop.closest('.modal')) close(true); });
     render();
     setInterval(function () { if (Q.run) tick(); }, 250);
