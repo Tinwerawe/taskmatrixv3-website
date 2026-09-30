@@ -1200,6 +1200,24 @@ html.bridge .type-live, html.bridge .type-foot, html.bridge .kbd-hint {
 html.wallpaper .kbd-hint kbd, html.bridge .kbd-hint kbd { background: rgba(var(--well-rgb), 0.85); }
 html.wallpaper .type-live .live-stats, html.wallpaper .kbd-hint { color: var(--text); }
 html.wallpaper .btn:not(.btn-primary):not(.btn-danger), html.bridge .btn:not(.btn-primary):not(.btn-danger) { background-color: rgba(var(--well-rgb), 0.82); }
+
+/* ================= 1.4.4: inside the ship ================= */
+@media (min-width: 701px) { html.bridge .app { padding-left: 46px; padding-right: 46px; max-width: 1316px; } }
+.topbar .tab { white-space: nowrap; }
+@media (max-width: 1260px) { html.bridge .topbar .tab { padding-left: 10px; padding-right: 10px; } html.bridge .brand-sub { display: none; } }
+@media (min-width: 901px) and (max-width: 980px) { .topbar .brand-text { display: none; } .topbar .tab { padding-left: 8px; padding-right: 8px; } }
+@media (min-width: 901px) and (max-width: 1000px) { html.bridge .topbar .tab svg { display: none; } }
+@media (max-width: 1140px) { html.bridge .topbar .brand-text { display: none; } html.bridge .topbar .tab { padding-left: 9px; padding-right: 9px; } }
+#glass {
+  position: fixed; z-index: 45; pointer-events: none;
+  background:
+    linear-gradient(112deg, rgba(255,255,255,0) 36%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.012) 50%, rgba(255,255,255,0) 58%),
+    linear-gradient(180deg, rgba(var(--tint-rgb), 0.045), rgba(var(--tint-rgb), 0) 18%),
+    linear-gradient(0deg, rgba(var(--accent-rgb), 0.035), rgba(var(--accent-rgb), 0) 14%);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.28);
+}
+#glass[hidden] { display: none; }
+html:not(.bridge) #glass { display: none; }
 </style>
 </head>
 <body>
@@ -3508,13 +3526,15 @@ var Typing = (function () {
     if (T && T.timer) clearInterval(T.timer);
     composing = false; // a half-finished IME word must never block the new test
     T = { target: text, typed: '', started: false, done: false, t0: 0, keys: 0, good: 0, errs: 0, samples: [], secKeys: 0, secErr: 0, timer: null, spans: [], lineOf: [], lines: [], charH: 0 };
-    renderCode();
+    // show the typing area first, so the code and the cursor are measured at their real size
     $('#type-results').hidden = true;
     $('#type-test').hidden = false;
+    activeLine = -1;
+    renderCode();
     inp.value = '';
+    scrollEl.scrollTop = 0;
     updateLive();
     placeCaret(true);
-    scrollEl.scrollTop = 0;
   }
   function newText() { fresh(buildText()); }
   function restart() { fresh(T.target); }
@@ -3550,7 +3570,8 @@ var Typing = (function () {
     var i = Math.min(T.typed.length, T.spans.length), cr = codeEl.getBoundingClientRect(), x, y, r;
     if (i < T.spans.length) { r = T.spans[i].getBoundingClientRect(); x = r.left - cr.left; }
     else { r = T.spans[T.spans.length - 1].getBoundingClientRect(); x = r.right - cr.left; }
-    var h = T.charH || r.height;
+    if (!T.charH && r.height) T.charH = r.height;
+    var h = T.charH || r.height || 20;
     y = r.top - cr.top + (r.height - h) / 2;
     if (instant) { caret.style.transition = 'none'; }
     caret.style.height = Math.round(h) + 'px';
@@ -3881,6 +3902,13 @@ var Typing = (function () {
         if (m && m[1].length > 1) { e.preventDefault(); commit(T.typed.slice(0, T.typed.length - m[1].length)); SFX.play('key'); }
       }
     });
+    // results screen: Enter = next code, Esc = same code again, Ctrl/Cmd+Enter = new code
+    document.addEventListener('keydown', function (e) {
+      if (!T || !T.done || $('#view-typing').hidden || $('#type-results').hidden || Modal.isOpen()) return;
+      var onButton = e.target && e.target.tagName === 'BUTTON';
+      if (e.key === 'Escape') { e.preventDefault(); restart(); SFX.play('tab'); focusInput(); }
+      else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || !onButton)) { e.preventDefault(); SFX.play('tab'); newText(); focusInput(); }
+    });
     inp.addEventListener('select', function () { try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* noop */ } });
     inp.addEventListener('mouseup', function () { try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* noop */ } });
     window.addEventListener('resize', debounce(function () { if (T && !$('#view-typing').hidden) { T.charH = T.spans[0] ? T.spans[0].getBoundingClientRect().height : T.charH; placeCaret(true); } }, 120));
@@ -3906,11 +3934,11 @@ var App = (function () {
     { id: 'typing', label: 'Code typing', ic: I.code }
   ];
   var current = null;
-  var VERSION = '1.4.3';
+  var VERSION = '1.4.4';
   var WHATS_NEW = [
-    'Bridge view: a clean, angular viewscreen that matches the rest of the interface and your theme colours.',
-    'The Earth now always keeps turning smoothly when you come back from another tab.',
-    'Your own wallpaper (Settings \u2192 Background \u2192 My wallpaper) and Timer + Notes on the right of the system bar.'
+    'Bridge view: you now sit inside the ship \u2013 two structural pillars, and your screens on the ship\u2019s viewscreen glass.',
+    'Code typing: after finishing, the next run always shows your cursor. Enter = next code, Esc = same again.',
+    'A more see-through interface that stays easy to read, plus a clean angular viewscreen frame.'
   ];
 
   /* ---------- themes ---------- */
@@ -5300,7 +5328,7 @@ var Mini = (function () {
     var parts = [];
     if (timer) parts.push(Focus.label() + ' ' + Focus.fmt(Focus.remaining()) + (Focus.running() ? '' : ' (paused)'));
     if (qt) parts.push('Timer ' + QTimer.fmt(QTimer.remaining()) + (QTimer.running() ? '' : ' (paused)'));
-    var sub = parts.length ? parts.join(' \u00b7 ') : 'Playing';
+      ['uView', 'uScale', 'uFocal', 'uFw', 'uUp', 'uRoll', 'uSun', 'uPr', 'uSC', 'uCell0', 'uSpin', 'uNoise', 'uAcc'].forEach(function (n) { P[n] = gl.getUniformLocation(prog, n); });
     var html = esc(main) + '<small>' + esc(sub) + '</small>';
     if (html !== last) { $('#mini-text').innerHTML = html; last = html; }
     $('#mini-bars').classList.toggle('paused', !playing);
@@ -5423,7 +5451,7 @@ var Scene = (function () {
   var FS = [
     'precision highp float;',
     'uniform vec2 uView;uniform float uScale;uniform float uFocal;uniform vec3 uFw;uniform vec3 uUp;uniform vec2 uRoll;uniform vec3 uSun;',
-    'uniform float uPr;uniform float uSC;uniform float uCell0;uniform float uSpin;uniform sampler2D uNoise;',
+    'uniform float uPr;uniform float uSC;uniform float uCell0;uniform float uSpin;uniform sampler2D uNoise;uniform vec3 uAcc;',
     'float nt(vec2 q){return texture2D(uNoise,q*(1.0/1024.0)).r;}',
     'float fbmN(vec2 q,float oct,float gain){float v=0.0,amp=0.5,norm=0.0;for(int o=0;o<10;o++){if(float(o)>=oct)break;v+=amp*nt(q);norm+=amp;q=mod(q*2.0+vec2(17.3,9.1),1024.0);amp*=gain;}return v/norm;}',
     'vec2 L(float um,float v,float s,vec2 o){return vec2(mod(um*s+o.x,1024.0),mod(v*s+o.y,1024.0));}',
@@ -5454,13 +5482,13 @@ var Scene = (function () {
     '  float night=1.0-smoothstep(-0.12,0.02,ndl);',
     '  if(night>0.0){float city=land*smoothstep(0.62,0.8,nt(L(um,v,3.125,vec2(7.0,3.0)))*0.55+nt(L(um,v,11.25,vec2(1.0,9.0)))*0.45)*(1.0-cloud*0.85)*night;col+=city*vec3(255.0,170.0,80.0)+cloud*night*vec3(10.0,14.0,26.0);}',
     '  float haze=pow(1.0-clamp(mu,0.0,1.0)+1e-6,4.0)*0.8;',
-    '  vec3 ah=vec3(14.0+70.0*day+150.0*warm,26.0+115.0*day+30.0*warm,60.0+185.0*day);',
+      '  vec3 ah=vec3(14.0+70.0*day+150.0*warm,26.0+115.0*day+30.0*warm,60.0+185.0*day); ah=mix(ah,uAcc*255.0*(0.2+0.6*day),0.4);',
     '  col+=(ah-col)*haze; col*=0.92/255.0;',
     ' } else {',
     '  vec3 add=vec3(0.0); float tc=-b;',
     '  if(tc>0.0){vec3 q=vec3(tc*d.x,uPr+tc*d.y,tc*d.z);float ql=length(q),hgt=ql-1.0,qs=dot(q,uSun)/ql,lit=smoothstep(-0.22,0.2,qs);',
     '   float I=exp(-hgt/0.0065),I2=exp(-hgt/0.02)*0.22,band=exp(-(qs/0.16)*(qs/0.16))*exp(-hgt/0.0035);',
-    '   add+=(vec3(8.0,30.0,60.0)+vec3(80.0,140.0,205.0)*lit)*(I+I2)+vec3(255.0,120.0,50.0)*band*0.9+vec3(20.0,60.0,30.0)*(1.0-lit)*I*0.3;}',
+        '   add+=(vec3(8.0,30.0,60.0)+mix(vec3(80.0,140.0,205.0),uAcc*230.0,0.55)*lit)*(I+I2)+vec3(255.0,120.0,50.0)*band*0.9+vec3(20.0,60.0,30.0)*(1.0-lit)*I*0.3;}',
     '  if(sd>0.0){float sdd=sd+1e-6;float g3=pow(sdd,1600.0)*900.0+pow(sdd,90.0)*120.0+pow(sdd,12.0)*16.0;add+=g3*vec3(1.0,0.96,0.9);}',
     '  col=add/255.0; alpha=clamp(max(col.r,max(col.g,col.b))*1.4,0.0,1.0); col=min(col,vec3(alpha));',
     ' }',
@@ -5520,7 +5548,7 @@ var Scene = (function () {
     gl.uniform2f(P.uView, w, h); gl.uniform1f(P.uScale, gcv.width / w);
     gl.uniform1f(P.uFocal, G.focal); gl.uniform3f(P.uFw, 0, G.f[1], G.f[2]); gl.uniform3f(P.uUp, 0, G.u[1], G.u[2]);
     gl.uniform2f(P.uRoll, G.cr, G.sr); gl.uniform3f(P.uSun, G.S[0], G.S[1], G.S[2]);
-    gl.uniform1f(P.uPr, G.pr); gl.uniform1f(P.uSC, G.SC); gl.uniform1f(P.uCell0, G.cell0);
+       gl.uniform1f(P.uPr, G.pr); gl.uniform1f(P.uSC, G.SC); gl.uniform1f(P.uCell0, G.cell0); var ac = acc.split(','); gl.uniform3f(P.uAcc, ac[0] / 255, ac[1] / 255, ac[2] / 255);
     glStart = performance.now();
     // only draw inside the window opening: the cabin walls hide everything else
     var W = winGeo(), k2 = gcv.width / w;
@@ -5637,9 +5665,16 @@ var Scene = (function () {
   /* ---------- front layer: the ship's window, fitted around the content ---------- */
   function winGeo() {
     var m = w < 700, app = document.getElementById('app'), r = app ? app.getBoundingClientRect() : null;
-    var L = m ? Math.max(6, w * 0.016) : Math.max(14, (r ? r.left : 0) + 6), R = m ? w - L : Math.min(w - 14, r ? r.right - 6 : w - 14);
+    var padL = 18, padR = 18;
+    if (app) { var cs = getComputedStyle(app); padL = parseFloat(cs.paddingLeft) || 18; padR = parseFloat(cs.paddingRight) || 18; }
+    var L, R;
+    if (m || !r) { L = Math.max(6, w * 0.016); R = w - L; }
+    else { L = Math.max(10, r.left + padL - 14); R = Math.min(w - 10, r.right - padR + 14); }
     if (R - L < w * 0.5) { L = 14; R = w - 14; }
-    return { m: m, L: L, R: R, T: m ? 4 : 6, B: h - (m ? 4 : 6), cut: Math.round(Math.min(w, h) * (m ? 0.035 : 0.03) + (m ? 10 : 16)), wall: L };
+    var F = m ? 5 : 9, pw = m ? 0 : clamp(Math.round((L - F) * 0.7), 0, 88), cut = Math.round(Math.min(w, h) * (m ? 0.035 : 0.03) + (m ? 10 : 16));
+    var T = m ? 4 : 6, B = h - (m ? 4 : 6);
+    if (pw >= 14) { F = 0; cut = 0; T = 0; B = h; pw = clamp(Math.round(L * 0.7), 14, 88); }
+    return { m: m, L: L, R: R, T: T, B: B, F: F, pw: pw, cut: cut, wall: L };
   }
   // the viewscreen outline: straight edges with 45° chamfered corners, like the rest of the interface
   function windowPath(g, W, grow) {
@@ -5647,28 +5682,67 @@ var Scene = (function () {
     g.moveTo(L + c, T); g.lineTo(R - c, T); g.lineTo(R, T + c); g.lineTo(R, B - c); g.lineTo(R - c, B);
     g.lineTo(L + c, B); g.lineTo(L, B - c); g.lineTo(L, T + c); g.closePath();
   }
+  function mixRgb(rgb, k, add) { return rgb.split(',').map(function (v, i) { return Math.round(clamp(+v * k + (add ? add[i] : 0), 0, 255)); }).join(','); }
+  // a structural pillar beside the window: shaded like a rounded beam, lit on the window side by the Earth
+  function drawPillar(x0, x1, side, deep) {
+    var wd = x1 - x0, inner = side < 0 ? x1 : x0, outer = side < 0 ? x0 : x1;
+    var g = fx.createLinearGradient(outer, 0, inner, 0);
+    g.addColorStop(0, 'rgb(' + mixRgb(deep, 0.35) + ')');
+    g.addColorStop(0.45, 'rgb(' + mixRgb(deep, 1.25, [10, 12, 16]) + ')');
+    g.addColorStop(0.8, 'rgb(' + mixRgb(deep, 1.05, [6, 8, 12]) + ')');
+    g.addColorStop(1, 'rgb(' + mixRgb(deep, 1.6, [30, 44, 70]) + ')');
+    fx.fillStyle = g; fx.fillRect(x0, 0, wd, h);
+    // bevelled face toward the window, catching blue Earthlight (brighter lower down)
+    var bev = Math.min(7, wd * 0.18), bx = side < 0 ? x1 - bev : x0;
+    var lit = fx.createLinearGradient(0, 0, 0, h);
+    lit.addColorStop(0, 'rgba(' + acc + ',0.08)'); lit.addColorStop(0.6, 'rgba(' + acc + ',0.18)'); lit.addColorStop(1, 'rgba(' + acc + ',0.3)');
+    fx.fillStyle = lit; fx.fillRect(bx, 0, bev, h);
+    fx.fillStyle = 'rgba(0,0,0,0.55)'; fx.fillRect(side < 0 ? x0 : x1 - 1, 0, 1, h);
+    // panel seams with bolts
+    [0.22, 0.5, 0.78].forEach(function (f) {
+      var y = Math.round(h * f);
+      fx.fillStyle = 'rgba(0,0,0,0.6)'; fx.fillRect(x0, y, wd, 1);
+      fx.fillStyle = 'rgba(' + tint + ',0.08)'; fx.fillRect(x0, y + 1, wd, 1);
+      if (wd >= 30) [x0 + wd * 0.25, x0 + wd * 0.75].forEach(function (bxx) {
+        [y - 9, y + 10].forEach(function (by) {
+          fx.fillStyle = 'rgba(0,0,0,0.75)'; fx.beginPath(); fx.arc(bxx, by, 2, 0, Math.PI * 2); fx.fill();
+          fx.fillStyle = 'rgba(' + tint + ',0.18)'; fx.beginPath(); fx.arc(bxx - 0.5, by - 0.6, 0.8, 0, Math.PI * 2); fx.fill();
+        });
+      });
+    });
+    // accent light strip running down the pillar
+    var sx = x0 + wd * (side < 0 ? 0.42 : 0.58), strip = fx.createLinearGradient(0, h * 0.08, 0, h * 0.92);
+    strip.addColorStop(0, 'rgba(' + acc + ',0)'); strip.addColorStop(0.2, 'rgba(' + acc + ',0.55)'); strip.addColorStop(0.8, 'rgba(' + acc + ',0.55)'); strip.addColorStop(1, 'rgba(' + acc + ',0)');
+    fx.save(); fx.shadowColor = 'rgba(' + acc + ',0.9)'; fx.shadowBlur = 8; fx.fillStyle = strip; fx.fillRect(sx - 0.75, h * 0.08, 1.5, h * 0.84); fx.restore();
+    // small status lights near the bottom
+    if (wd >= 24) [['80,255,150', 0], ['255,176,60', 1], [acc, 2]].forEach(function (l) {
+      var ly = h * 0.86 + l[1] * 9, lx = x0 + wd * (side < 0 ? 0.25 : 0.75);
+      fx.save(); fx.fillStyle = 'rgba(' + l[0] + ',0.9)'; fx.shadowColor = 'rgba(' + l[0] + ',0.9)'; fx.shadowBlur = 5; fx.fillRect(lx - 1.5, ly, 3, 3); fx.restore();
+    });
+  }
+  // the glass sits in front of the content: a faint reflection that stays put while the content scrolls
+  function placeGlass(W) {
+    var gEl = document.getElementById('glass');
+    if (!gEl) { gEl = document.createElement('div'); gEl.id = 'glass'; gEl.setAttribute('aria-hidden', 'true'); document.body.appendChild(gEl); }
+    gEl.hidden = mode !== 'bridge';
+    if (mode !== 'bridge') return;
+    var c = W.cut, gw = W.R - W.L, gh = W.B - W.T;
+    gEl.style.left = W.L + 'px'; gEl.style.top = W.T + 'px'; gEl.style.width = gw + 'px'; gEl.style.height = gh + 'px';
+    gEl.style.clipPath = 'polygon(' + c + 'px 0, ' + (gw - c) + 'px 0, ' + gw + 'px ' + c + 'px, ' + gw + 'px ' + (gh - c) + 'px, ' + (gw - c) + 'px ' + gh + 'px, ' + c + 'px ' + gh + 'px, 0 ' + (gh - c) + 'px, 0 ' + c + 'px)';
+  }
   function rgbVar(name, fb) { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace(/\s+/g, ''); return v || fb; }
   function drawFrame() {
     if (!fx) return;
-    var W = winGeo(), F = W.m ? 5 : 9, deep = rgbVar('--deep-rgb', '8,16,30'), well = rgbVar('--well-rgb', '2,8,18');
+    var W = winGeo(), F = W.F, deep = rgbVar('--deep-rgb', '8,16,30'), well = rgbVar('--well-rgb', '2,8,18');
     fx.clearRect(0, 0, w, h);
     // cabin around the screen, in the theme's own panel colours
     fx.save(); fx.beginPath(); fx.rect(0, 0, w, h); windowPath(fx, W, F);
     var wall = fx.createLinearGradient(0, 0, 0, h);
     wall.addColorStop(0, 'rgb(' + well + ')'); wall.addColorStop(1, 'rgb(' + deep + ')');
     fx.fillStyle = wall; fx.fill('evenodd'); fx.clip('evenodd');
-    if (W.wall > 60) {
-      [[0, W.L - F], [W.R + F, w]].forEach(function (sd) {
-        var x0 = sd[0], x1 = sd[1]; if (x1 - x0 < 30) return;
-        var lx = x0 === 0 ? x1 - 18 : x0 + 16, strip = fx.createLinearGradient(0, h * 0.15, 0, h * 0.85);
-        strip.addColorStop(0, 'rgba(' + acc + ',0)'); strip.addColorStop(0.5, 'rgba(' + acc + ',0.3)'); strip.addColorStop(1, 'rgba(' + acc + ',0)');
-        fx.fillStyle = strip; fx.fillRect(lx, h * 0.15, 1.5, h * 0.7);
-        var halo = fx.createRadialGradient(lx, h / 2, 0, lx, h / 2, 70);
-        halo.addColorStop(0, 'rgba(' + acc + ',0.05)'); halo.addColorStop(1, 'rgba(' + acc + ',0)');
-        fx.fillStyle = halo; fx.fillRect(lx - 70, h * 0.15, 140, h * 0.7);
-      });
-    }
     fx.restore();
+    if (W.pw >= 14) { drawPillar(W.L - F - W.pw, W.L - F, -1, deep); drawPillar(W.R + F, W.R + F + W.pw, 1, deep); }
+    if (W.pw < 14) { // no pillars (phones): a thin frame outlines the screen instead
     // the frame band
     fx.save(); fx.beginPath(); windowPath(fx, W, F); windowPath(fx, W, 0);
     var band = fx.createLinearGradient(0, W.T, 0, W.B);
@@ -5688,8 +5762,14 @@ var Scene = (function () {
       fx.beginPath(); fx.moveTo(mx - dx, my - dy); fx.lineTo(mx + dx, my + dy); fx.stroke();
     });
     fx.restore();
+    }
     // clear glass: soft edge shade, a faint cabin reflection and one diagonal streak
     fx.save(); fx.beginPath(); windowPath(fx, W, 0); fx.clip();
+    if (W.pw >= 14) [[W.L, 1], [W.R, -1]].forEach(function (e) {
+      var sh = fx.createLinearGradient(e[0], 0, e[0] + e[1] * 70, 0);
+      sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+      fx.fillStyle = sh; fx.fillRect(Math.min(e[0], e[0] + e[1] * 70), 0, 70, h);
+    });
     fx.shadowColor = 'rgba(0,0,0,0.7)'; fx.shadowBlur = W.m ? 14 : 26; fx.lineWidth = 18; fx.strokeStyle = 'rgba(0,0,0,0.7)';
     fx.beginPath(); windowPath(fx, W, 9); fx.stroke(); fx.shadowBlur = 0;
     var cab = fx.createLinearGradient(0, W.T, 0, W.T + h * 0.28);
@@ -5700,6 +5780,7 @@ var Scene = (function () {
     streak.addColorStop(0, 'rgba(255,255,255,0)'); streak.addColorStop(0.5, 'rgba(255,255,255,0.022)'); streak.addColorStop(1, 'rgba(255,255,255,0)');
     fx.fillStyle = streak; fx.fillRect(-70, -h, 140, h * 3);
     fx.restore();
+    placeGlass(W);
   }
 
   /* ---------- main loop ---------- */
@@ -5768,6 +5849,7 @@ var Scene = (function () {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
     ensureLayers(m);
     Wallpaper.show(m === 'custom');
+    var glassEl = document.getElementById('glass'); if (glassEl && m !== 'bridge') glassEl.hidden = true;
     resize(); kick();
     if (m !== 'bridge') fireReady();
   }
@@ -5777,7 +5859,7 @@ var Scene = (function () {
     acc = (cs.getPropertyValue('--accent-rgb') || '').trim().replace(/\s+/g, '') || acc;
     if (!x) return;
     if (mode === 'stars') { x.clearRect(0, 0, w, h); drawStarfield(performance.now(), 0, !still()); }
-    else if (mode === 'bridge') drawFrame();
+    else if (mode === 'bridge') { drawFrame(); if (gl) { var ac2 = acc.split(','); gl.uniform3f(P.uAcc, ac2[0] / 255, ac2[1] / 255, ac2[2] / 255); drawEarthGL(); } }
   }
   function init() {
     cv = document.createElement('canvas'); cv.id = 'stars'; cv.setAttribute('aria-hidden', 'true');
