@@ -3934,11 +3934,11 @@ var App = (function () {
     { id: 'typing', label: 'Code typing', ic: I.code }
   ];
   var current = null;
-  var VERSION = '1.4.4';
+  var VERSION = '1.4.5';
   var WHATS_NEW = [
-    'Bridge view: you now sit inside the ship \u2013 two structural pillars, and your screens on the ship\u2019s viewscreen glass.',
-    'Code typing: after finishing, the next run always shows your cursor. Enter = next code, Esc = same again.',
-    'A more see-through interface that stays easy to read, plus a clean angular viewscreen frame.'
+    'Timers: the Quick timer and the Focus deck now close as soon as you press Start \u2013 the countdown carries on in the bar.',
+    'Bridge view: the ship\u2019s glow and pillar lights follow your theme colour.',
+    'Bridge view: you sit inside the ship, with two structural pillars and your screens on the viewscreen glass.'
   ];
 
   /* ---------- themes ---------- */
@@ -5037,7 +5037,7 @@ var Focus = (function () {
    QUICK TIMER — one tap in the system bar (desktop) or the Theme sheet (phone)
    ===================================================================== */
 var QTimer = (function () {
-  var Q = S.qtimer, pop = null, baseTitle = document.title, SMALL = 59.69, BIG = 2 * Math.PI * 46;
+  var Q = S.qtimer, pop = null, modalClose = null, baseTitle = document.title, SMALL = 59.69, BIG = 2 * Math.PI * 46;
   var PRESETS = [1, 3, 5, 10, 15, 25, 30, 60];
   if (!(Q.last >= 1 && Q.last <= 600)) Q.last = 10;
   if (Q.run && !(isPlainObj(Q.run) && Q.run.total > 0 && (typeof Q.run.endAt === 'number' || typeof Q.run.left === 'number'))) Q.run = null;
@@ -5055,8 +5055,11 @@ var QTimer = (function () {
     min = clamp(Math.round(min), 1, 600);
     Q.last = min;
     Q.run = { total: min * 60000, endAt: Date.now() + min * 60000, min: min };
-    save(); SFX.play('on'); render(); renderPop();
+    save(); SFX.play('on'); render(); dismiss();
+    toast('Timer started \u2013 ' + label(min) + '. It counts down in the bar.', { kind: 'ok', timeout: 2200 });
   }
+  // put the panel away: the countdown carries on in the bar (or the phone's bottom menu)
+  function dismiss() { if (!pop) return; if (modalClose) modalClose(); else close(true); }
   function pause() {
     if (!Q.run) return;
     if (running()) { Q.run.left = remaining(); Q.run.endAt = null; SFX.play('off'); }
@@ -5069,7 +5072,7 @@ var QTimer = (function () {
     if (running()) Q.run.endAt += ms; else Q.run.left += ms;
     save(); SFX.play('click'); render(); renderPop();
   }
-  function cancel() { Q.run = null; save(); SFX.play('close'); render(); renderPop(); }
+  function cancel() { Q.run = null; save(); SFX.play('close'); render(); dismiss(); toast('Timer cancelled', { timeout: 1600 }); }
   function complete() {
     var r = Q.run, late = Date.now() - r.endAt > 60000;
     Q.run = null; save();
@@ -5185,10 +5188,10 @@ var QTimer = (function () {
   /* phone: same panel inside a dialog */
   function openModal() {
     Modal.open({ title: 'Quick timer', width: 380, body: '<div class="qt-pop" id="qt-modal"></div>', onOpen: function (w, closeModal) {
-      pop = $('#qt-modal', w); renderPop();
+      pop = $('#qt-modal', w); modalClose = closeModal; renderPop();
       pop.addEventListener('click', function (e) { if (e.target.closest('[data-qt="close"]')) { closeModal(); return; } onPanelClick(e); });
       pop.addEventListener('keydown', function (e) { if (e.key === 'Enter') onPanelKey(e); });
-    }, onClose: function () { pop = null; } });
+    }, onClose: function () { pop = null; modalClose = null; } });
   }
 
   function init() {
@@ -5208,7 +5211,7 @@ var QTimer = (function () {
    FOCUS DECK — music + focus session in one control (system bar / phone sheet)
    ===================================================================== */
 var FocusDeck = (function () {
-  var pop = null, inModal = false, CIRC = 2 * Math.PI * 46, liveTimer = 0;
+  var pop = null, inModal = false, deckModalClose = null, CIRC = 2 * Math.PI * 46, liveTimer = 0;
   function head() { return '<div class="qt-head"><h3>Focus deck</h3><button class="icon-btn" type="button" data-fd="close" aria-label="Close" data-sfx="none">' + I.close + '</button></div>'; }
   function html() {
     var fa = Focus.active();
@@ -5268,10 +5271,11 @@ var FocusDeck = (function () {
     if (a === 'close') { close(); return; }
     if (a === 'more') { close(true); App.show('audio'); return; }
     if (a === 'play') { AudioUI.togglePlay(); live(); return; }
-    if (a === 'go') { Focus.begin('focus'); if (!Music.isPlaying()) Music.play(); render(); return; }
+    if (a === 'go') { Focus.begin('focus'); if (!Music.isPlaying()) Music.play(); App.dockStatus(); putAway(); toast('Focus session started \u2013 ' + Focus.length() + ' min', { kind: 'ok', timeout: 2200 }); return; }
     if (a === 'pause') { Focus.toggle(); live(); return; }
-    if (a === 'stop') { Focus.reset(); SFX.play('close'); render(); }
+    if (a === 'stop') { Focus.reset(); SFX.play('close'); App.dockStatus(); putAway(); }
   }
+  function putAway() { if (!pop) return; if (inModal) { if (deckModalClose) deckModalClose(); } else close(true); }
   function onInput(e) { if (e.target.id === 'fd-vol') { AudioUI.setVolume(e.target.value / 100); live(); } }
   function wire() { pop.addEventListener('click', onClick); pop.addEventListener('input', onInput); liveTimer = setInterval(live, 500); }
 
@@ -5299,9 +5303,9 @@ var FocusDeck = (function () {
   }
   function openModal() {
     Modal.open({ title: 'Focus deck', width: 420, body: '<div class="qt-pop fd-pop" id="fd-modal"></div>', onOpen: function (w, closeModal) {
-      pop = $('#fd-modal', w); inModal = true; render(); wire();
+      pop = $('#fd-modal', w); inModal = true; deckModalClose = closeModal; render(); wire();
       pop.addEventListener('click', function (e) { var b = e.target.closest('[data-fd="close"],[data-fd="more"]'); if (b) closeModal(); });
-    }, onClose: function () { clearInterval(liveTimer); pop = null; inModal = false; } });
+    }, onClose: function () { clearInterval(liveTimer); pop = null; inModal = false; deckModalClose = null; } });
   }
   function init() {
     $('#dock-deck').addEventListener('click', function () { this.blur(); open(); });
@@ -5328,7 +5332,7 @@ var Mini = (function () {
     var parts = [];
     if (timer) parts.push(Focus.label() + ' ' + Focus.fmt(Focus.remaining()) + (Focus.running() ? '' : ' (paused)'));
     if (qt) parts.push('Timer ' + QTimer.fmt(QTimer.remaining()) + (QTimer.running() ? '' : ' (paused)'));
-      ['uView', 'uScale', 'uFocal', 'uFw', 'uUp', 'uRoll', 'uSun', 'uPr', 'uSC', 'uCell0', 'uSpin', 'uNoise', 'uAcc'].forEach(function (n) { P[n] = gl.getUniformLocation(prog, n); });
+    var sub = parts.length ? parts.join(' \u00b7 ') : 'Playing';
     var html = esc(main) + '<small>' + esc(sub) + '</small>';
     if (html !== last) { $('#mini-text').innerHTML = html; last = html; }
     $('#mini-bars').classList.toggle('paused', !playing);
@@ -5482,13 +5486,13 @@ var Scene = (function () {
     '  float night=1.0-smoothstep(-0.12,0.02,ndl);',
     '  if(night>0.0){float city=land*smoothstep(0.62,0.8,nt(L(um,v,3.125,vec2(7.0,3.0)))*0.55+nt(L(um,v,11.25,vec2(1.0,9.0)))*0.45)*(1.0-cloud*0.85)*night;col+=city*vec3(255.0,170.0,80.0)+cloud*night*vec3(10.0,14.0,26.0);}',
     '  float haze=pow(1.0-clamp(mu,0.0,1.0)+1e-6,4.0)*0.8;',
-      '  vec3 ah=vec3(14.0+70.0*day+150.0*warm,26.0+115.0*day+30.0*warm,60.0+185.0*day); ah=mix(ah,uAcc*255.0*(0.2+0.6*day),0.4);',
+    '  vec3 ah=vec3(14.0+70.0*day+150.0*warm,26.0+115.0*day+30.0*warm,60.0+185.0*day); ah=mix(ah,uAcc*255.0*(0.2+0.6*day),0.4);',
     '  col+=(ah-col)*haze; col*=0.92/255.0;',
     ' } else {',
     '  vec3 add=vec3(0.0); float tc=-b;',
     '  if(tc>0.0){vec3 q=vec3(tc*d.x,uPr+tc*d.y,tc*d.z);float ql=length(q),hgt=ql-1.0,qs=dot(q,uSun)/ql,lit=smoothstep(-0.22,0.2,qs);',
     '   float I=exp(-hgt/0.0065),I2=exp(-hgt/0.02)*0.22,band=exp(-(qs/0.16)*(qs/0.16))*exp(-hgt/0.0035);',
-        '   add+=(vec3(8.0,30.0,60.0)+mix(vec3(80.0,140.0,205.0),uAcc*230.0,0.55)*lit)*(I+I2)+vec3(255.0,120.0,50.0)*band*0.9+vec3(20.0,60.0,30.0)*(1.0-lit)*I*0.3;}',
+    '   add+=(vec3(8.0,30.0,60.0)+mix(vec3(80.0,140.0,205.0),uAcc*230.0,0.55)*lit)*(I+I2)+vec3(255.0,120.0,50.0)*band*0.9+vec3(20.0,60.0,30.0)*(1.0-lit)*I*0.3;}',
     '  if(sd>0.0){float sdd=sd+1e-6;float g3=pow(sdd,1600.0)*900.0+pow(sdd,90.0)*120.0+pow(sdd,12.0)*16.0;add+=g3*vec3(1.0,0.96,0.9);}',
     '  col=add/255.0; alpha=clamp(max(col.r,max(col.g,col.b))*1.4,0.0,1.0); col=min(col,vec3(alpha));',
     ' }',
@@ -5528,7 +5532,7 @@ var Scene = (function () {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
       P = {};
-      ['uView', 'uScale', 'uFocal', 'uFw', 'uUp', 'uRoll', 'uSun', 'uPr', 'uSC', 'uCell0', 'uSpin', 'uNoise'].forEach(function (n) { P[n] = gl.getUniformLocation(prog, n); });
+      ['uView', 'uScale', 'uFocal', 'uFw', 'uUp', 'uRoll', 'uSun', 'uPr', 'uSC', 'uCell0', 'uSpin', 'uNoise', 'uAcc'].forEach(function (n) { P[n] = gl.getUniformLocation(prog, n); });
       gl.uniform1i(P.uNoise, 0);
       gcv.addEventListener('webglcontextlost', function (e) { e.preventDefault(); gl = null; glBroken = true; if (gcv) gcv.hidden = true; if (mode === 'bridge') { painted = false; paint(); } }, false);
       return true;
@@ -5548,7 +5552,7 @@ var Scene = (function () {
     gl.uniform2f(P.uView, w, h); gl.uniform1f(P.uScale, gcv.width / w);
     gl.uniform1f(P.uFocal, G.focal); gl.uniform3f(P.uFw, 0, G.f[1], G.f[2]); gl.uniform3f(P.uUp, 0, G.u[1], G.u[2]);
     gl.uniform2f(P.uRoll, G.cr, G.sr); gl.uniform3f(P.uSun, G.S[0], G.S[1], G.S[2]);
-       gl.uniform1f(P.uPr, G.pr); gl.uniform1f(P.uSC, G.SC); gl.uniform1f(P.uCell0, G.cell0); var ac = acc.split(','); gl.uniform3f(P.uAcc, ac[0] / 255, ac[1] / 255, ac[2] / 255);
+    gl.uniform1f(P.uPr, G.pr); gl.uniform1f(P.uSC, G.SC); gl.uniform1f(P.uCell0, G.cell0); var ac = acc.split(','); gl.uniform3f(P.uAcc, ac[0] / 255, ac[1] / 255, ac[2] / 255);
     glStart = performance.now();
     // only draw inside the window opening: the cabin walls hide everything else
     var W = winGeo(), k2 = gcv.width / w;
