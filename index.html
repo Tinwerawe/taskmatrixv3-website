@@ -1218,6 +1218,152 @@ html.wallpaper .btn:not(.btn-primary):not(.btn-danger), html.bridge .btn:not(.bt
 }
 #glass[hidden] { display: none; }
 html:not(.bridge) #glass { display: none; }
+
+/* ================= Bridge consoles: two wall displays beside the window =================
+   Left = mission deck (your day), right = ship systems (orbit, focus, audio).
+   They mirror live data, sit behind the interface and never take clicks. */
+.bconsole {
+  position: fixed; z-index: -1; pointer-events: none; user-select: none; -webkit-user-select: none;
+  top: calc(var(--safe-t) + 16px); bottom: calc(var(--dock-h) + var(--safe-b) + 16px);
+  display: flex; flex-direction: column; padding: 16px 14px 14px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(var(--deep-rgb), 0.9), rgba(var(--well-rgb), 0.95));
+  border: 1px solid rgba(var(--tint-rgb), 0.15); border-radius: var(--radius);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--tint-rgb), 0.05);
+  font-family: var(--font-mono), monospace; font-size: 0.72rem; line-height: 1.3; color: var(--text-2);
+  text-shadow: none;
+}
+.bconsole[hidden], html:not(.bridge) .bconsole { display: none; }
+.bconsole::before {
+  content: ""; position: absolute; left: 18px; right: 18px; top: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.85) 18%, rgba(var(--accent-rgb), 0.35) 55%, transparent 80%);
+}
+/* the light rail on the side that faces the window */
+.bconsole::after {
+  content: ""; position: absolute; top: 22px; bottom: 22px; width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(var(--accent-rgb), 0.6) 18%, rgba(var(--accent-rgb), 0.6) 82%, transparent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.55);
+}
+#bc-left::after { right: -1px; }
+#bc-right::after { left: -1px; }
+.bc-view { display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; min-height: 0; }
+.bc-view[hidden] { display: none; }
+
+.bc-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.bc-h b { display: flex; align-items: center; gap: 8px; font-family: var(--font-display), sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text); white-space: nowrap; }
+.bc-h b::before { content: ""; width: 6px; height: 6px; flex: none; background: var(--accent); box-shadow: 0 0 8px var(--accent); transform: rotate(45deg); }
+.bc-h small { font-size: 0.66rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* left: clock */
+.bc-label { display: block; margin-bottom: 6px; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.bc-clock { font-family: var(--font-display), sans-serif; font-size: 1.85rem; font-weight: 700; line-height: 1; color: var(--hi); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.45); white-space: nowrap; }
+.bc-clock small { font-size: 0.5em; margin-right: 4px; color: var(--accent); letter-spacing: 0; vertical-align: 0.35em; }
+.bc-date { margin-top: 8px; font-family: var(--font-ui), sans-serif; font-size: 0.86rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-next.soon .bc-clock { color: var(--amber); text-shadow: 0 0 18px rgba(255, 181, 71, 0.4); }
+.bc-next.soon .bc-clock small { color: var(--amber); }
+.bc-next.idle .bc-clock { color: var(--dim); text-shadow: none; }
+.bc-next.idle .bc-date { color: var(--dim); }
+
+/* left: the mission ladder — today's tasks in order, with a NOW line */
+.bc-ladder { position: relative; flex: 1 1 0; min-height: 52px; overflow: hidden; display: flex; flex-direction: column; }
+.bc-ladder::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(180deg, rgba(var(--tint-rgb), 0.28), rgba(var(--tint-rgb), 0.04)); }
+.bc-rung { position: relative; flex: none; height: 26px; display: grid; grid-template-columns: 12px auto minmax(0, 1fr); align-items: center; column-gap: 10px; }
+.bc-pip { width: 8px; height: 8px; margin-left: 2px; transform: rotate(45deg); border: 1.5px solid var(--c, var(--accent)); background: rgb(var(--well-rgb)); }
+.bc-tm { min-width: 3.3em; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bc-t { font-family: var(--font-ui), sans-serif; font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-rung.done .bc-pip { background: var(--c, var(--accent)); box-shadow: 0 0 8px var(--c, var(--accent)); }
+.bc-rung.done .bc-t, .bc-rung.done .bc-tm { color: var(--dim); text-decoration: line-through; text-decoration-color: rgba(var(--dim-rgb), 0.7); }
+.bc-rung.overdue .bc-pip { border-color: var(--danger); }
+.bc-rung.overdue .bc-tm { color: var(--danger); }
+.bc-rung.soon .bc-pip { border-color: var(--amber); background: var(--amber); animation: bcBlink 1.4s steps(2, jump-none) infinite; }
+.bc-rung.soon .bc-tm { color: var(--amber); }
+.bc-now { flex: none; height: 18px; display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.bc-now::before { content: ""; width: 12px; height: 2px; flex: none; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.bc-now::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.6), transparent); }
+.bc-more { flex: none; height: 22px; display: flex; align-items: center; padding-left: 22px; color: var(--dim); }
+.bc-empty { padding: 4px 0 0 22px; font-family: var(--font-ui), sans-serif; font-size: 0.8rem; line-height: 1.45; color: var(--dim); }
+@keyframes bcBlink { 50% { opacity: 0.35; } }
+
+/* left: progress footer */
+.bc-meter { position: relative; height: 6px; background: repeating-linear-gradient(90deg, rgba(var(--tint-rgb), 0.14) 0 6px, transparent 6px 8px); }
+.bc-meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.7)); transition: width 0.6s ease; }
+.bc-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; white-space: nowrap; }
+.bc-row b { color: var(--text); font-weight: 600; }
+
+/* right: orbit scope */
+.bc-scope { display: block; width: 100%; max-width: 206px; height: auto; margin: 0 auto; overflow: visible; }
+.bc-scope .ring { fill: none; stroke: rgba(var(--tint-rgb), 0.22); stroke-width: 0.6; }
+.bc-scope .ticks { fill: none; stroke: rgba(var(--tint-rgb), 0.38); stroke-width: 2.6; stroke-dasharray: 0.45 5.31; }
+.bc-scope .orbit { fill: none; stroke: rgba(var(--accent-rgb), 0.38); stroke-width: 0.6; stroke-dasharray: 2 2.4; }
+.bc-scope .wedge { fill: rgba(var(--accent-rgb), 0.09); }
+.bc-scope .beam { stroke: rgba(var(--accent-rgb), 0.7); stroke-width: 0.8; }
+.bc-scope .sweep { transform-box: view-box; transform-origin: 0 0; animation: bcSweep 6s linear infinite; }
+.bc-scope .earth { fill: rgb(var(--well-rgb)); stroke: rgba(var(--accent-rgb), 0.75); stroke-width: 0.9; }
+.bc-scope .grid { fill: none; stroke: rgba(var(--tint-rgb), 0.16); stroke-width: 0.5; }
+.bc-scope .night { fill: rgba(0, 0, 0, 0.55); }
+.bc-scope .sun { fill: var(--amber); }
+.bc-scope .sunray { stroke: var(--amber); stroke-width: 0.6; opacity: 0.6; }
+.bc-scope .trail { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; opacity: 0.7; }
+.bc-scope .ship { fill: var(--hi); stroke: var(--accent); stroke-width: 0.8; }
+.bconsole.is-still .bc-scope .sweep { animation: none; }
+@keyframes bcSweep { to { transform: rotate(360deg); } }
+.bc-sun { text-align: center; color: var(--text-2); letter-spacing: 0.04em; }
+.bc-sun b { color: var(--amber); font-weight: 600; }
+.bc-sun.night b { color: var(--accent-2); }
+
+/* right: telemetry */
+.bc-tele { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+.bc-tele div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bc-tele span { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.bc-tele b { font-family: var(--font-display), sans-serif; font-size: 0.84rem; font-weight: 600; color: var(--hi); letter-spacing: 0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bc-tele small { font-family: var(--font-mono), monospace; font-size: 0.62rem; font-weight: 400; color: var(--dim); margin-left: 2px; }
+
+/* right: activity log */
+.bc-log { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; margin-top: -6px; }
+.bc-ev { flex: none; height: 22px; display: grid; grid-template-columns: 6px auto minmax(0, 1fr); align-items: center; column-gap: 9px; }
+.bc-ev i { width: 6px; height: 6px; background: var(--c); box-shadow: 0 0 6px var(--c); }
+.bc-ev span { min-width: 3.3em; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bc-ev b { font-family: var(--font-ui), sans-serif; font-size: 0.78rem; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-log .bc-empty { padding-left: 0; }
+.bconsole.is-compact .bc-loghead, .bconsole.is-compact .bc-log { display: none; }
+
+/* right: system status */
+.bc-sys { display: flex; flex-direction: column; gap: 2px; margin-top: auto; flex: none; }
+.bc-sys .bc-h { margin-bottom: 6px; }
+.bc-s { height: 24px; display: grid; grid-template-columns: 6px auto minmax(0, 1fr); align-items: center; column-gap: 9px; }
+.bc-s > span { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.bc-s > b { text-align: right; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.bc-s.off > b { color: var(--dim); font-weight: 400; }
+.bc-led { width: 6px; height: 6px; flex: none; background: rgba(var(--dim-rgb), 0.45); }
+.bc-led.on, .bc-s.on .bc-led { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.bc-led.warn, .bc-s.warn .bc-led { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.bc-wave { display: block; width: 100%; height: 32px; margin: 2px 0 4px; }
+
+/* compact: narrower walls drop the long text */
+.bconsole.is-compact { padding: 14px 12px 12px; }
+.bconsole.is-compact .bc-clock { font-size: 1.15rem; }
+.bconsole.is-compact .bc-date { font-size: 0.76rem; }
+.bc-short { display: none; }
+.bconsole.is-compact .bc-short { display: inline; }
+.bconsole.is-compact .bc-long, .bconsole.is-compact .bc-t, .bconsole.is-compact .bc-h small, .bconsole.is-compact .bc-tele { display: none; }
+.bconsole.is-compact .bc-now { font-size: 0; gap: 0; }
+.bconsole.is-compact .bc-now::before { width: 22px; }
+.bconsole.is-compact .bc-label { margin-bottom: 4px; }
+.bconsole.is-compact .bc-rung { grid-template-columns: 12px auto; }
+.bconsole.is-compact .bc-scope { max-width: 128px; }
+.bconsole.is-compact .bc-s { grid-template-columns: 6px minmax(0, 1fr); }
+.bconsole.is-compact .bc-s > span { display: none; }
+.bconsole.is-compact .bc-s > b { text-align: left; }
+
+/* rail: a thin strip with a vertical gauge, for walls only a few fingers wide */
+.bconsole.is-rail { padding: 14px 0 12px; align-items: center; }
+.bconsole.is-rail::before { left: 4px; right: 4px; }
+.bc-rail { align-items: center; gap: 12px; width: 100%; }
+.bc-rv { font-family: var(--font-display), sans-serif; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; color: var(--hi); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; text-transform: uppercase; }
+.bc-vg { flex: 1 1 0; min-height: 40px; width: 8px; display: flex; flex-direction: column-reverse; gap: 3px; }
+.bc-vg i { flex: 1 1 0; min-height: 2px; background: rgba(var(--tint-rgb), 0.14); }
+.bc-vg i.on { background: var(--accent); box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.7); }
+.bc-vg i.alt { background: var(--accent-2); box-shadow: 0 0 6px var(--accent-2); }
+.bc-leds { display: flex; flex-direction: column; align-items: center; gap: 7px; }
 </style>
 </head>
 <body>
@@ -5349,6 +5495,318 @@ var Mini = (function () {
 }());
 
 /* =====================================================================
+   BRIDGE CONSOLES — the two wall displays beside the ship's window
+   Left : mission deck. Today's tasks as a ladder with a NOW line,
+          the ship clock, progress, streak and rank.
+   Right: ship systems. An orbit scope that follows a real ~93-minute
+          orbit, telemetry, and live focus / audio / timer status
+          (with an oscilloscope of the music while it plays).
+   Both only mirror live data: they sit behind the interface and never
+   take clicks. Wide walls get the full console, narrower walls a
+   compact one, and very thin walls a slim gauge rail.
+   ===================================================================== */
+var Consoles = (function () {
+  var Lc = null, Rc = null, mode = 'none', ticker = 0, raf = 0, lastWave = 0;
+  var lastLadder = '', lastRailL = '', lastRailR = '', wave = null, wctx = null, wbuf = null;
+  var accC = '61,242,255', tintC = '120,200,255', dpr = 1;
+  var ORBIT = 92.68, ROW = 26;
+
+  function isBridge() { return document.documentElement.classList.contains('bridge'); }
+  function still() { return S.settings.reduceMotion || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function q(root, k) { return root.querySelector('[data-k="' + k + '"]'); }
+  function txt(el, v) { if (el && el.textContent !== v) el.textContent = v; }
+  function htm(el, v) { if (el && el._h !== v) { el.innerHTML = v; el._h = v; } }
+  function cls(el, c) { if (el && el.className !== c) el.className = c; }
+
+  function build(anchor) {
+    Lc = document.createElement('aside'); Lc.className = 'bconsole'; Lc.id = 'bc-left'; Lc.setAttribute('aria-hidden', 'true');
+    Lc.innerHTML =
+      '<div class="bc-view bc-full" data-k="full">' +
+        '<div class="bc-h"><b><span class="bc-long">Mission deck</span><span class="bc-short">Missions</span></b><small data-k="rank"></small></div>' +
+        '<div class="bc-next" data-k="next"><span class="bc-label">Next up</span><div class="bc-clock" data-k="clock"></div><div class="bc-date" data-k="date"></div></div>' +
+        '<div class="bc-h"><b>Today</b><small data-k="count"></small></div>' +
+        '<div class="bc-ladder" data-k="ladder"></div>' +
+        '<div><div class="bc-meter"><i data-k="meter"></i></div>' +
+        '<div class="bc-row"><span data-k="pct"></span><span data-k="streak"></span></div></div>' +
+      '</div>' +
+      '<div class="bc-view bc-rail" data-k="rail" hidden>' +
+        '<b class="bc-rv" data-k="rcount"></b><div class="bc-vg" data-k="rgauge"></div><span class="bc-led" data-k="rlate"></span>' +
+      '</div>';
+    Rc = document.createElement('aside'); Rc.className = 'bconsole'; Rc.id = 'bc-right'; Rc.setAttribute('aria-hidden', 'true');
+    Rc.innerHTML =
+      '<div class="bc-view bc-full" data-k="full">' +
+        '<div class="bc-h"><b><span class="bc-long">Ship systems</span><span class="bc-short">Systems</span></b><small data-k="orbit"></small></div>' +
+        '<svg class="bc-scope" viewBox="-66 -64 132 128" aria-hidden="true">' +
+          '<circle class="ring" r="59"/><circle class="ticks" r="55"/><circle class="orbit" r="40"/>' +
+          '<g class="sweep"><path class="wedge" d="M0 0L55 0A55 55 0 0 0 47.63 -27.5Z"/><path class="beam" d="M0 0L55 0"/></g>' +
+          '<circle class="earth" r="24"/><g class="grid"><circle r="14"/><path d="M-24 0H24M0 -24V24"/></g>' +
+          '<path class="night" d="M0 -24A24 24 0 0 0 0 24Z"/>' +
+          '<circle class="sun" cx="63" cy="0" r="2.4"/><path class="sunray" d="M63 -6V-4M63 4V6M57 0H59"/>' +
+          '<g data-k="ship"><path class="trail" d="M30.64 -25.71A40 40 0 0 1 40 0"/><circle class="ship" cx="40" cy="0" r="2.8"/></g>' +
+        '</svg>' +
+        '<div class="bc-sun" data-k="sun"></div>' +
+        '<div class="bc-tele" data-opt="2">' +
+          '<div><span>Altitude</span><b data-k="alt"></b></div>' +
+          '<div><span>Velocity</span><b>7.66<small>km/s</small></b></div>' +
+          '<div><span>Latitude</span><b data-k="lat"></b></div>' +
+          '<div><span>Longitude</span><b data-k="lon"></b></div>' +
+        '</div>' +
+        '<div class="bc-h bc-loghead" data-k="loghead"><b>Activity</b><small data-k="logsub"></small></div>' +
+        '<div class="bc-log" data-k="log"></div>' +
+        '<div class="bc-sys">' +
+          '<div class="bc-h"><b>Status</b></div>' +
+          '<div class="bc-s" data-k="sf"><i class="bc-led"></i><span>Focus</span><b></b></div>' +
+          '<div class="bc-s" data-k="sa"><i class="bc-led"></i><span>Audio</span><b></b></div>' +
+          '<canvas class="bc-wave" data-k="wave"></canvas>' +
+          '<div class="bc-s" data-k="st"><i class="bc-led"></i><span>Timer</span><b></b></div>' +
+          '<div class="bc-s" data-k="sr"><i class="bc-led"></i><span>Alerts</span><b></b></div>' +
+          '<div class="bc-s" data-k="sy" data-opt="1"><i class="bc-led"></i><span>Typing</span><b></b></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="bc-view bc-rail" data-k="rail" hidden>' +
+        '<b class="bc-rv" data-k="rorbit"></b><div class="bc-vg" data-k="rgauge"></div>' +
+        '<div class="bc-leds"><i class="bc-led" data-k="lf"></i><i class="bc-led" data-k="la"></i><i class="bc-led" data-k="lt"></i></div>' +
+      '</div>';
+    // stars, Earth and window frame first, then the consoles on the wall
+    anchor.parentNode.insertBefore(Rc, anchor.nextSibling);
+    anchor.parentNode.insertBefore(Lc, anchor.nextSibling);
+    wave = q(Rc, 'wave'); wctx = wave.getContext('2d');
+    ticker = setInterval(update, 1000);
+    document.addEventListener('visibilitychange', update);
+  }
+
+  /* ---------- placement: called whenever the window frame is redrawn ---------- */
+  function layout(W, anchor) {
+    var cwW = document.documentElement.clientWidth || window.innerWidth;
+    var gap = 20, edge = 12;
+    var cw = W && W.pw >= 14 ? Math.min(W.L - gap - edge, cwW - W.R - gap - edge) : 0;
+    var m = cw >= 196 ? 'full' : cw >= 104 ? 'compact' : cw >= 22 ? 'rail' : 'none';
+    if (!Lc) { if (m === 'none' || !anchor) { mode = 'none'; return; } build(anchor); }
+    mode = m;
+    Lc.hidden = Rc.hidden = m === 'none';
+    if (m === 'none') { stopWave(); return; }
+    var width = Math.floor(m === 'full' ? Math.min(cw, 272) : m === 'rail' ? Math.min(cw, 46) : cw);
+    [Lc, Rc].forEach(function (el) {
+      el.style.width = width + 'px';
+      el.classList.toggle('is-compact', m === 'compact');
+      el.classList.toggle('is-rail', m === 'rail');
+      q(el, 'full').hidden = m === 'rail';
+      q(el, 'rail').hidden = m !== 'rail';
+    });
+    Lc.style.left = Math.round(W.L - gap - width) + 'px';
+    Rc.style.left = Math.round(W.R + gap) + 'px';
+    if (m !== 'rail') {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      wave.width = Math.max(1, Math.round(wave.clientWidth * dpr)); wave.height = Math.round(32 * dpr);
+    }
+    lastLadder = lastRailL = lastRailR = lastLog = '';
+    fit(); update();
+  }
+  // on short screens, drop the least important blocks until everything fits
+  function fit() {
+    [Lc, Rc].forEach(function (el) {
+      var opts = el.querySelectorAll('[data-opt]');
+      opts.forEach(function (o) { o.hidden = false; });
+      if (mode === 'rail') return;
+      ['2', '1'].forEach(function (lv) {
+        if (el.scrollHeight <= el.clientHeight + 1 && !overLadder(el)) return;
+        opts.forEach(function (o) { if (o.getAttribute('data-opt') === lv) o.hidden = true; });
+      });
+    });
+  }
+  function overLadder(el) { var lad = q(el, 'ladder'); return !!lad && lad.clientHeight < ROW * 3; }
+
+  /* ---------- left: mission deck ---------- */
+  function streakNow() {
+    var days = {};
+    S.tasks.forEach(function (t) { Object.keys(t.done).forEach(function (k) { days[k] = 1; }); });
+    var k = todayKey(), n = 0;
+    if (!days[k]) k = addDays(k, -1);
+    while (days[k]) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function updateLeft(d) {
+    var k = todayKey(), list = Sched.tasksOn(k), now = nowMinutes(), done = 0, late = 0;
+    var st = list.map(function (t) { var s = Sched.status(t, k); if (s === 'done') done++; if (s === 'overdue') late++; return s; });
+    var total = list.length, pct = total ? Math.round(done / total * 100) : 0;
+
+    if (mode === 'rail') {
+      txt(q(Lc, 'rcount'), done + '/' + total);
+      var n = total ? clamp(total, 4, 24) : 12, on = total ? Math.round(done / total * n) : 0, sig = n + ':' + on;
+      if (sig !== lastRailL) { lastRailL = sig; var hs = ''; for (var i = 0; i < n; i++) hs += '<i' + (i < on ? ' class="on"' : '') + '></i>'; q(Lc, 'rgauge').innerHTML = hs; }
+      cls(q(Lc, 'rlate'), 'bc-led' + (late ? ' warn' : done && done === total ? ' on' : ''));
+      return;
+    }
+
+    txt(q(Lc, 'rank'), DAY_NAMES[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3));
+    // T-minus to the next timed task that is still ahead
+    var secNow = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(), next = null, pending = 0;
+    list.forEach(function (t, i) {
+      if (st[i] === 'done') return; pending++;
+      var m = minutesOf(t.time); if (m !== null && m * 60 > secNow && !next) next = t;
+    });
+    var nb = q(Lc, 'next');
+    if (next) {
+      var left = minutesOf(next.time) * 60 - secNow, hh = Math.floor(left / 3600), mm = Math.floor(left % 3600 / 60), ss = left % 60;
+      htm(q(Lc, 'clock'), '<small>T\u2212</small>' + (hh ? hh + ':' + pad2(mm) : pad2(mm)) + ':' + pad2(ss));
+      txt(q(Lc, 'date'), next.title);
+      cls(nb, 'bc-next' + (left <= 1800 ? ' soon' : ''));
+    } else {
+      htm(q(Lc, 'clock'), '<small>T\u2212</small>--:--');
+      txt(q(Lc, 'date'), late ? late + ' overdue to clear' : pending ? pending + ' anytime ' + (pending === 1 ? 'task' : 'tasks') + ' left' : total ? 'All tasks done' : 'Nothing scheduled');
+      cls(nb, 'bc-next idle');
+    }
+    txt(q(Lc, 'count'), done + ' / ' + total);
+    q(Lc, 'meter').style.width = pct + '%';
+    txt(q(Lc, 'pct'), mode === 'full' ? (total ? pct + '% complete' : 'No tasks') : done + '/' + total);
+    var sk = streakNow();
+    txt(q(Lc, 'streak'), mode === 'full' ? 'Streak ' + sk + (sk === 1 ? ' day' : ' days') : sk + 'd streak');
+
+    // the NOW line sits before the first timed task still ahead (after the last timed one if all are past)
+    var nowAt = -1, lastTimed = -1;
+    list.forEach(function (t, i) { var m = minutesOf(t.time); if (m === null) return; lastTimed = i; if (nowAt < 0 && m > now) nowAt = i; });
+    if (nowAt < 0 && lastTimed >= 0) nowAt = lastTimed + 1;
+    var lad = q(Lc, 'ladder'), cap = Math.max(2, Math.floor(lad.clientHeight / ROW));
+    var sig2 = [k, cap, mode, S.settings.clock24, nowAt].concat(list.map(function (t, i) { return t.id + st[i] + t.time + t.title + t.category; })).join('|');
+    if (sig2 === lastLadder) return;
+    lastLadder = sig2;
+    if (!total) { lad.innerHTML = '<div class="bc-empty">No tasks for today. Add one and it lights up here.</div>'; return; }
+    var rows = [];
+    list.forEach(function (t, i) { if (i === nowAt) rows.push({ now: true }); rows.push({ t: t, s: st[i] }); });
+    if (nowAt === list.length) rows.push({ now: true });
+    var start = 0, end = rows.length;
+    if (rows.length > cap) {
+      var focus = -1;
+      rows.forEach(function (r, i) { if (focus < 0 && (r.now || (r.s && r.s !== 'done'))) focus = i; });
+      start = clamp((focus < 0 ? 0 : focus) - 2, 0, rows.length - (cap - 1));
+      end = start + cap - (start > 0 ? 1 : 0);
+      if (end < rows.length) end -= 1;
+    }
+    var count = function (a, b) { var c = 0; for (var i = a; i < b; i++) if (!rows[i].now) c++; return c; };
+    var html = '', before = count(0, start), after = count(end, rows.length);
+    if (before) html += '<div class="bc-more">+' + before + ' earlier</div>';
+    rows.slice(start, end).forEach(function (r) {
+      if (r.now) { html += '<div class="bc-now">Now ' + esc(Sched.fmtTime(pad2(d.getHours()) + ':' + pad2(d.getMinutes()))) + '</div>'; return; }
+      var tm = r.t.time ? Sched.fmtTime(r.t.time) : 'Any';
+      html += '<div class="bc-rung ' + r.s + '" style="--c:' + catOf(r.t.category).c + '"><i class="bc-pip"></i>' +
+        '<span class="bc-tm">' + esc(tm) + '</span><span class="bc-t">' + esc(r.t.title) + '</span></div>';
+    });
+    if (after) html += '<div class="bc-more">+' + after + ' more</div>';
+    lad.innerHTML = html;
+  }
+
+  /* ---------- right: ship systems ---------- */
+  function sys(row, state, value) { cls(row, 'bc-s ' + state); txt(row.lastChild, mode === 'compact' && state === 'off' ? row.children[1].textContent : value); }
+  function led(el, state) { cls(el, 'bc-led' + (state ? ' ' + state : '')); }
+  function updateRight(d) {
+    var mid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    var mins = (d.getTime() - mid) / 60000, orbitNo = Math.floor(mins / ORBIT) + 1, phase = (mins / ORBIT) % 1;
+    var day = phase < 0.5, compact = mode !== 'full';
+    var fa = Focus.active(), fr = Focus.running(), playing = Music.isPlaying(), qa = QTimer.active(), qr = QTimer.running();
+
+    if (mode === 'rail') {
+      txt(q(Rc, 'rorbit'), 'Orbit ' + orbitNo);
+      var n = 24, on = Math.floor(phase * n), sig = on + (day ? 'd' : 'n');
+      if (sig !== lastRailR) { lastRailR = sig; var hs = ''; for (var i = 0; i < n; i++) hs += '<i' + (i < on ? ' class="' + (i < n / 2 ? 'on' : 'alt') + '"' : '') + '></i>'; q(Rc, 'rgauge').innerHTML = hs; }
+      led(q(Rc, 'lf'), fa ? (fr ? 'on' : 'warn') : '');
+      led(q(Rc, 'la'), playing ? 'on' : '');
+      led(q(Rc, 'lt'), qa ? (qr ? 'on' : 'warn') : '');
+      return;
+    }
+
+    txt(q(Rc, 'orbit'), 'Orbit ' + orbitNo);
+    q(Rc, 'ship').setAttribute('transform', 'rotate(' + (phase * 360 - 90).toFixed(2) + ')');
+    var left = Math.max(1, Math.ceil(((day ? 0.5 : 1) - phase) * ORBIT));
+    var sun = q(Rc, 'sun');
+    cls(sun, 'bc-sun' + (day ? '' : ' night'));
+    htm(sun, (day ? 'Sunset in <b>' : 'Sunrise in <b>') + left + ' min</b>');
+    if (!compact) {
+      var lat = 51.6 * Math.sin(phase * Math.PI * 2);
+      var lon = ((phase * 360 - (orbitNo - 1) * 22.9) % 360 + 540) % 360 - 180;
+      htm(q(Rc, 'alt'), (408 + 1.8 * Math.sin(phase * Math.PI * 4)).toFixed(1) + '<small>km</small>');
+      txt(q(Rc, 'lat'), Math.abs(lat).toFixed(1) + '\u00b0 ' + (lat >= 0 ? 'N' : 'S'));
+      txt(q(Rc, 'lon'), Math.abs(lon).toFixed(1) + '\u00b0 ' + (lon >= 0 ? 'E' : 'W'));
+    }
+    if (!compact) updateLog(d);
+    sys(q(Rc, 'sf'), fa ? (fr ? 'on' : 'warn') : 'off',
+      fa ? (compact ? '' : Focus.label() + ' ') + Focus.fmt(Focus.remaining()) + (fr ? '' : ' (paused)') : 'Standby');
+    var prog = (S.audio && PROGRAMS[S.audio.program]) || PROGRAMS.drift;
+    sys(q(Rc, 'sa'), playing ? 'on' : 'off', playing ? (S.ui.presetName || prog.name) : 'Off');
+    sys(q(Rc, 'st'), qa ? (qr ? 'on' : 'warn') : 'off', qa ? QTimer.fmt(QTimer.remaining()) + (qr ? '' : ' (paused)') : 'Off');
+    sys(q(Rc, 'sr'), S.settings.reminders ? 'on' : 'off', S.settings.reminders ? 'On' : 'Off');
+    var best = 0; Object.keys(S.typing.best || {}).forEach(function (kk) { best = Math.max(best, S.typing.best[kk] || 0); });
+    sys(q(Rc, 'sy'), best ? 'on' : 'off', best ? 'Best ' + best + ' WPM' : 'No runs yet');
+    Rc.classList.toggle('is-still', still());
+  }
+
+  // recent completions and typing runs, newest first
+  var lastLog = '';
+  function updateLog(d) {
+    var head = q(Rc, 'loghead'), box = q(Rc, 'log'), ev = [], since = d.getTime() - 3 * 86400000;
+    head.hidden = box.hidden = false;
+    var cap = Math.floor(box.clientHeight / 22);
+    if (cap < 2) { head.hidden = box.hidden = true; lastLog = ''; return; }
+    S.tasks.forEach(function (t) { Object.keys(t.done).forEach(function (k) { var at = t.done[k] && t.done[k].t; if (at > since) ev.push({ at: at, txt: t.title, c: catOf(t.category).c }); }); });
+    (S.typing.history || []).slice(0, 10).forEach(function (r) { if (r && r.at > since) ev.push({ at: r.at, txt: 'Typing run ' + r.wpm + ' WPM', c: 'var(--violet)' }); });
+    ev.sort(function (a, b) { return b.at - a.at; });
+    var tk = todayKey(), sig = cap + '|' + S.settings.clock24 + '|' + ev.slice(0, cap).map(function (e) { return e.at + e.txt; }).join('|');
+    txt(q(Rc, 'logsub'), ev.length ? ev.length + ' in 3 days' : '');
+    if (sig === lastLog) return;
+    lastLog = sig;
+    if (!ev.length) { box.innerHTML = '<div class="bc-empty">Finished tasks and typing runs show up here.</div>'; return; }
+    box.innerHTML = ev.slice(0, cap).map(function (e) {
+      var dt = new Date(e.at), when = dateKey(dt) === tk ? Sched.fmtTime(pad2(dt.getHours()) + ':' + pad2(dt.getMinutes())) : DAY_NAMES[dt.getDay()].slice(0, 3);
+      return '<div class="bc-ev" style="--c:' + e.c + '"><i></i><span>' + esc(when) + '</span><b>' + esc(e.txt) + '</b></div>';
+    }).join('');
+  }
+
+  /* ---------- the music oscilloscope ---------- */
+  function waveWanted() { return isBridge() && !document.hidden && (mode === 'full' || mode === 'compact') && Music.isPlaying() && !still(); }
+  function drawWave(live) {
+    if (!wctx || mode === 'rail' || mode === 'none') return;
+    var W = wave.width, H = wave.height, an = live ? Music.analyser() : null;
+    wctx.clearRect(0, 0, W, H);
+    wctx.fillStyle = 'rgba(' + tintC + ',0.12)'; wctx.fillRect(0, Math.round(H / 2), W, Math.max(1, dpr));
+    wctx.save();
+    wctx.lineWidth = 1.4 * dpr; wctx.lineJoin = 'round';
+    wctx.strokeStyle = 'rgba(' + accC + ',' + (an ? 0.95 : 0.3) + ')';
+    if (an) { wctx.shadowColor = 'rgba(' + accC + ',0.8)'; wctx.shadowBlur = 6 * dpr; }
+    wctx.beginPath();
+    if (an && an.getByteTimeDomainData) {
+      if (!wbuf || wbuf.length !== an.fftSize) wbuf = new Uint8Array(an.fftSize);
+      an.getByteTimeDomainData(wbuf);
+      var n = Math.min(wbuf.length, 512);
+      for (var i = 0; i < n; i++) {
+        var px = i / (n - 1) * W, py = H / 2 + (wbuf[i] - 128) / 128 * (H * 0.46);
+        if (i) wctx.lineTo(px, py); else wctx.moveTo(px, py);
+      }
+    } else { wctx.moveTo(0, H / 2); wctx.lineTo(W, H / 2); }
+    wctx.stroke(); wctx.restore();
+  }
+  function waveLoop(t) {
+    raf = 0;
+    if (!waveWanted()) { drawWave(false); return; }
+    if (t - lastWave >= 33) { drawWave(true); lastWave = t; }
+    raf = requestAnimationFrame(waveLoop);
+  }
+  function stopWave() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+
+  function update() {
+    if (!Lc || mode === 'none' || !isBridge() || document.hidden) { stopWave(); return; }
+    var cs = getComputedStyle(document.documentElement);
+    accC = (cs.getPropertyValue('--accent-rgb') || '').trim().replace(/\s+/g, '') || accC;
+    tintC = (cs.getPropertyValue('--tint-rgb') || '').trim().replace(/\s+/g, '') || tintC;
+    var d = new Date();
+    try { updateLeft(d); } catch (e) { if (DEBUG) console.error('[Task Matrix] mission deck:', e); }
+    try { updateRight(d); } catch (e) { if (DEBUG) console.error('[Task Matrix] ship systems:', e); }
+    if (waveWanted()) { if (!raf) raf = requestAnimationFrame(waveLoop); }
+    else { stopWave(); drawWave(Music.isPlaying()); }
+  }
+
+  return { layout: layout, update: update };
+}());
+
+/* =====================================================================
    BACKGROUND SCENE
    'stars'  : starfield with depth, slow drift and a rare shooting star
    'bridge' : Earth from a spacecraft window in low orbit. The planet is drawn
@@ -5687,42 +6145,32 @@ var Scene = (function () {
     g.lineTo(L + c, B); g.lineTo(L, B - c); g.lineTo(L, T + c); g.closePath();
   }
   function mixRgb(rgb, k, add) { return rgb.split(',').map(function (v, i) { return Math.round(clamp(+v * k + (add ? add[i] : 0), 0, 255)); }).join(','); }
-  // a structural pillar beside the window: shaded like a rounded beam, lit on the window side by the Earth
-  function drawPillar(x0, x1, side, deep) {
-    var wd = x1 - x0, inner = side < 0 ? x1 : x0, outer = side < 0 ? x0 : x1;
-    var g = fx.createLinearGradient(outer, 0, inner, 0);
-    g.addColorStop(0, 'rgb(' + mixRgb(deep, 0.35) + ')');
-    g.addColorStop(0.45, 'rgb(' + mixRgb(deep, 1.25, [10, 12, 16]) + ')');
-    g.addColorStop(0.8, 'rgb(' + mixRgb(deep, 1.05, [6, 8, 12]) + ')');
-    g.addColorStop(1, 'rgb(' + mixRgb(deep, 1.6, [30, 44, 70]) + ')');
-    fx.fillStyle = g; fx.fillRect(x0, 0, wd, h);
-    // bevelled face toward the window, catching blue Earthlight (brighter lower down)
-    var bev = Math.min(7, wd * 0.18), bx = side < 0 ? x1 - bev : x0;
-    var lit = fx.createLinearGradient(0, 0, 0, h);
-    lit.addColorStop(0, 'rgba(' + acc + ',0.08)'); lit.addColorStop(0.6, 'rgba(' + acc + ',0.18)'); lit.addColorStop(1, 'rgba(' + acc + ',0.3)');
-    fx.fillStyle = lit; fx.fillRect(bx, 0, bev, h);
-    fx.fillStyle = 'rgba(0,0,0,0.55)'; fx.fillRect(side < 0 ? x0 : x1 - 1, 0, 1, h);
-    // panel seams with bolts
-    [0.22, 0.5, 0.78].forEach(function (f) {
-      var y = Math.round(h * f);
-      fx.fillStyle = 'rgba(0,0,0,0.6)'; fx.fillRect(x0, y, wd, 1);
-      fx.fillStyle = 'rgba(' + tint + ',0.08)'; fx.fillRect(x0, y + 1, wd, 1);
-      if (wd >= 30) [x0 + wd * 0.25, x0 + wd * 0.75].forEach(function (bxx) {
-        [y - 9, y + 10].forEach(function (by) {
-          fx.fillStyle = 'rgba(0,0,0,0.75)'; fx.beginPath(); fx.arc(bxx, by, 2, 0, Math.PI * 2); fx.fill();
-          fx.fillStyle = 'rgba(' + tint + ',0.18)'; fx.beginPath(); fx.arc(bxx - 0.5, by - 0.6, 0.8, 0, Math.PI * 2); fx.fill();
-        });
-      });
+  // the cabin wall beside the window: Earthlight spilling in from the glass, darker toward the screen edge
+  function drawWall(W) {
+    [[W.L, -1, W.L], [W.R, 1, w - W.R]].forEach(function (e) {
+      var x0 = e[0], side = e[1], span = e[2]; if (span <= 0) return;
+      var far = x0 + side * Math.min(260, span);
+      var spill = fx.createLinearGradient(x0, 0, far, 0);
+      spill.addColorStop(0, 'rgba(' + acc + ',0.075)'); spill.addColorStop(1, 'rgba(' + acc + ',0)');
+      fx.fillStyle = spill; fx.fillRect(Math.min(x0, far), 0, Math.abs(far - x0), h);
+      var edge = side < 0 ? 0 : w, vig = fx.createLinearGradient(edge, 0, edge - side * Math.min(90, span), 0);
+      vig.addColorStop(0, 'rgba(0,0,0,0.4)'); vig.addColorStop(1, 'rgba(0,0,0,0)');
+      fx.fillStyle = vig; fx.fillRect(side < 0 ? 0 : w - Math.min(90, span), 0, Math.min(90, span), h);
     });
-    // accent light strip running down the pillar
-    var sx = x0 + wd * (side < 0 ? 0.42 : 0.58), strip = fx.createLinearGradient(0, h * 0.08, 0, h * 0.92);
-    strip.addColorStop(0, 'rgba(' + acc + ',0)'); strip.addColorStop(0.2, 'rgba(' + acc + ',0.55)'); strip.addColorStop(0.8, 'rgba(' + acc + ',0.55)'); strip.addColorStop(1, 'rgba(' + acc + ',0)');
-    fx.save(); fx.shadowColor = 'rgba(' + acc + ',0.9)'; fx.shadowBlur = 8; fx.fillStyle = strip; fx.fillRect(sx - 0.75, h * 0.08, 1.5, h * 0.84); fx.restore();
-    // small status lights near the bottom
-    if (wd >= 24) [['80,255,150', 0], ['255,176,60', 1], [acc, 2]].forEach(function (l) {
-      var ly = h * 0.86 + l[1] * 9, lx = x0 + wd * (side < 0 ? 0.25 : 0.75);
-      fx.save(); fx.fillStyle = 'rgba(' + l[0] + ',0.9)'; fx.shadowColor = 'rgba(' + l[0] + ',0.9)'; fx.shadowBlur = 5; fx.fillRect(lx - 1.5, ly, 3, 3); fx.restore();
-    });
+  }
+  // a slim mullion along each side of the glass, with a lit edge and three marker lights
+  function drawMullion(xe, side, deep) {
+    var mw = 6, x0 = side < 0 ? xe - mw : xe;
+    var g = fx.createLinearGradient(x0, 0, x0 + mw, 0);
+    g.addColorStop(0, 'rgb(' + mixRgb(deep, side < 0 ? 0.6 : 1.5, side < 0 ? null : [14, 20, 30]) + ')');
+    g.addColorStop(1, 'rgb(' + mixRgb(deep, side < 0 ? 1.5 : 0.6, side < 0 ? [14, 20, 30] : null) + ')');
+    fx.fillStyle = g; fx.fillRect(x0, 0, mw, h);
+    fx.fillStyle = 'rgba(0,0,0,0.6)'; fx.fillRect(side < 0 ? x0 : x0 + mw - 1, 0, 1, h);
+    fx.save(); fx.shadowColor = 'rgba(' + acc + ',0.85)'; fx.shadowBlur = 7;
+    fx.fillStyle = 'rgba(' + acc + ',0.5)'; fx.fillRect(xe - 0.5, 0, 1, h);
+    fx.fillStyle = 'rgba(' + acc + ',0.95)';
+    [0.18, 0.5, 0.82].forEach(function (f) { fx.fillRect(x0 + 1, Math.round(h * f) - 8, mw - 2, 16); });
+    fx.restore();
   }
   // the glass sits in front of the content: a faint reflection that stays put while the content scrolls
   function placeGlass(W) {
@@ -5745,7 +6193,7 @@ var Scene = (function () {
     wall.addColorStop(0, 'rgb(' + well + ')'); wall.addColorStop(1, 'rgb(' + deep + ')');
     fx.fillStyle = wall; fx.fill('evenodd'); fx.clip('evenodd');
     fx.restore();
-    if (W.pw >= 14) { drawPillar(W.L - F - W.pw, W.L - F, -1, deep); drawPillar(W.R + F, W.R + F + W.pw, 1, deep); }
+    if (W.pw >= 14) { drawWall(W); drawMullion(W.L, -1, deep); drawMullion(W.R, 1, deep); }
     if (W.pw < 14) { // no pillars (phones): a thin frame outlines the screen instead
     // the frame band
     fx.save(); fx.beginPath(); windowPath(fx, W, F); windowPath(fx, W, 0);
@@ -5785,6 +6233,7 @@ var Scene = (function () {
     fx.fillStyle = streak; fx.fillRect(-70, -h, 140, h * 3);
     fx.restore();
     placeGlass(W);
+    Consoles.layout(W, fcv);
   }
 
   /* ---------- main loop ---------- */
