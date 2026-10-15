@@ -835,13 +835,6 @@ body {
 .task:hover { border-color: rgba(var(--accent-rgb), 0.35); box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.06); }
 .task-time { font-family: var(--font-mono), monospace; }
 .wday { background: rgba(var(--well-rgb), 0.5); }
-.dial-wrap::before {
-  content: ""; position: absolute; inset: 8.4%; border-radius: 50%; pointer-events: none;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 280deg, rgba(var(--accent-rgb), 0.05) 300deg, rgba(var(--accent-rgb), 0.24) 359deg, transparent 360deg);
-  will-change: transform; transform: translateZ(0); backface-visibility: hidden;
-}
-.dial-wrap.sweep-on::before { animation: radar 6s linear infinite; }
-@keyframes radar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* audio */
 .prog-name { font-family: var(--font-display), sans-serif; font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -955,9 +948,8 @@ html.bridge .modal { background: rgba(0, 0, 0, 0.55); }
   .rank-chip { padding: 4px 8px; } .top-right { gap: 2px; }
 }
 @media (max-width: 560px) { #fs-btn { display: none; } .brand-text { overflow: hidden; } .brand-name { overflow: hidden; text-overflow: ellipsis; font-size: 0.86rem; letter-spacing: 0.1em; } }
-body.reduce-motion .dial-wrap::before { transition: none; }
 body.reduce-motion .dock-id .dot { animation: none; }
-@media (prefers-reduced-motion: reduce) { .dial-wrap::before { transition: none; } .dock-id .dot { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .dock-id .dot { animation: none; } }
 
 /* ================= loading screen ================= */
 .boot {
@@ -1214,156 +1206,45 @@ html.wallpaper .btn:not(.btn-primary):not(.btn-danger), html.bridge .btn:not(.bt
     linear-gradient(112deg, rgba(255,255,255,0) 36%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.012) 50%, rgba(255,255,255,0) 58%),
     linear-gradient(180deg, rgba(var(--tint-rgb), 0.045), rgba(var(--tint-rgb), 0) 18%),
     linear-gradient(0deg, rgba(var(--accent-rgb), 0.035), rgba(var(--accent-rgb), 0) 14%);
-  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.18);
 }
 #glass[hidden] { display: none; }
 html:not(.bridge) #glass { display: none; }
 
-/* ================= Bridge consoles: two wall displays beside the window =================
-   Left = mission deck (your day), right = ship systems (orbit, focus, audio).
-   They mirror live data, sit behind the interface and never take clicks. */
-.bconsole {
-  position: fixed; z-index: -1; pointer-events: none; user-select: none; -webkit-user-select: none;
-  top: calc(var(--safe-t) + 16px); bottom: calc(var(--dock-h) + var(--safe-b) + 16px);
-  display: flex; flex-direction: column; padding: 16px 14px 14px; overflow: hidden;
-  background: linear-gradient(180deg, rgba(var(--deep-rgb), 0.9), rgba(var(--well-rgb), 0.95));
-  border: 1px solid rgba(var(--tint-rgb), 0.15); border-radius: var(--radius);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--tint-rgb), 0.05);
-  font-family: var(--font-mono), monospace; font-size: 0.72rem; line-height: 1.3; color: var(--text-2);
-  text-shadow: none;
+/* ================= 1.4.7: live side rails ================= */
+@media (min-width: 1300px) { html.bridge .app { padding-left: 96px; padding-right: 96px; max-width: 1416px; } }
+.side-rail {
+  position: fixed; z-index: 44; top: calc(var(--safe-t) + 12px); bottom: calc(var(--dock-h) + var(--safe-b) + 12px);
+  display: none; flex-direction: column; gap: 8px;
 }
-.bconsole[hidden], html:not(.bridge) .bconsole { display: none; }
-.bconsole::before {
-  content: ""; position: absolute; left: 18px; right: 18px; top: -1px; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.85) 18%, rgba(var(--accent-rgb), 0.35) 55%, transparent 80%);
+html.bridge .side-rail.on { display: flex; }
+.rail-block {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; width: 100%;
+  background: linear-gradient(180deg, rgba(var(--deep-rgb), 0.82), rgba(var(--well-rgb), 0.9));
+  border: 1px solid var(--line); border-radius: var(--radius); color: var(--text);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(var(--tint-rgb), 0.05);
+  font-family: var(--font-mono), monospace; text-transform: uppercase; text-align: center;
 }
-/* the light rail on the side that faces the window */
-.bconsole::after {
-  content: ""; position: absolute; top: 22px; bottom: 22px; width: 2px;
-  background: linear-gradient(180deg, transparent, rgba(var(--accent-rgb), 0.6) 18%, rgba(var(--accent-rgb), 0.6) 82%, transparent);
-  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.55);
-}
-#bc-left::after { right: -1px; }
-#bc-right::after { left: -1px; }
-.bc-view { display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; min-height: 0; }
-.bc-view[hidden] { display: none; }
-
-.bc-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
-.bc-h b { display: flex; align-items: center; gap: 8px; font-family: var(--font-display), sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text); white-space: nowrap; }
-.bc-h b::before { content: ""; width: 6px; height: 6px; flex: none; background: var(--accent); box-shadow: 0 0 8px var(--accent); transform: rotate(45deg); }
-.bc-h small { font-size: 0.66rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* left: clock */
-.bc-label { display: block; margin-bottom: 6px; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
-.bc-clock { font-family: var(--font-display), sans-serif; font-size: 1.85rem; font-weight: 700; line-height: 1; color: var(--hi); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.45); white-space: nowrap; }
-.bc-clock small { font-size: 0.5em; margin-right: 4px; color: var(--accent); letter-spacing: 0; vertical-align: 0.35em; }
-.bc-date { margin-top: 8px; font-family: var(--font-ui), sans-serif; font-size: 0.86rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bc-next.soon .bc-clock { color: var(--amber); text-shadow: 0 0 18px rgba(255, 181, 71, 0.4); }
-.bc-next.soon .bc-clock small { color: var(--amber); }
-.bc-next.idle .bc-clock { color: var(--dim); text-shadow: none; }
-.bc-next.idle .bc-date { color: var(--dim); }
-
-/* left: the mission ladder — today's tasks in order, with a NOW line */
-.bc-ladder { position: relative; flex: 1 1 0; min-height: 52px; overflow: hidden; display: flex; flex-direction: column; }
-.bc-ladder::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(180deg, rgba(var(--tint-rgb), 0.28), rgba(var(--tint-rgb), 0.04)); }
-.bc-rung { position: relative; flex: none; height: 26px; display: grid; grid-template-columns: 12px auto minmax(0, 1fr); align-items: center; column-gap: 10px; }
-.bc-pip { width: 8px; height: 8px; margin-left: 2px; transform: rotate(45deg); border: 1.5px solid var(--c, var(--accent)); background: rgb(var(--well-rgb)); }
-.bc-tm { min-width: 3.3em; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bc-t { font-family: var(--font-ui), sans-serif; font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bc-rung.done .bc-pip { background: var(--c, var(--accent)); box-shadow: 0 0 8px var(--c, var(--accent)); }
-.bc-rung.done .bc-t, .bc-rung.done .bc-tm { color: var(--dim); text-decoration: line-through; text-decoration-color: rgba(var(--dim-rgb), 0.7); }
-.bc-rung.overdue .bc-pip { border-color: var(--danger); }
-.bc-rung.overdue .bc-tm { color: var(--danger); }
-.bc-rung.soon .bc-pip { border-color: var(--amber); background: var(--amber); animation: bcBlink 1.4s steps(2, jump-none) infinite; }
-.bc-rung.soon .bc-tm { color: var(--amber); }
-.bc-now { flex: none; height: 18px; display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; }
-.bc-now::before { content: ""; width: 12px; height: 2px; flex: none; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-.bc-now::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.6), transparent); }
-.bc-more { flex: none; height: 22px; display: flex; align-items: center; padding-left: 22px; color: var(--dim); }
-.bc-empty { padding: 4px 0 0 22px; font-family: var(--font-ui), sans-serif; font-size: 0.8rem; line-height: 1.45; color: var(--dim); }
-@keyframes bcBlink { 50% { opacity: 0.35; } }
-
-/* left: progress footer */
-.bc-meter { position: relative; height: 6px; background: repeating-linear-gradient(90deg, rgba(var(--tint-rgb), 0.14) 0 6px, transparent 6px 8px); }
-.bc-meter i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 8px); filter: drop-shadow(0 0 4px rgba(var(--accent-rgb), 0.7)); transition: width 0.6s ease; }
-.bc-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; white-space: nowrap; }
-.bc-row b { color: var(--text); font-weight: 600; }
-
-/* right: orbit scope */
-.bc-scope { display: block; width: 100%; max-width: 206px; height: auto; margin: 0 auto; overflow: visible; }
-.bc-scope .ring { fill: none; stroke: rgba(var(--tint-rgb), 0.22); stroke-width: 0.6; }
-.bc-scope .ticks { fill: none; stroke: rgba(var(--tint-rgb), 0.38); stroke-width: 2.6; stroke-dasharray: 0.45 5.31; }
-.bc-scope .orbit { fill: none; stroke: rgba(var(--accent-rgb), 0.38); stroke-width: 0.6; stroke-dasharray: 2 2.4; }
-.bc-scope .wedge { fill: rgba(var(--accent-rgb), 0.09); }
-.bc-scope .beam { stroke: rgba(var(--accent-rgb), 0.7); stroke-width: 0.8; }
-.bc-scope .sweep { transform-box: view-box; transform-origin: 0 0; animation: bcSweep 6s linear infinite; }
-.bc-scope .earth { fill: rgb(var(--well-rgb)); stroke: rgba(var(--accent-rgb), 0.75); stroke-width: 0.9; }
-.bc-scope .grid { fill: none; stroke: rgba(var(--tint-rgb), 0.16); stroke-width: 0.5; }
-.bc-scope .night { fill: rgba(0, 0, 0, 0.55); }
-.bc-scope .sun { fill: var(--amber); }
-.bc-scope .sunray { stroke: var(--amber); stroke-width: 0.6; opacity: 0.6; }
-.bc-scope .trail { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; opacity: 0.7; }
-.bc-scope .ship { fill: var(--hi); stroke: var(--accent); stroke-width: 0.8; }
-.bconsole.is-still .bc-scope .sweep { animation: none; }
-@keyframes bcSweep { to { transform: rotate(360deg); } }
-.bc-sun { text-align: center; color: var(--text-2); letter-spacing: 0.04em; }
-.bc-sun b { color: var(--amber); font-weight: 600; }
-.bc-sun.night b { color: var(--accent-2); }
-
-/* right: telemetry */
-.bc-tele { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
-.bc-tele div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bc-tele span { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
-.bc-tele b { font-family: var(--font-display), sans-serif; font-size: 0.84rem; font-weight: 600; color: var(--hi); letter-spacing: 0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bc-tele small { font-family: var(--font-mono), monospace; font-size: 0.62rem; font-weight: 400; color: var(--dim); margin-left: 2px; }
-
-/* right: activity log */
-.bc-log { flex: 1 1 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; margin-top: -6px; }
-.bc-ev { flex: none; height: 22px; display: grid; grid-template-columns: 6px auto minmax(0, 1fr); align-items: center; column-gap: 9px; }
-.bc-ev i { width: 6px; height: 6px; background: var(--c); box-shadow: 0 0 6px var(--c); }
-.bc-ev span { min-width: 3.3em; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bc-ev b { font-family: var(--font-ui), sans-serif; font-size: 0.78rem; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bc-log .bc-empty { padding-left: 0; }
-.bconsole.is-compact .bc-loghead, .bconsole.is-compact .bc-log { display: none; }
-
-/* right: system status */
-.bc-sys { display: flex; flex-direction: column; gap: 2px; margin-top: auto; flex: none; }
-.bc-sys .bc-h { margin-bottom: 6px; }
-.bc-s { height: 24px; display: grid; grid-template-columns: 6px auto minmax(0, 1fr); align-items: center; column-gap: 9px; }
-.bc-s > span { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
-.bc-s > b { text-align: right; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-.bc-s.off > b { color: var(--dim); font-weight: 400; }
-.bc-led { width: 6px; height: 6px; flex: none; background: rgba(var(--dim-rgb), 0.45); }
-.bc-led.on, .bc-s.on .bc-led { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
-.bc-led.warn, .bc-s.warn .bc-led { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
-.bc-wave { display: block; width: 100%; height: 32px; margin: 2px 0 4px; }
-
-/* compact: narrower walls drop the long text */
-.bconsole.is-compact { padding: 14px 12px 12px; }
-.bconsole.is-compact .bc-clock { font-size: 1.15rem; }
-.bconsole.is-compact .bc-date { font-size: 0.76rem; }
-.bc-short { display: none; }
-.bconsole.is-compact .bc-short { display: inline; }
-.bconsole.is-compact .bc-long, .bconsole.is-compact .bc-t, .bconsole.is-compact .bc-h small, .bconsole.is-compact .bc-tele { display: none; }
-.bconsole.is-compact .bc-now { font-size: 0; gap: 0; }
-.bconsole.is-compact .bc-now::before { width: 22px; }
-.bconsole.is-compact .bc-label { margin-bottom: 4px; }
-.bconsole.is-compact .bc-rung { grid-template-columns: 12px auto; }
-.bconsole.is-compact .bc-scope { max-width: 128px; }
-.bconsole.is-compact .bc-s { grid-template-columns: 6px minmax(0, 1fr); }
-.bconsole.is-compact .bc-s > span { display: none; }
-.bconsole.is-compact .bc-s > b { text-align: left; }
-
-/* rail: a thin strip with a vertical gauge, for walls only a few fingers wide */
-.bconsole.is-rail { padding: 14px 0 12px; align-items: center; }
-.bconsole.is-rail::before { left: 4px; right: 4px; }
-.bc-rail { align-items: center; gap: 12px; width: 100%; }
-.bc-rv { font-family: var(--font-display), sans-serif; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; color: var(--hi); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; text-transform: uppercase; }
-.bc-vg { flex: 1 1 0; min-height: 40px; width: 8px; display: flex; flex-direction: column-reverse; gap: 3px; }
-.bc-vg i { flex: 1 1 0; min-height: 2px; background: rgba(var(--tint-rgb), 0.14); }
-.bc-vg i.on { background: var(--accent); box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.7); }
-.bc-vg i.alt { background: var(--accent-2); box-shadow: 0 0 6px var(--accent-2); }
-.bc-leds { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.rail-block::before { content: ""; position: absolute; left: 8px; right: 8px; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.85), transparent); }
+button.rail-block { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+button.rail-block:hover { border-color: rgba(var(--accent-rgb), 0.5); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35), 0 0 16px rgba(var(--accent-rgb), 0.15); }
+.rail-grow { flex: 1; min-height: 0; }
+.rail-head { padding: 12px 4px 14px; }
+.rail-dia { width: 7px; height: 7px; background: var(--accent); box-shadow: 0 0 8px var(--accent); transform: rotate(45deg); }
+.rail-title { writing-mode: vertical-rl; font-family: var(--font-display), sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.22em; color: var(--text-2); }
+.rail-num { font-family: var(--font-display), sans-serif; font-weight: 700; font-size: 0.95rem; line-height: 1; color: var(--hi); text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.45); font-variant-numeric: tabular-nums; }
+.rail-num small { font-size: 0.6em; color: var(--text-2); margin-left: 1px; }
+.rail-clock { font-size: 1.15rem; color: var(--accent); }
+.rail-small { font-size: 0.7rem; color: var(--amber); }
+.rail-lbl { font-size: 0.52rem; letter-spacing: 0.1em; color: var(--dim); }
+.rail-sep { width: 60%; height: 1px; background: var(--line-2); margin: 4px 0; }
+.rail-meter { position: relative; flex: 1; min-height: 40px; width: 8px; border-radius: 4px; background: rgba(var(--tint-rgb), 0.12); overflow: hidden; }
+.rail-meter i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, var(--accent-2), var(--accent)); box-shadow: 0 0 10px var(--accent); transition: height 0.6s ease; }
+#rail-audio .mini-bars { height: 18px; }
+#rail-audio .mini-bars i { height: 9px; }
+#rail-audio .mini-bars.paused i { height: 3px; }
+#rail-audio.live { border-color: rgba(var(--accent-rgb), 0.45); }
+@media (max-height: 640px) { .rail-head { display: none; } }
 </style>
 </head>
 <body>
@@ -2104,14 +1985,8 @@ var SFX = (function () {
   function hum(f1, f2, lp1, lp2, t, d, vol, attack) { tone({ f: f1, f2: f2, type: 'sawtooth', at: t, dur: d, vol: vol, attack: attack || 0.1, lp: lp1, lp2: lp2, q: 3 }); }
   var fx = {
     click: function () { var t = now(); pip(1760, t, 0.028, 0.034, 2093); noise({ ft: 'highpass', ff: 5000, dur: 0.006, vol: 0.012, at: t }); },
-    // section change: pneumatic door + acknowledgement chirp
-    tab: function () {
-      var t = now();
-      noise({ ft: 'lowpass', ff: 600, ff2: 2600, q: 0.7, dur: 0.17, vol: 0.04, attack: 0.03, at: t });
-      noise({ ft: 'lowpass', ff: 2600, ff2: 450, q: 0.7, dur: 0.24, vol: 0.026, attack: 0.01, at: t + 0.15 });
-      pip(1318.5, t + 0.05, 0.05, 0.024, 1760);
-      pip(1760, t + 0.11, 0.05, 0.02);
-    },
+    // section change: one short, soft tone
+    tab: function () { tone({ f: 784, dur: 0.07, vol: 0.03, attack: 0.004, lp: 2400 }); },
     open: function () { var t = now(); pip(880, t, 0.07, 0.032, 1760); tone({ f: 2637, at: t + 0.06, dur: 0.14, vol: 0.011, attack: 0.012 }); noise({ ft: 'highpass', ff: 6000, dur: 0.15, vol: 0.006, attack: 0.05, at: t }); },
     close: function () { var t = now(); pip(1760, t, 0.08, 0.028, 880); noise({ ft: 'lowpass', ff: 2000, ff2: 300, dur: 0.1, vol: 0.012, at: t }); },
     // entry logged
@@ -4080,11 +3955,11 @@ var App = (function () {
     { id: 'typing', label: 'Code typing', ic: I.code }
   ];
   var current = null;
-  var VERSION = '1.4.5';
+  var VERSION = '1.4.8';
   var WHATS_NEW = [
-    'Timers: the Quick timer and the Focus deck now close as soon as you press Start \u2013 the countdown carries on in the bar.',
-    'Bridge view: the ship\u2019s glow and pillar lights follow your theme colour.',
-    'Bridge view: you sit inside the ship, with two structural pillars and your screens on the viewscreen glass.'
+    'Day overview: the rotating sweep is gone \u2013 a calm, still dial.',
+    'Switching between Schedule, Focus audio and Code typing now plays one short, soft tone.',
+    'Bridge view: the side panels are live ship displays \u2013 progress, tasks left, streak, clock, level and audio.'
   ];
 
   /* ---------- themes ---------- */
@@ -4138,7 +4013,7 @@ var App = (function () {
     try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// in some browsers */ }
     if (!opt.silent) SFX.play('tab');
     if (prev !== null) window.scrollTo(0, 0);
-    if (id === 'schedule') { Sched.render(); restartSweep(); }
+    if (id === 'schedule') Sched.render();
     if (id === 'typing') Typing.onShow();
     AudioUI.onTab(id === 'audio');
     Mini.update();
@@ -4150,10 +4025,6 @@ var App = (function () {
     var h = d.getHours(), m = pad2(d.getMinutes()), s = pad2(d.getSeconds());
     if (S.settings.clock24) return pad2(h) + ':' + m + ':' + s;
     return (h % 12 || 12) + ':' + m + ':' + s + ' ' + (h < 12 ? 'AM' : 'PM');
-  }
-  function restartSweep() {
-    var wrap = $('.dial-wrap'); if (!wrap) return;
-    wrap.classList.remove('sweep-on'); void wrap.offsetWidth; wrap.classList.add('sweep-on');
   }
   function tickClock() {
     var d = new Date();
@@ -4708,7 +4579,7 @@ var App = (function () {
     renderRank();
     setInterval(function () { tickClock(); dockStatus(); }, 1000);
     setInterval(function () { Sched.minuteTick(); greeting(); }, 30000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) { tickClock(); Sched.minuteTick(); if (current === 'schedule') restartSweep(); } });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { tickClock(); Sched.minuteTick(); } });
     window.addEventListener('hashchange', function () { var h = location.hash.slice(1); if (h && h !== current) show(h); });
     var h = location.hash.slice(1);
     show(TABS.some(function (t) { return t.id === h; }) ? h : S.ui.tab, { silent: true });
@@ -5495,318 +5366,6 @@ var Mini = (function () {
 }());
 
 /* =====================================================================
-   BRIDGE CONSOLES — the two wall displays beside the ship's window
-   Left : mission deck. Today's tasks as a ladder with a NOW line,
-          the ship clock, progress, streak and rank.
-   Right: ship systems. An orbit scope that follows a real ~93-minute
-          orbit, telemetry, and live focus / audio / timer status
-          (with an oscilloscope of the music while it plays).
-   Both only mirror live data: they sit behind the interface and never
-   take clicks. Wide walls get the full console, narrower walls a
-   compact one, and very thin walls a slim gauge rail.
-   ===================================================================== */
-var Consoles = (function () {
-  var Lc = null, Rc = null, mode = 'none', ticker = 0, raf = 0, lastWave = 0;
-  var lastLadder = '', lastRailL = '', lastRailR = '', wave = null, wctx = null, wbuf = null;
-  var accC = '61,242,255', tintC = '120,200,255', dpr = 1;
-  var ORBIT = 92.68, ROW = 26;
-
-  function isBridge() { return document.documentElement.classList.contains('bridge'); }
-  function still() { return S.settings.reduceMotion || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-  function q(root, k) { return root.querySelector('[data-k="' + k + '"]'); }
-  function txt(el, v) { if (el && el.textContent !== v) el.textContent = v; }
-  function htm(el, v) { if (el && el._h !== v) { el.innerHTML = v; el._h = v; } }
-  function cls(el, c) { if (el && el.className !== c) el.className = c; }
-
-  function build(anchor) {
-    Lc = document.createElement('aside'); Lc.className = 'bconsole'; Lc.id = 'bc-left'; Lc.setAttribute('aria-hidden', 'true');
-    Lc.innerHTML =
-      '<div class="bc-view bc-full" data-k="full">' +
-        '<div class="bc-h"><b><span class="bc-long">Mission deck</span><span class="bc-short">Missions</span></b><small data-k="rank"></small></div>' +
-        '<div class="bc-next" data-k="next"><span class="bc-label">Next up</span><div class="bc-clock" data-k="clock"></div><div class="bc-date" data-k="date"></div></div>' +
-        '<div class="bc-h"><b>Today</b><small data-k="count"></small></div>' +
-        '<div class="bc-ladder" data-k="ladder"></div>' +
-        '<div><div class="bc-meter"><i data-k="meter"></i></div>' +
-        '<div class="bc-row"><span data-k="pct"></span><span data-k="streak"></span></div></div>' +
-      '</div>' +
-      '<div class="bc-view bc-rail" data-k="rail" hidden>' +
-        '<b class="bc-rv" data-k="rcount"></b><div class="bc-vg" data-k="rgauge"></div><span class="bc-led" data-k="rlate"></span>' +
-      '</div>';
-    Rc = document.createElement('aside'); Rc.className = 'bconsole'; Rc.id = 'bc-right'; Rc.setAttribute('aria-hidden', 'true');
-    Rc.innerHTML =
-      '<div class="bc-view bc-full" data-k="full">' +
-        '<div class="bc-h"><b><span class="bc-long">Ship systems</span><span class="bc-short">Systems</span></b><small data-k="orbit"></small></div>' +
-        '<svg class="bc-scope" viewBox="-66 -64 132 128" aria-hidden="true">' +
-          '<circle class="ring" r="59"/><circle class="ticks" r="55"/><circle class="orbit" r="40"/>' +
-          '<g class="sweep"><path class="wedge" d="M0 0L55 0A55 55 0 0 0 47.63 -27.5Z"/><path class="beam" d="M0 0L55 0"/></g>' +
-          '<circle class="earth" r="24"/><g class="grid"><circle r="14"/><path d="M-24 0H24M0 -24V24"/></g>' +
-          '<path class="night" d="M0 -24A24 24 0 0 0 0 24Z"/>' +
-          '<circle class="sun" cx="63" cy="0" r="2.4"/><path class="sunray" d="M63 -6V-4M63 4V6M57 0H59"/>' +
-          '<g data-k="ship"><path class="trail" d="M30.64 -25.71A40 40 0 0 1 40 0"/><circle class="ship" cx="40" cy="0" r="2.8"/></g>' +
-        '</svg>' +
-        '<div class="bc-sun" data-k="sun"></div>' +
-        '<div class="bc-tele" data-opt="2">' +
-          '<div><span>Altitude</span><b data-k="alt"></b></div>' +
-          '<div><span>Velocity</span><b>7.66<small>km/s</small></b></div>' +
-          '<div><span>Latitude</span><b data-k="lat"></b></div>' +
-          '<div><span>Longitude</span><b data-k="lon"></b></div>' +
-        '</div>' +
-        '<div class="bc-h bc-loghead" data-k="loghead"><b>Activity</b><small data-k="logsub"></small></div>' +
-        '<div class="bc-log" data-k="log"></div>' +
-        '<div class="bc-sys">' +
-          '<div class="bc-h"><b>Status</b></div>' +
-          '<div class="bc-s" data-k="sf"><i class="bc-led"></i><span>Focus</span><b></b></div>' +
-          '<div class="bc-s" data-k="sa"><i class="bc-led"></i><span>Audio</span><b></b></div>' +
-          '<canvas class="bc-wave" data-k="wave"></canvas>' +
-          '<div class="bc-s" data-k="st"><i class="bc-led"></i><span>Timer</span><b></b></div>' +
-          '<div class="bc-s" data-k="sr"><i class="bc-led"></i><span>Alerts</span><b></b></div>' +
-          '<div class="bc-s" data-k="sy" data-opt="1"><i class="bc-led"></i><span>Typing</span><b></b></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="bc-view bc-rail" data-k="rail" hidden>' +
-        '<b class="bc-rv" data-k="rorbit"></b><div class="bc-vg" data-k="rgauge"></div>' +
-        '<div class="bc-leds"><i class="bc-led" data-k="lf"></i><i class="bc-led" data-k="la"></i><i class="bc-led" data-k="lt"></i></div>' +
-      '</div>';
-    // stars, Earth and window frame first, then the consoles on the wall
-    anchor.parentNode.insertBefore(Rc, anchor.nextSibling);
-    anchor.parentNode.insertBefore(Lc, anchor.nextSibling);
-    wave = q(Rc, 'wave'); wctx = wave.getContext('2d');
-    ticker = setInterval(update, 1000);
-    document.addEventListener('visibilitychange', update);
-  }
-
-  /* ---------- placement: called whenever the window frame is redrawn ---------- */
-  function layout(W, anchor) {
-    var cwW = document.documentElement.clientWidth || window.innerWidth;
-    var gap = 20, edge = 12;
-    var cw = W && W.pw >= 14 ? Math.min(W.L - gap - edge, cwW - W.R - gap - edge) : 0;
-    var m = cw >= 196 ? 'full' : cw >= 104 ? 'compact' : cw >= 22 ? 'rail' : 'none';
-    if (!Lc) { if (m === 'none' || !anchor) { mode = 'none'; return; } build(anchor); }
-    mode = m;
-    Lc.hidden = Rc.hidden = m === 'none';
-    if (m === 'none') { stopWave(); return; }
-    var width = Math.floor(m === 'full' ? Math.min(cw, 272) : m === 'rail' ? Math.min(cw, 46) : cw);
-    [Lc, Rc].forEach(function (el) {
-      el.style.width = width + 'px';
-      el.classList.toggle('is-compact', m === 'compact');
-      el.classList.toggle('is-rail', m === 'rail');
-      q(el, 'full').hidden = m === 'rail';
-      q(el, 'rail').hidden = m !== 'rail';
-    });
-    Lc.style.left = Math.round(W.L - gap - width) + 'px';
-    Rc.style.left = Math.round(W.R + gap) + 'px';
-    if (m !== 'rail') {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      wave.width = Math.max(1, Math.round(wave.clientWidth * dpr)); wave.height = Math.round(32 * dpr);
-    }
-    lastLadder = lastRailL = lastRailR = lastLog = '';
-    fit(); update();
-  }
-  // on short screens, drop the least important blocks until everything fits
-  function fit() {
-    [Lc, Rc].forEach(function (el) {
-      var opts = el.querySelectorAll('[data-opt]');
-      opts.forEach(function (o) { o.hidden = false; });
-      if (mode === 'rail') return;
-      ['2', '1'].forEach(function (lv) {
-        if (el.scrollHeight <= el.clientHeight + 1 && !overLadder(el)) return;
-        opts.forEach(function (o) { if (o.getAttribute('data-opt') === lv) o.hidden = true; });
-      });
-    });
-  }
-  function overLadder(el) { var lad = q(el, 'ladder'); return !!lad && lad.clientHeight < ROW * 3; }
-
-  /* ---------- left: mission deck ---------- */
-  function streakNow() {
-    var days = {};
-    S.tasks.forEach(function (t) { Object.keys(t.done).forEach(function (k) { days[k] = 1; }); });
-    var k = todayKey(), n = 0;
-    if (!days[k]) k = addDays(k, -1);
-    while (days[k]) { n++; k = addDays(k, -1); }
-    return n;
-  }
-  function updateLeft(d) {
-    var k = todayKey(), list = Sched.tasksOn(k), now = nowMinutes(), done = 0, late = 0;
-    var st = list.map(function (t) { var s = Sched.status(t, k); if (s === 'done') done++; if (s === 'overdue') late++; return s; });
-    var total = list.length, pct = total ? Math.round(done / total * 100) : 0;
-
-    if (mode === 'rail') {
-      txt(q(Lc, 'rcount'), done + '/' + total);
-      var n = total ? clamp(total, 4, 24) : 12, on = total ? Math.round(done / total * n) : 0, sig = n + ':' + on;
-      if (sig !== lastRailL) { lastRailL = sig; var hs = ''; for (var i = 0; i < n; i++) hs += '<i' + (i < on ? ' class="on"' : '') + '></i>'; q(Lc, 'rgauge').innerHTML = hs; }
-      cls(q(Lc, 'rlate'), 'bc-led' + (late ? ' warn' : done && done === total ? ' on' : ''));
-      return;
-    }
-
-    txt(q(Lc, 'rank'), DAY_NAMES[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3));
-    // T-minus to the next timed task that is still ahead
-    var secNow = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds(), next = null, pending = 0;
-    list.forEach(function (t, i) {
-      if (st[i] === 'done') return; pending++;
-      var m = minutesOf(t.time); if (m !== null && m * 60 > secNow && !next) next = t;
-    });
-    var nb = q(Lc, 'next');
-    if (next) {
-      var left = minutesOf(next.time) * 60 - secNow, hh = Math.floor(left / 3600), mm = Math.floor(left % 3600 / 60), ss = left % 60;
-      htm(q(Lc, 'clock'), '<small>T\u2212</small>' + (hh ? hh + ':' + pad2(mm) : pad2(mm)) + ':' + pad2(ss));
-      txt(q(Lc, 'date'), next.title);
-      cls(nb, 'bc-next' + (left <= 1800 ? ' soon' : ''));
-    } else {
-      htm(q(Lc, 'clock'), '<small>T\u2212</small>--:--');
-      txt(q(Lc, 'date'), late ? late + ' overdue to clear' : pending ? pending + ' anytime ' + (pending === 1 ? 'task' : 'tasks') + ' left' : total ? 'All tasks done' : 'Nothing scheduled');
-      cls(nb, 'bc-next idle');
-    }
-    txt(q(Lc, 'count'), done + ' / ' + total);
-    q(Lc, 'meter').style.width = pct + '%';
-    txt(q(Lc, 'pct'), mode === 'full' ? (total ? pct + '% complete' : 'No tasks') : done + '/' + total);
-    var sk = streakNow();
-    txt(q(Lc, 'streak'), mode === 'full' ? 'Streak ' + sk + (sk === 1 ? ' day' : ' days') : sk + 'd streak');
-
-    // the NOW line sits before the first timed task still ahead (after the last timed one if all are past)
-    var nowAt = -1, lastTimed = -1;
-    list.forEach(function (t, i) { var m = minutesOf(t.time); if (m === null) return; lastTimed = i; if (nowAt < 0 && m > now) nowAt = i; });
-    if (nowAt < 0 && lastTimed >= 0) nowAt = lastTimed + 1;
-    var lad = q(Lc, 'ladder'), cap = Math.max(2, Math.floor(lad.clientHeight / ROW));
-    var sig2 = [k, cap, mode, S.settings.clock24, nowAt].concat(list.map(function (t, i) { return t.id + st[i] + t.time + t.title + t.category; })).join('|');
-    if (sig2 === lastLadder) return;
-    lastLadder = sig2;
-    if (!total) { lad.innerHTML = '<div class="bc-empty">No tasks for today. Add one and it lights up here.</div>'; return; }
-    var rows = [];
-    list.forEach(function (t, i) { if (i === nowAt) rows.push({ now: true }); rows.push({ t: t, s: st[i] }); });
-    if (nowAt === list.length) rows.push({ now: true });
-    var start = 0, end = rows.length;
-    if (rows.length > cap) {
-      var focus = -1;
-      rows.forEach(function (r, i) { if (focus < 0 && (r.now || (r.s && r.s !== 'done'))) focus = i; });
-      start = clamp((focus < 0 ? 0 : focus) - 2, 0, rows.length - (cap - 1));
-      end = start + cap - (start > 0 ? 1 : 0);
-      if (end < rows.length) end -= 1;
-    }
-    var count = function (a, b) { var c = 0; for (var i = a; i < b; i++) if (!rows[i].now) c++; return c; };
-    var html = '', before = count(0, start), after = count(end, rows.length);
-    if (before) html += '<div class="bc-more">+' + before + ' earlier</div>';
-    rows.slice(start, end).forEach(function (r) {
-      if (r.now) { html += '<div class="bc-now">Now ' + esc(Sched.fmtTime(pad2(d.getHours()) + ':' + pad2(d.getMinutes()))) + '</div>'; return; }
-      var tm = r.t.time ? Sched.fmtTime(r.t.time) : 'Any';
-      html += '<div class="bc-rung ' + r.s + '" style="--c:' + catOf(r.t.category).c + '"><i class="bc-pip"></i>' +
-        '<span class="bc-tm">' + esc(tm) + '</span><span class="bc-t">' + esc(r.t.title) + '</span></div>';
-    });
-    if (after) html += '<div class="bc-more">+' + after + ' more</div>';
-    lad.innerHTML = html;
-  }
-
-  /* ---------- right: ship systems ---------- */
-  function sys(row, state, value) { cls(row, 'bc-s ' + state); txt(row.lastChild, mode === 'compact' && state === 'off' ? row.children[1].textContent : value); }
-  function led(el, state) { cls(el, 'bc-led' + (state ? ' ' + state : '')); }
-  function updateRight(d) {
-    var mid = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    var mins = (d.getTime() - mid) / 60000, orbitNo = Math.floor(mins / ORBIT) + 1, phase = (mins / ORBIT) % 1;
-    var day = phase < 0.5, compact = mode !== 'full';
-    var fa = Focus.active(), fr = Focus.running(), playing = Music.isPlaying(), qa = QTimer.active(), qr = QTimer.running();
-
-    if (mode === 'rail') {
-      txt(q(Rc, 'rorbit'), 'Orbit ' + orbitNo);
-      var n = 24, on = Math.floor(phase * n), sig = on + (day ? 'd' : 'n');
-      if (sig !== lastRailR) { lastRailR = sig; var hs = ''; for (var i = 0; i < n; i++) hs += '<i' + (i < on ? ' class="' + (i < n / 2 ? 'on' : 'alt') + '"' : '') + '></i>'; q(Rc, 'rgauge').innerHTML = hs; }
-      led(q(Rc, 'lf'), fa ? (fr ? 'on' : 'warn') : '');
-      led(q(Rc, 'la'), playing ? 'on' : '');
-      led(q(Rc, 'lt'), qa ? (qr ? 'on' : 'warn') : '');
-      return;
-    }
-
-    txt(q(Rc, 'orbit'), 'Orbit ' + orbitNo);
-    q(Rc, 'ship').setAttribute('transform', 'rotate(' + (phase * 360 - 90).toFixed(2) + ')');
-    var left = Math.max(1, Math.ceil(((day ? 0.5 : 1) - phase) * ORBIT));
-    var sun = q(Rc, 'sun');
-    cls(sun, 'bc-sun' + (day ? '' : ' night'));
-    htm(sun, (day ? 'Sunset in <b>' : 'Sunrise in <b>') + left + ' min</b>');
-    if (!compact) {
-      var lat = 51.6 * Math.sin(phase * Math.PI * 2);
-      var lon = ((phase * 360 - (orbitNo - 1) * 22.9) % 360 + 540) % 360 - 180;
-      htm(q(Rc, 'alt'), (408 + 1.8 * Math.sin(phase * Math.PI * 4)).toFixed(1) + '<small>km</small>');
-      txt(q(Rc, 'lat'), Math.abs(lat).toFixed(1) + '\u00b0 ' + (lat >= 0 ? 'N' : 'S'));
-      txt(q(Rc, 'lon'), Math.abs(lon).toFixed(1) + '\u00b0 ' + (lon >= 0 ? 'E' : 'W'));
-    }
-    if (!compact) updateLog(d);
-    sys(q(Rc, 'sf'), fa ? (fr ? 'on' : 'warn') : 'off',
-      fa ? (compact ? '' : Focus.label() + ' ') + Focus.fmt(Focus.remaining()) + (fr ? '' : ' (paused)') : 'Standby');
-    var prog = (S.audio && PROGRAMS[S.audio.program]) || PROGRAMS.drift;
-    sys(q(Rc, 'sa'), playing ? 'on' : 'off', playing ? (S.ui.presetName || prog.name) : 'Off');
-    sys(q(Rc, 'st'), qa ? (qr ? 'on' : 'warn') : 'off', qa ? QTimer.fmt(QTimer.remaining()) + (qr ? '' : ' (paused)') : 'Off');
-    sys(q(Rc, 'sr'), S.settings.reminders ? 'on' : 'off', S.settings.reminders ? 'On' : 'Off');
-    var best = 0; Object.keys(S.typing.best || {}).forEach(function (kk) { best = Math.max(best, S.typing.best[kk] || 0); });
-    sys(q(Rc, 'sy'), best ? 'on' : 'off', best ? 'Best ' + best + ' WPM' : 'No runs yet');
-    Rc.classList.toggle('is-still', still());
-  }
-
-  // recent completions and typing runs, newest first
-  var lastLog = '';
-  function updateLog(d) {
-    var head = q(Rc, 'loghead'), box = q(Rc, 'log'), ev = [], since = d.getTime() - 3 * 86400000;
-    head.hidden = box.hidden = false;
-    var cap = Math.floor(box.clientHeight / 22);
-    if (cap < 2) { head.hidden = box.hidden = true; lastLog = ''; return; }
-    S.tasks.forEach(function (t) { Object.keys(t.done).forEach(function (k) { var at = t.done[k] && t.done[k].t; if (at > since) ev.push({ at: at, txt: t.title, c: catOf(t.category).c }); }); });
-    (S.typing.history || []).slice(0, 10).forEach(function (r) { if (r && r.at > since) ev.push({ at: r.at, txt: 'Typing run ' + r.wpm + ' WPM', c: 'var(--violet)' }); });
-    ev.sort(function (a, b) { return b.at - a.at; });
-    var tk = todayKey(), sig = cap + '|' + S.settings.clock24 + '|' + ev.slice(0, cap).map(function (e) { return e.at + e.txt; }).join('|');
-    txt(q(Rc, 'logsub'), ev.length ? ev.length + ' in 3 days' : '');
-    if (sig === lastLog) return;
-    lastLog = sig;
-    if (!ev.length) { box.innerHTML = '<div class="bc-empty">Finished tasks and typing runs show up here.</div>'; return; }
-    box.innerHTML = ev.slice(0, cap).map(function (e) {
-      var dt = new Date(e.at), when = dateKey(dt) === tk ? Sched.fmtTime(pad2(dt.getHours()) + ':' + pad2(dt.getMinutes())) : DAY_NAMES[dt.getDay()].slice(0, 3);
-      return '<div class="bc-ev" style="--c:' + e.c + '"><i></i><span>' + esc(when) + '</span><b>' + esc(e.txt) + '</b></div>';
-    }).join('');
-  }
-
-  /* ---------- the music oscilloscope ---------- */
-  function waveWanted() { return isBridge() && !document.hidden && (mode === 'full' || mode === 'compact') && Music.isPlaying() && !still(); }
-  function drawWave(live) {
-    if (!wctx || mode === 'rail' || mode === 'none') return;
-    var W = wave.width, H = wave.height, an = live ? Music.analyser() : null;
-    wctx.clearRect(0, 0, W, H);
-    wctx.fillStyle = 'rgba(' + tintC + ',0.12)'; wctx.fillRect(0, Math.round(H / 2), W, Math.max(1, dpr));
-    wctx.save();
-    wctx.lineWidth = 1.4 * dpr; wctx.lineJoin = 'round';
-    wctx.strokeStyle = 'rgba(' + accC + ',' + (an ? 0.95 : 0.3) + ')';
-    if (an) { wctx.shadowColor = 'rgba(' + accC + ',0.8)'; wctx.shadowBlur = 6 * dpr; }
-    wctx.beginPath();
-    if (an && an.getByteTimeDomainData) {
-      if (!wbuf || wbuf.length !== an.fftSize) wbuf = new Uint8Array(an.fftSize);
-      an.getByteTimeDomainData(wbuf);
-      var n = Math.min(wbuf.length, 512);
-      for (var i = 0; i < n; i++) {
-        var px = i / (n - 1) * W, py = H / 2 + (wbuf[i] - 128) / 128 * (H * 0.46);
-        if (i) wctx.lineTo(px, py); else wctx.moveTo(px, py);
-      }
-    } else { wctx.moveTo(0, H / 2); wctx.lineTo(W, H / 2); }
-    wctx.stroke(); wctx.restore();
-  }
-  function waveLoop(t) {
-    raf = 0;
-    if (!waveWanted()) { drawWave(false); return; }
-    if (t - lastWave >= 33) { drawWave(true); lastWave = t; }
-    raf = requestAnimationFrame(waveLoop);
-  }
-  function stopWave() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
-
-  function update() {
-    if (!Lc || mode === 'none' || !isBridge() || document.hidden) { stopWave(); return; }
-    var cs = getComputedStyle(document.documentElement);
-    accC = (cs.getPropertyValue('--accent-rgb') || '').trim().replace(/\s+/g, '') || accC;
-    tintC = (cs.getPropertyValue('--tint-rgb') || '').trim().replace(/\s+/g, '') || tintC;
-    var d = new Date();
-    try { updateLeft(d); } catch (e) { if (DEBUG) console.error('[Task Matrix] mission deck:', e); }
-    try { updateRight(d); } catch (e) { if (DEBUG) console.error('[Task Matrix] ship systems:', e); }
-    if (waveWanted()) { if (!raf) raf = requestAnimationFrame(waveLoop); }
-    else { stopWave(); drawWave(Music.isPlaying()); }
-  }
-
-  return { layout: layout, update: update };
-}());
-
-/* =====================================================================
    BACKGROUND SCENE
    'stars'  : starfield with depth, slow drift and a rare shooting star
    'bridge' : Earth from a spacecraft window in low orbit. The planet is drawn
@@ -5945,7 +5504,7 @@ var Scene = (function () {
     '  if(night>0.0){float city=land*smoothstep(0.62,0.8,nt(L(um,v,3.125,vec2(7.0,3.0)))*0.55+nt(L(um,v,11.25,vec2(1.0,9.0)))*0.45)*(1.0-cloud*0.85)*night;col+=city*vec3(255.0,170.0,80.0)+cloud*night*vec3(10.0,14.0,26.0);}',
     '  float haze=pow(1.0-clamp(mu,0.0,1.0)+1e-6,4.0)*0.8;',
     '  vec3 ah=vec3(14.0+70.0*day+150.0*warm,26.0+115.0*day+30.0*warm,60.0+185.0*day); ah=mix(ah,uAcc*255.0*(0.2+0.6*day),0.4);',
-    '  col+=(ah-col)*haze; col*=0.92/255.0;',
+    '  col+=(ah-col)*haze; float lum=dot(col,vec3(0.3,0.59,0.11)); col=mix(col,lum*uAcc*1.3,0.2); col*=0.92/255.0;',
     ' } else {',
     '  vec3 add=vec3(0.0); float tc=-b;',
     '  if(tc>0.0){vec3 q=vec3(tc*d.x,uPr+tc*d.y,tc*d.z);float ql=length(q),hgt=ql-1.0,qs=dot(q,uSun)/ql,lit=smoothstep(-0.22,0.2,qs);',
@@ -6108,7 +5667,7 @@ var Scene = (function () {
   /* ---------- back layer: deep space and sharp stars (painted once) ---------- */
   function drawBack() {
     x.clearRect(0, 0, w, h);
-    x.fillStyle = '#000103'; x.fillRect(0, 0, w, h);
+    x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#000103'; x.fillRect(0, 0, w, h);
     var n = Math.round(w * h / 4200);
     for (var i = 0; i < n; i++) {
       var sx = hash(i, 1, 7) * w, sy = hash(i, 2, 9) * h, d = ray(sx, sy);
@@ -6135,7 +5694,7 @@ var Scene = (function () {
     if (R - L < w * 0.5) { L = 14; R = w - 14; }
     var F = m ? 5 : 9, pw = m ? 0 : clamp(Math.round((L - F) * 0.7), 0, 88), cut = Math.round(Math.min(w, h) * (m ? 0.035 : 0.03) + (m ? 10 : 16));
     var T = m ? 4 : 6, B = h - (m ? 4 : 6);
-    if (pw >= 14) { F = 0; cut = 0; T = 0; B = h; pw = clamp(Math.round(L * 0.7), 14, 88); }
+    if (pw >= 14) { F = 0; cut = 0; T = 0; B = h; pw = clamp(Math.round(L - 18), 14, 92); }
     return { m: m, L: L, R: R, T: T, B: B, F: F, pw: pw, cut: cut, wall: L };
   }
   // the viewscreen outline: straight edges with 45° chamfered corners, like the rest of the interface
@@ -6144,33 +5703,57 @@ var Scene = (function () {
     g.moveTo(L + c, T); g.lineTo(R - c, T); g.lineTo(R, T + c); g.lineTo(R, B - c); g.lineTo(R - c, B);
     g.lineTo(L + c, B); g.lineTo(L, B - c); g.lineTo(L, T + c); g.closePath();
   }
-  function mixRgb(rgb, k, add) { return rgb.split(',').map(function (v, i) { return Math.round(clamp(+v * k + (add ? add[i] : 0), 0, 255)); }).join(','); }
-  // the cabin wall beside the window: Earthlight spilling in from the glass, darker toward the screen edge
-  function drawWall(W) {
-    [[W.L, -1, W.L], [W.R, 1, w - W.R]].forEach(function (e) {
-      var x0 = e[0], side = e[1], span = e[2]; if (span <= 0) return;
-      var far = x0 + side * Math.min(260, span);
-      var spill = fx.createLinearGradient(x0, 0, far, 0);
-      spill.addColorStop(0, 'rgba(' + acc + ',0.075)'); spill.addColorStop(1, 'rgba(' + acc + ',0)');
-      fx.fillStyle = spill; fx.fillRect(Math.min(x0, far), 0, Math.abs(far - x0), h);
-      var edge = side < 0 ? 0 : w, vig = fx.createLinearGradient(edge, 0, edge - side * Math.min(90, span), 0);
-      vig.addColorStop(0, 'rgba(0,0,0,0.4)'); vig.addColorStop(1, 'rgba(0,0,0,0)');
-      fx.fillStyle = vig; fx.fillRect(side < 0 ? 0 : w - Math.min(90, span), 0, Math.min(90, span), h);
-    });
+  // a side rail built like the interface's panels: flat glass blocks, thin borders, angled corners, an accent light strip
+  function railBlock(x0, x1, y0, y1, side, deep, well) {
+    var wd = x1 - x0, c = Math.min(10, wd * 0.3), inX = side < 0 ? x1 : x0, outX = side < 0 ? x0 : x1, dir = side < 0 ? -1 : 1;
+    fx.beginPath();
+    fx.moveTo(outX, y0); fx.lineTo(inX + dir * c, y0); fx.lineTo(inX, y0 + c); fx.lineTo(inX, y1 - c); fx.lineTo(inX + dir * c, y1); fx.lineTo(outX, y1); fx.closePath();
+    var g = fx.createLinearGradient(0, y0, 0, y1);
+    g.addColorStop(0, 'rgba(' + deep + ',0.95)'); g.addColorStop(1, 'rgba(' + well + ',0.97)');
+    fx.fillStyle = g; fx.fill();
+    fx.lineWidth = 1; fx.strokeStyle = 'rgba(' + tint + ',0.16)'; fx.stroke();
+    var strip = fx.createLinearGradient(0, y0 + c, 0, y1 - c);
+    strip.addColorStop(0, 'rgba(' + acc + ',0)'); strip.addColorStop(0.25, 'rgba(' + acc + ',0.85)'); strip.addColorStop(0.6, 'rgba(' + acc + ',0.35)'); strip.addColorStop(1, 'rgba(' + acc + ',0)');
+    fx.save(); fx.shadowColor = 'rgba(' + acc + ',0.8)'; fx.shadowBlur = 6; fx.fillStyle = strip; fx.fillRect(inX - (side < 0 ? 1.5 : 0), y0 + c, 1.5, y1 - y0 - 2 * c); fx.restore();
+    var dx = inX - dir * 9, dy = y0 + c + 10;
+    fx.save(); fx.translate(dx, dy); fx.rotate(Math.PI / 4); fx.fillStyle = 'rgb(' + acc + ')'; fx.shadowColor = 'rgba(' + acc + ',0.9)'; fx.shadowBlur = 6; fx.fillRect(-2.5, -2.5, 5, 5); fx.restore();
   }
-  // a slim mullion along each side of the glass, with a lit edge and three marker lights
-  function drawMullion(xe, side, deep) {
-    var mw = 6, x0 = side < 0 ? xe - mw : xe;
-    var g = fx.createLinearGradient(x0, 0, x0 + mw, 0);
-    g.addColorStop(0, 'rgb(' + mixRgb(deep, side < 0 ? 0.6 : 1.5, side < 0 ? null : [14, 20, 30]) + ')');
-    g.addColorStop(1, 'rgb(' + mixRgb(deep, side < 0 ? 1.5 : 0.6, side < 0 ? [14, 20, 30] : null) + ')');
-    fx.fillStyle = g; fx.fillRect(x0, 0, mw, h);
-    fx.fillStyle = 'rgba(0,0,0,0.6)'; fx.fillRect(side < 0 ? x0 : x0 + mw - 1, 0, 1, h);
-    fx.save(); fx.shadowColor = 'rgba(' + acc + ',0.85)'; fx.shadowBlur = 7;
-    fx.fillStyle = 'rgba(' + acc + ',0.5)'; fx.fillRect(xe - 0.5, 0, 1, h);
-    fx.fillStyle = 'rgba(' + acc + ',0.95)';
-    [0.18, 0.5, 0.82].forEach(function (f) { fx.fillRect(x0 + 1, Math.round(h * f) - 8, mw - 2, 16); });
-    fx.restore();
+  function drawRail(x0, x1, side, deep, well) {
+    var wd = x1 - x0, top = 12, bot = h - 64, gap = 8, y1 = top + (bot - top) * 0.36, y2 = top + (bot - top) * 0.7;
+    var mono = (getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || 'monospace').trim();
+    railBlock(x0, x1, top, y1 - gap / 2, side, deep, well);
+    railBlock(x0, x1, y1 + gap / 2, y2 - gap / 2, side, deep, well);
+    railBlock(x0, x1, y2 + gap / 2, bot, side, deep, well);
+    var cx = x0 + wd / 2;
+    // upper block: a vertical system label
+    if (wd >= 24) {
+      fx.save(); fx.translate(cx + 4, top + 30); fx.rotate(Math.PI / 2);
+      fx.font = '600 ' + Math.min(11, Math.round(wd * 0.28)) + 'px ' + mono; fx.fillStyle = 'rgba(' + tint + ',0.5)';
+      try { fx.letterSpacing = '3px'; } catch (e) { /* older browsers */ }
+      fx.fillText(side < 0 ? 'TASK MATRIX // BRIDGE' : 'SECTOR 0x99F // ORBIT', 0, 0); fx.restore();
+    }
+    // middle block: a measuring ruler with one lit marker
+    var rx = side < 0 ? x0 + 5 : x1 - 5, rdir = side < 0 ? 1 : -1;
+    for (var y = y1 + 22, n = 0; y < y2 - 14; y += 10, n++) {
+      var big = n % 5 === 0;
+      fx.fillStyle = big ? 'rgba(' + acc + ',0.55)' : 'rgba(' + tint + ',0.22)';
+      fx.fillRect(rdir > 0 ? rx : rx - (big ? Math.min(12, wd * 0.4) : Math.min(6, wd * 0.2)), Math.round(y), big ? Math.min(12, wd * 0.4) : Math.min(6, wd * 0.2), 1);
+    }
+    var my = (y1 + y2) / 2;
+    fx.save(); fx.fillStyle = 'rgb(' + acc + ')'; fx.shadowColor = 'rgba(' + acc + ',0.9)'; fx.shadowBlur = 6;
+    fx.beginPath(); fx.moveTo(rx + rdir * Math.min(16, wd * 0.5), my); fx.lineTo(rx + rdir * Math.min(24, wd * 0.72), my - 4); fx.lineTo(rx + rdir * Math.min(24, wd * 0.72), my + 4); fx.closePath(); fx.fill(); fx.restore();
+    // lower block: mini meters and status lights
+    var ok = rgbVar('--ok', '#4dffa6'), amber = rgbVar('--amber', '#ffb547');
+    if (wd >= 30) [0.72, 0.46, 0.86].forEach(function (f, k) {
+      var mx0 = x0 + 8, mw = wd - 16, myy = y2 + 26 + k * 14;
+      fx.fillStyle = 'rgba(' + tint + ',0.12)'; fx.fillRect(mx0, myy, mw, 3);
+      fx.fillStyle = 'rgba(' + acc + ',0.85)'; fx.fillRect(side < 0 ? mx0 : mx0 + mw * (1 - f), myy, mw * f, 3);
+    });
+    [ok, 'rgb(' + acc + ')', amber].forEach(function (col, k) {
+      var ly = bot - 18 - k * 11;
+      fx.save(); fx.fillStyle = col; fx.shadowColor = col; fx.shadowBlur = 5; fx.globalAlpha = 0.9;
+      fx.beginPath(); fx.arc(cx, ly, 2, 0, Math.PI * 2); fx.fill(); fx.restore();
+    });
   }
   // the glass sits in front of the content: a faint reflection that stays put while the content scrolls
   function placeGlass(W) {
@@ -6189,11 +5772,13 @@ var Scene = (function () {
     fx.clearRect(0, 0, w, h);
     // cabin around the screen, in the theme's own panel colours
     fx.save(); fx.beginPath(); fx.rect(0, 0, w, h); windowPath(fx, W, F);
+    var bgc = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || 'rgb(' + well + ')';
     var wall = fx.createLinearGradient(0, 0, 0, h);
-    wall.addColorStop(0, 'rgb(' + well + ')'); wall.addColorStop(1, 'rgb(' + deep + ')');
+    wall.addColorStop(0, bgc); wall.addColorStop(1, 'rgb(' + well + ')');
     fx.fillStyle = wall; fx.fill('evenodd'); fx.clip('evenodd');
     fx.restore();
-    if (W.pw >= 14) { drawWall(W); drawMullion(W.L, -1, deep); drawMullion(W.R, 1, deep); }
+    if (W.pw >= 54) Rails.place(W.L - 6 - W.pw, W.L - 6, W.R + 6, W.R + 6 + W.pw);
+    else { Rails.hide(); if (W.pw >= 14) { drawRail(W.L - 6 - W.pw, W.L - 6, -1, deep, well); drawRail(W.R + 6, W.R + 6 + W.pw, 1, deep, well); } }
     if (W.pw < 14) { // no pillars (phones): a thin frame outlines the screen instead
     // the frame band
     fx.save(); fx.beginPath(); windowPath(fx, W, F); windowPath(fx, W, 0);
@@ -6217,13 +5802,7 @@ var Scene = (function () {
     }
     // clear glass: soft edge shade, a faint cabin reflection and one diagonal streak
     fx.save(); fx.beginPath(); windowPath(fx, W, 0); fx.clip();
-    if (W.pw >= 14) [[W.L, 1], [W.R, -1]].forEach(function (e) {
-      var sh = fx.createLinearGradient(e[0], 0, e[0] + e[1] * 70, 0);
-      sh.addColorStop(0, 'rgba(0,0,0,0.5)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-      fx.fillStyle = sh; fx.fillRect(Math.min(e[0], e[0] + e[1] * 70), 0, 70, h);
-    });
-    fx.shadowColor = 'rgba(0,0,0,0.7)'; fx.shadowBlur = W.m ? 14 : 26; fx.lineWidth = 18; fx.strokeStyle = 'rgba(0,0,0,0.7)';
-    fx.beginPath(); windowPath(fx, W, 9); fx.stroke(); fx.shadowBlur = 0;
+    if (W.pw < 14) { fx.shadowColor = 'rgba(0,0,0,0.7)'; fx.shadowBlur = 14; fx.lineWidth = 18; fx.strokeStyle = 'rgba(0,0,0,0.7)'; fx.beginPath(); windowPath(fx, W, 9); fx.stroke(); fx.shadowBlur = 0; }
     var cab = fx.createLinearGradient(0, W.T, 0, W.T + h * 0.28);
     cab.addColorStop(0, 'rgba(' + tint + ',0.05)'); cab.addColorStop(1, 'rgba(' + tint + ',0)');
     fx.fillStyle = cab; fx.fillRect(0, 0, w, h);
@@ -6233,7 +5812,6 @@ var Scene = (function () {
     fx.fillStyle = streak; fx.fillRect(-70, -h, 140, h * 3);
     fx.restore();
     placeGlass(W);
-    Consoles.layout(W, fcv);
   }
 
   /* ---------- main loop ---------- */
@@ -6303,6 +5881,7 @@ var Scene = (function () {
     ensureLayers(m);
     Wallpaper.show(m === 'custom');
     var glassEl = document.getElementById('glass'); if (glassEl && m !== 'bridge') glassEl.hidden = true;
+    if (m !== 'bridge') Rails.hide();
     resize(); kick();
     if (m !== 'bridge') fireReady();
   }
@@ -6312,7 +5891,7 @@ var Scene = (function () {
     acc = (cs.getPropertyValue('--accent-rgb') || '').trim().replace(/\s+/g, '') || acc;
     if (!x) return;
     if (mode === 'stars') { x.clearRect(0, 0, w, h); drawStarfield(performance.now(), 0, !still()); }
-    else if (mode === 'bridge') { drawFrame(); if (gl) { var ac2 = acc.split(','); gl.uniform3f(P.uAcc, ac2[0] / 255, ac2[1] / 255, ac2[2] / 255); drawEarthGL(); } }
+    else if (mode === 'bridge') { drawBack(); drawFrame(); if (gl) { var ac2 = acc.split(','); gl.uniform3f(P.uAcc, ac2[0] / 255, ac2[1] / 255, ac2[2] / 255); drawEarthGL(); } }
   }
   function init() {
     cv = document.createElement('canvas'); cv.id = 'stars'; cv.setAttribute('aria-hidden', 'true');
@@ -6330,6 +5909,72 @@ var Scene = (function () {
   if (DEBUG) api._state = function () { return { spin: spin, spinOff: spinOff, quality: glQuality }; };
   if (DEBUG) api._probe = function (v) { if (!gl) return null; gl.uniform1f(P.uSpin, v); gl.drawArrays(gl.TRIANGLES, 0, 3); var W = gcv.width, H = gcv.height, px = new Uint8Array(W * H * 4); gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px); return Array.prototype.slice.call(px.filter(function (_, i) { return i % 4 < 3 && (i >> 2) % 53 === 0; })); };
   return api;
+}());
+
+/* =====================================================================
+   SIDE RAILS — live HUD panels beside the Bridge view window
+   Built from the interface's own panel styles, so every theme fits.
+   ===================================================================== */
+var Rails = (function () {
+  var L = null, R = null, on = false, timer = 0, last = {};
+  function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstChild; }
+  function build() {
+    L = el('<aside class="side-rail" id="rail-left" aria-label="Mission status">' +
+      '<div class="rail-block rail-head"><span class="rail-dia"></span><span class="rail-title">Mission</span></div>' +
+      '<button type="button" class="rail-block rail-grow" id="rail-prog" title="Today\u2019s progress \u2013 open Schedule">' +
+        '<b class="rail-num" id="rail-pct">0<small>%</small></b><span class="rail-meter"><i id="rail-pct-bar"></i></span><span class="rail-lbl">Today</span></button>' +
+      '<div class="rail-block"><b class="rail-num" id="rail-left-n">0</b><span class="rail-lbl">Left</span><span class="rail-sep"></span><b class="rail-num" id="rail-streak">0</b><span class="rail-lbl">Streak</span></div>' +
+    '</aside>');
+    R = el('<aside class="side-rail" id="rail-right" aria-label="Ship systems">' +
+      '<div class="rail-block rail-head"><span class="rail-dia"></span><span class="rail-title">Systems</span></div>' +
+      '<div class="rail-block"><b class="rail-num rail-clock" id="rail-hh">00</b><b class="rail-num rail-clock" id="rail-mm">00</b><span class="rail-lbl" id="rail-date"></span></div>' +
+      '<button type="button" class="rail-block rail-grow" id="rail-lvl" title="Level \u2013 open profile">' +
+        '<b class="rail-num" id="rail-lv">LV1</b><span class="rail-meter"><i id="rail-xp-bar"></i></span><span class="rail-lbl">XP</span></button>' +
+      '<button type="button" class="rail-block" id="rail-audio" title="Play / pause music" data-sfx="none">' +
+        '<span class="mini-bars paused" id="rail-bars"><i></i><i></i><i></i><i></i></span><span class="rail-lbl" id="rail-audio-l">Audio</span><b class="rail-num rail-small" id="rail-focus" hidden></b></button>' +
+    '</aside>');
+    document.body.appendChild(L); document.body.appendChild(R);
+    $('#rail-prog').addEventListener('click', function () { App.show('schedule'); });
+    $('#rail-lvl').addEventListener('click', function () { App.openProfile(); });
+    $('#rail-audio').addEventListener('click', function () { AudioUI.togglePlay(); update(); });
+  }
+  function set(id, v, prop) { if (last[id] === v) return; last[id] = v; var e = document.getElementById(id); if (!e) return; if (prop) e.style[prop] = v; else e.textContent = v; }
+  function update() {
+    if (!on || document.hidden) return;
+    var tk = todayKey(), list = Sched.tasksOn(tk), done = list.filter(function (t) { return t.done[tk]; }).length;
+    var pct = list.length ? Math.round(done / list.length * 100) : 0;
+    if (last.pct !== pct) { last.pct = pct; $('#rail-pct').innerHTML = pct + '<small>%</small>'; }
+    set('rail-pct-bar', pct + '%', 'height');
+    set('rail-left-n', String(list.length - done));
+    set('rail-streak', ($('#st-streak') || {}).textContent || '0');
+    var d = new Date(), h = d.getHours();
+    set('rail-hh', S.settings.clock24 ? pad2(h) : pad2(h % 12 || 12));
+    set('rail-mm', pad2(d.getMinutes()));
+    set('rail-date', DAY_NAMES[d.getDay()].slice(0, 3) + ' ' + d.getDate());
+    var info = levelInfo(S.profile.xp);
+    set('rail-lv', 'LV' + info.level);
+    set('rail-xp-bar', Math.round(info.into / info.need * 100) + '%', 'height');
+    var playing = Music.isPlaying(), fa = Focus.active();
+    if (last.play !== playing) { last.play = playing; $('#rail-bars').classList.toggle('paused', !playing); $('#rail-audio').classList.toggle('live', playing); }
+    set('rail-audio-l', fa ? Focus.label() : playing ? 'Playing' : 'Audio');
+    var ft = $('#rail-focus'); ft.hidden = !fa; if (fa) set('rail-focus', Focus.fmt(Focus.remaining()));
+  }
+  // called by the scene whenever the window is laid out
+  function place(x0, x1, x2, x3) {
+    if (!L) build();
+    on = true; last = {};
+    L.style.left = x0 + 'px'; L.style.width = (x1 - x0) + 'px';
+    R.style.left = x2 + 'px'; R.style.width = (x3 - x2) + 'px';
+    L.classList.add('on'); R.classList.add('on');
+    update();
+    if (!timer) timer = setInterval(update, 1000);
+  }
+  function hide() {
+    on = false;
+    if (L) { L.classList.remove('on'); R.classList.remove('on'); }
+    if (timer) { clearInterval(timer); timer = 0; }
+  }
+  return { place: place, hide: hide, update: update };
 }());
 
 /* =====================================================================
