@@ -21,6 +21,7 @@
     if (st && ['command', 'solar', 'neon', 'terminal'].indexOf(st.theme) >= 0) document.documentElement.setAttribute('data-theme', st.theme);
     if (st && st.scene === 'bridge') document.documentElement.classList.add('bridge');
     if (st && st.scene === 'custom') document.documentElement.classList.add('wallpaper');
+    if (!st || st.sideRails !== false) document.documentElement.classList.add('rails');
   } catch (e) { /* first visit or storage blocked */ }
   /* app install files (manifest + icons) only exist on the website, so link them only there */
   if (/^https?:$/.test(location.protocol)) {
@@ -1212,12 +1213,12 @@ html.wallpaper .btn:not(.btn-primary):not(.btn-danger), html.bridge .btn:not(.bt
 html:not(.bridge) #glass { display: none; }
 
 /* ================= 1.4.7: live side rails ================= */
-@media (min-width: 1300px) { html.bridge .app { padding-left: 96px; padding-right: 96px; max-width: 1416px; } }
+@media (min-width: 1300px) { html.bridge .app, html.rails .app { padding-left: 96px; padding-right: 96px; max-width: 1416px; } }
 .side-rail {
   position: fixed; z-index: 44; top: calc(var(--safe-t) + 12px); bottom: calc(var(--dock-h) + var(--safe-b) + 12px);
   display: none; flex-direction: column; gap: 8px;
 }
-html.bridge .side-rail.on { display: flex; }
+.side-rail.on { display: flex; }
 .rail-block {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; width: 100%;
   background: linear-gradient(180deg, rgba(var(--deep-rgb), 0.82), rgba(var(--well-rgb), 0.9));
@@ -1627,7 +1628,7 @@ function defaultState() {
   return {
     v: 3,
     profile: { callsign: '', xp: 0, ach: {}, stats: { completed: 0, focus: 0, bestStreak: 0, typingRuns: 0 }, created: Date.now(), welcomed: false, version: '' },
-    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'command', scene: 'stars', wpDim: 0.35, clock24: true, reminders: true, lead: 0, reduceMotion: false },
+    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'command', scene: 'stars', wpDim: 0.35, sideRails: true, clock24: true, reminders: true, lead: 0, reduceMotion: false },
     tasks: [],
     logs: {},
     notified: {},
@@ -3955,11 +3956,11 @@ var App = (function () {
     { id: 'typing', label: 'Code typing', ic: I.code }
   ];
   var current = null;
-  var VERSION = '1.4.8';
+  var VERSION = '1.4.9';
   var WHATS_NEW = [
+    'The Mission and Systems side panels now appear with every background, not just Bridge view (Settings \u2192 Side panels).',
     'Day overview: the rotating sweep is gone \u2013 a calm, still dial.',
-    'Switching between Schedule, Focus audio and Code typing now plays one short, soft tone.',
-    'Bridge view: the side panels are live ship displays \u2013 progress, tasks left, streak, clock, level and audio.'
+    'Switching sections plays one short, soft tone.'
   ];
 
   /* ---------- themes ---------- */
@@ -4040,11 +4041,13 @@ var App = (function () {
   /* ---------- settings application ---------- */
   function applySettings() {
     var st = S.settings;
+    document.documentElement.classList.toggle('rails', st.sideRails !== false);
     var th = themeOf(st.theme);
     document.documentElement.setAttribute('data-theme', th.id);
     var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', th.bg);
     $$('.theme-btn[data-theme-id]').forEach(function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-theme-id') === th.id)); });
     if (Scene) { Scene.setMode(st.scene); Scene.recolor(); Scene.kick(); }
+    Rails.layout();
     document.body.classList.toggle('reduce-motion', !!st.reduceMotion);
     SFX.setVol(st.sfxVol);
     keepAlive();
@@ -4131,6 +4134,7 @@ var App = (function () {
         '</div>' +
         '<input type="file" id="wp-file" accept="image/*" hidden>' +
         setRow('24-hour clock', 'Off shows AM / PM', sw('set-24', st.clock24, '24-hour clock')) +
+        setRow('Side panels', 'Mission and Systems displays beside the screen (wide screens)', sw('set-rails', st.sideRails !== false, 'Side panels')) +
         setRow('Reduce motion', 'Fewer animations', sw('set-motion', st.reduceMotion, 'Reduce motion')) +
       '</div>' +
       '<div class="set-sec"><h3>REMINDERS</h3>' +
@@ -4198,6 +4202,7 @@ var App = (function () {
           'set-formkeys': function (on) { st.formKeys = on; },
           'set-24': function (on) { st.clock24 = on; Sched.render(); },
           'set-motion': function (on) { st.reduceMotion = on; },
+          'set-rails': function (on) { st.sideRails = on; },
           'set-rem': function (on) { st.reminders = on; }
         };
         Object.keys(switches).forEach(function (id) {
@@ -5777,7 +5782,7 @@ var Scene = (function () {
     wall.addColorStop(0, bgc); wall.addColorStop(1, 'rgb(' + well + ')');
     fx.fillStyle = wall; fx.fill('evenodd'); fx.clip('evenodd');
     fx.restore();
-    if (W.pw >= 54) Rails.place(W.L - 6 - W.pw, W.L - 6, W.R + 6, W.R + 6 + W.pw);
+    if (W.pw >= 54 && S.settings.sideRails !== false) Rails.place(W.L - 6 - W.pw, W.L - 6, W.R + 6, W.R + 6 + W.pw);
     else { Rails.hide(); if (W.pw >= 14) { drawRail(W.L - 6 - W.pw, W.L - 6, -1, deep, well); drawRail(W.R + 6, W.R + 6 + W.pw, 1, deep, well); } }
     if (W.pw < 14) { // no pillars (phones): a thin frame outlines the screen instead
     // the frame band
@@ -5974,7 +5979,19 @@ var Rails = (function () {
     if (L) { L.classList.remove('on'); R.classList.remove('on'); }
     if (timer) { clearInterval(timer); timer = 0; }
   }
-  return { place: place, hide: hide, update: update };
+  // every background except Bridge view (the scene places them there, around its window)
+  function layout() {
+    if (Scene.mode() === 'bridge') return;
+    var app = document.getElementById('app');
+    if (!app || S.settings.sideRails === false || window.innerWidth < 900) { hide(); return; }
+    var r = app.getBoundingClientRect(), cs = getComputedStyle(app);
+    var lx = r.left + (parseFloat(cs.paddingLeft) || 18) - 14, rx = r.right - (parseFloat(cs.paddingRight) || 18) + 14;
+    var pw = clamp(Math.round(lx - 18), 0, 92);
+    if (pw < 54) { hide(); return; }
+    place(lx - 6 - pw, lx - 6, rx + 6, rx + 6 + pw);
+  }
+  window.addEventListener('resize', debounce(layout, 200));
+  return { place: place, hide: hide, update: update, layout: layout };
 }());
 
 /* =====================================================================
