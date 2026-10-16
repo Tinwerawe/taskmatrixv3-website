@@ -85,7 +85,7 @@
 }
 /* THEME 2 — WHITE: white on white, dark text */
 html[data-theme="white"] {
-  --bg: #f2f2f2; --bg-2: #ffffff; --deep-rgb: 255, 255, 255; --well-rgb: 255, 255, 255; --tint-rgb: 20, 20, 20; --dim-rgb: 120, 120, 120;
+  --bg: #ffffff; --bg-2: #fafafa; --deep-rgb: 255, 255, 255; --well-rgb: 255, 255, 255; --tint-rgb: 20, 20, 20; --dim-rgb: 120, 120, 120;
   --panel: rgba(255, 255, 255, 0.94); --panel-2: rgba(250, 250, 250, 0.96);
   --accent: #141414; --accent-rgb: 20, 20, 20; --accent-ink: #ffffff; --accent-2: #555555;
   --amber: #2a2a2a; --danger: #000000; --ok: #3a3a3a; --violet: #444444;
@@ -1756,8 +1756,9 @@ html.tui .cal { display: grid; grid-template-columns: minmax(0, 1fr) 390px; alig
   .cal-side { margin-left: 0; margin-top: -1px; }
   .cal-label { min-width: 0; flex: 1; }
   .cal-nav { flex: 1; }
-  html.tui .cal-bar h1 { width: 100%; }
-  #cal-view { width: 100%; display: flex; } #cal-view button { flex: 1; }
+  html.tui .cal-bar { flex-wrap: nowrap; }
+  html.tui .cal-bar h1 { width: auto; }
+  #cal-view { width: auto; display: flex; }
   .cal-grid.month { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(6, minmax(52px, auto)); }
   .cal-wk, .cal-wkh { display: none; }
   .cal-dh { padding: 5px 2px; text-align: center; letter-spacing: 0.04em; }
@@ -1769,13 +1770,181 @@ html.tui .cal { display: grid; grid-template-columns: minmax(0, 1fr) 390px; alig
   .cw-col { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .cw-list:empty { display: none; }
 }
+
+/* =====================================================================
+   1.9.0 — everything flush: boxes inside boxes share their lines,
+   bars are full-height segments, and orange / red mark the actions
+   ===================================================================== */
+:root { --orange: #f0803c; --orange-hi: #ff9d63; --red: #ef4136; --red-hi: #ff6a5a; --amber: var(--orange); --danger: var(--red); }
+html[data-theme="white"] { --orange: #e2681f; --orange-hi: #f07a30; --red: #d42e1f; --red-hi: #e8402f; --amber: var(--orange); --danger: var(--red); }
+html[data-theme="dark"] { --amber: var(--orange); --danger: var(--red); }
+html.red, html.red[data-theme] { --amber: var(--orange); --danger: var(--red); }
+
+/* ---------- menu bar: full-height segments ---------- */
+html.tui .topbar { padding: 0 0 0 10px; gap: 14px; align-items: stretch; min-height: 48px; }
+html.tui .topbar .brand { align-self: center; }
+html.tui .topbar .tabs { align-self: stretch; }
+html.tui .topbar .tab { min-height: 0; padding: 0 16px; border-left: 1px solid var(--line); }
+html.tui .topbar .tabs .tab:last-child { border-right: 1px solid var(--line); }
+html.tui .top-right { align-self: stretch; align-items: stretch; }
+html.tui .top-right > * { height: auto; min-height: 0; margin-left: 0 !important; border: 0 !important; border-left: 1px solid var(--frame) !important; }
+html.tui .top-right .icon-btn { width: 44px; }
+html.tui .rank-chip { padding: 0 12px; }
+@media (max-width: 900px) {
+  html.tui .topbar { grid-template-columns: minmax(0, 1fr) auto; min-height: 46px; padding-left: 10px; }
+  html.tui .top-right .icon-btn { width: 42px; }
+}
+@media (min-width: 901px) and (max-width: 1060px) { html.tui .topbar .tab { padding: 0 11px; } }
+
+/* ---------- system bar: one strip of segments from edge to edge ---------- */
+html.tui .dock { padding-left: var(--safe-l); padding-right: var(--safe-r); gap: 0; }
+html.tui .dock-left { align-self: stretch; gap: 0; }
+html.tui .tui-keys { align-self: stretch; align-items: stretch; }
+html.tui .tk { height: auto; border-width: 0 1px 0 0; padding-right: 12px; }
+html.tui .tk + .tk { margin-left: 0; }
+html.tui .tk:hover { border-color: var(--line-2); background: rgba(var(--tint-rgb), 0.08); }
+html.tui .tk kbd { min-width: 30px; }
+html.tui .dock-console { border-width: 0 1px; padding: 0 0 0 10px; gap: 10px; }
+html.tui .dock-themes { align-self: stretch; height: auto; }
+html.tui .theme-btn { padding: 0 12px; }
+html.tui .dock-sys > :last-child { border-right-width: 0; }
+@media (max-width: 1000px) { html.tui .theme-btn { font-size: 0; gap: 0; padding: 0 13px; } html.tui .theme-btn i { width: 9px; height: 9px; } html.tui .dock-console .lbl { display: none; } }
+
+/* ---------- boxes inside a panel run to the panel's edges and share its line ---------- */
+html.tui .panel { --pp: 14px; padding: 18px var(--pp) var(--pp); }
+html.tui .dial-panel { --pp: 12px; }
+html.tui .panel > :is(.week, .kv, .prog-grid, .spectrum, .cal-day-list, .cal-up, .cal-add, .cal-stats > .cal-stat-row, .log-area, .ctl-tabs),
+html.tui .cal-stats > .cal-stat-row, html.tui .focus-card > .kv, html.tui .deck > .kv, html.tui .deck > .spectrum {
+  margin-left: calc(-1 * var(--pp) - 1px); margin-right: calc(-1 * var(--pp) - 1px);
+}
+@media (min-width: 901px) { html.tui .dial-panel > .dial-stats { margin: 12px calc(-1 * var(--pp) - 1px) 0; } }
+html.tui .cal-stats .cal-stat-row { --pp: 14px; }
+html.tui .dial-stats .stat:first-child, html.tui .week > :first-child { border-left-color: var(--frame); }
+html.tui .ctl-tabs { border-left: 0; border-right: 0; margin-top: -4px; }
+html.tui .ctl-tab:first-child { border-left: 0; }
+html.tui .spectrum { border-left: 0; border-right: 0; }
+html.tui .log-area { border-left: 0; border-right: 0; width: calc(100% + 2 * var(--pp) + 2px); }
+html.tui .log-foot { margin-top: 6px; }
+/* a bar of buttons along the bottom of a panel */
+html.tui .deck > .deck-actions { margin: 0 calc(-1 * var(--pp) - 1px); padding: 0; display: flex; flex-wrap: nowrap; }
+html.tui .deck > .deck-actions > * { flex: 1 1 auto; margin: 0 0 0 -1px; min-height: 42px; }
+html.tui .deck > .deck-actions > :first-child { margin-left: 0; }
+html.tui .cal-open { display: block; margin: 10px calc(-1 * var(--pp) - 1px) 0; width: calc(100% + 2 * var(--pp) + 2px); min-height: 42px; }
+html.tui .cal-side > .panel:first-child > .panel-head:first-child { margin-top: -10px; }
+html.tui #cal-day-panel .cal-add { margin-bottom: 0; }
+@media (max-width: 420px) { html.tui .deck > .deck-actions > * { padding: 0 6px; font-size: 0.6rem; } }
+
+/* ---------- schedule column: the add row and list header are full width ---------- */
+html.tui .addbar { padding: 0 0 8px; }
+html.tui .add-row { margin: -1px -1px 0; }
+html.tui .add-row .field, html.tui .add-row .btn { min-height: 48px; }
+html.tui .more-toggle { margin: 6px 12px 0; }
+html.tui #add-more { padding: 0 12px 4px; }
+html.tui .list-head { padding: 0 0 0 12px; align-items: stretch; min-height: 42px; flex-wrap: nowrap; }
+html.tui .list-head .panel-title { align-self: center; }
+html.tui .list-tools { align-self: stretch; flex-wrap: nowrap; }
+html.tui .list-tools > * + * { margin-left: 0; }
+html.tui .list-tools .seg { border-width: 0 0 0 1px; height: 100%; flex-wrap: nowrap; }
+html.tui .list-tools .seg button { height: 100%; }
+html.tui .list-tools select.field { border-width: 0 0 0 1px; height: auto; min-height: 0; }
+html.tui .datebar { min-height: 44px; }
+html.tui .datebar > .btn { min-height: 0; }
+@media (max-width: 560px) {
+  html.tui .list-head { flex-wrap: wrap; padding: 0; }
+  html.tui .list-head .panel-title { padding: 10px 12px; }
+  html.tui .list-tools { width: 100%; border-top: 1px solid var(--line); }
+  html.tui .list-tools .seg { border-left: 0; }
+  html.tui .list-tools select.field { flex: 1; }
+  html.tui .add-row .time-wrap { margin-left: -1px; }
+}
+
+/* ---------- calendar bar: flush segments ---------- */
+html.tui .cal-bar { padding: 0 0 0 12px; gap: 0; align-items: stretch; min-height: 42px; }
+html.tui .cal-bar h1 { align-self: center; padding-right: 12px; }
+html.tui .cal-nav { align-items: stretch; }
+html.tui .cal-nav > * { border-width: 0 0 0 1px !important; border-style: solid; border-color: var(--frame); margin-left: 0 !important; min-height: 0 !important; height: auto; }
+html.tui .cal-nav .icon-btn { width: 42px; height: auto; }
+html.tui #cal-view { border-width: 0 0 0 1px; align-self: stretch; }
+html.tui #cal-view button { height: 100%; padding: 0 14px; }
+@media (max-width: 600px) {
+  html.tui .cal-bar { padding: 0; flex-wrap: wrap; }
+  html.tui .cal-bar h1 { padding: 8px 12px; width: 100%; }
+  html.tui .cal-nav { border-top: 1px solid var(--frame); min-height: 42px; }
+  html.tui .cal-nav > :first-child { border-left: 0 !important; }
+  html.tui #cal-view { border-width: 1px 0 0; min-height: 40px; width: 100%; }
+  html.tui #cal-view button { flex: 1; }
+}
+
+/* ---------- short landscape screens (phones on their side) ---------- */
+@media (max-height: 560px) and (min-width: 600px) {
+  :root { --dock-h: 42px; }
+  html.tui .tui-status { position: static; }
+  html.tui .topbar { position: static; }
+  html.tui .tui-status::before { display: none; }
+  html.tui .app { padding-top: calc(var(--safe-t) + 6px); }
+  html.tui .tk .tk-s, html.tui .tk .tk-l { display: none; }
+  html.tui .tk { padding-right: 0; }
+  html.tui .brand-sub { display: none; }
+  .side-rail { top: calc(var(--safe-t) + 6px); }
+}
+
+/* ---------- orange = do it, red = stop / delete / late ---------- */
+html.tui .btn-primary { background: var(--orange); border-color: var(--orange); color: #000; }
+html.tui .btn-primary:hover { background: var(--orange-hi); border-color: var(--orange-hi); color: #000; }
+html.tui .btn-primary.is-stop { background: var(--red); border-color: var(--red); color: #fff; }
+html.tui .btn-primary.is-stop:hover { background: var(--red-hi); border-color: var(--red-hi); }
+html.tui .btn-danger { color: var(--red); border-color: var(--red); }
+html.tui .btn-danger:hover { background: var(--red); border-color: var(--red); color: #fff; }
+html.tui .task-actions .icon-btn.del:hover { color: #fff; background: var(--red); }
+html.tui .preset-chip button.x:hover { color: #fff; background: var(--red); }
+html.tui .task[data-status="overdue"] { --edge: var(--red); }
+html.tui .task[data-status="soon"] { --edge: var(--orange); }
+html.tui .task[data-status="overdue"] .task-time { color: var(--red); }
+html.tui .task[data-status="soon"] .task-time { color: var(--orange); }
+html.tui .chip.st-overdue { background: var(--red); border-color: var(--red); color: #fff; }
+html.tui .chip.st-soon { background: transparent; border-color: var(--orange); color: var(--orange); }
+html.tui .chip.prio-high { border-color: var(--orange); color: var(--orange); }
+html.tui .now-line { color: var(--orange); }
+html.tui .now-line::before { background: var(--orange); }
+html.tui .now-line::after { background: var(--orange); opacity: 0.7; }
+html.tui .nextup-when { color: var(--orange); }
+html.tui .toast.warn { --c: var(--orange); border-left-color: var(--orange); }
+html.tui .toast.danger { --c: var(--red); border-left-color: var(--red); }
+html.tui .dock-red { color: var(--red); }
+html.tui .dock-red:hover { background: rgba(239, 65, 54, 0.12); color: var(--red-hi); }
+html.tui .dock-red[aria-pressed="true"] { background: var(--red); color: #fff; }
+html.tui .dock-timer.live { color: var(--orange); }
+html.tui .dock-timer.live b { color: var(--orange); }
+html.tui .dock-timer.paused b { color: var(--text-2); }
+html.tui .dock-timer.ring { background: var(--red); color: #fff; }
+html.tui .dock-timer.ring b { color: #fff; }
+html.tui .dock-btn[aria-pressed="true"] { background: var(--orange); color: #000; }
+html.tui .panel > .panel-head:first-child > .np-state.on { background: var(--orange); color: #000; }
+html.tui .focus-card.running .focus-bar #focus-bar, html.tui .focus-card.running .focus-time { color: var(--orange); }
+html.tui .dd-pill, html.tui .dock-deck.brk .dd-pill { background: var(--orange); color: #000; }
+html.tui .cal-cell.today .cc-num { background: var(--orange); color: #000; }
+html.tui .cw-col.today .cw-head { background: var(--orange); color: #000; }
+html.tui .cw-col.today .cw-head b, html.tui .cw-col.today .cw-head small { color: #000; }
+html.tui .hc.today { color: var(--orange); border-color: var(--orange); }
+html.tui .cc-task.late, html.tui .cw-task.late { border-left-color: var(--red); color: var(--red); }
+html.tui .cc-task.soon, html.tui .cw-task.soon { border-left-color: var(--orange); }
+html.tui .ag-row.late .ag-title, html.tui .ag-row.late .cc-t, html.tui .cd-row.late .cd-title, html.tui .cd-row.late .cc-t { color: var(--red); }
+html.tui .cbox[aria-pressed="true"] { color: var(--orange); }
+html.tui .badge { color: var(--orange); border-color: var(--orange); }
+
+@media (max-width: 900px) {
+  html.tui .sched-side .dial-panel > .dial-stats { margin-right: calc(-1 * var(--pp) - 1px); align-self: stretch; margin-top: 0; margin-bottom: 0; }
+  html.tui .sched-side .dial-panel > .dial-stats { grid-auto-rows: 1fr; }
+  html.tui .sched-side .dial-panel .stat:not(.side-extra) { display: flex; flex-direction: column; justify-content: center; }
+  html.tui .sched-side .dial-panel .stat span { font-size: 0.58rem; }
+}
 </style>
 </head>
 <body>
 <div id="redmode" aria-hidden="true"></div>
 <!-- ================= LOADING SCREEN ================= -->
 <div class="boot" id="boot" role="status" aria-live="polite" aria-label="Loading Task Matrix">
-  <div class="boot-log" id="boot-log"><div class="dim">Task Matrix BIOS 1.8.0  tty0  node 01</div><div><span class="cmd">$</span> ./taskmatrix --boot</div></div>
+  <div class="boot-log" id="boot-log"><div class="dim">Task Matrix BIOS 1.9.0  tty0  node 01</div><div><span class="cmd">$</span> ./taskmatrix --boot</div></div>
 </div>
 <div class="app" id="app">
   <div class="tui-status" id="tui-status" aria-hidden="true"><span id="ts-left">TASK MATRIX</span><span id="ts-right"></span></div>
@@ -3547,7 +3716,7 @@ var Sched = (function () {
     parts.push('<circle class="dial-hour" cx="' + hp[0].toFixed(1) + '" cy="' + hp[1].toFixed(1) + '" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
     parts.push('<circle class="dial-min" cx="' + mp[0].toFixed(1) + '" cy="' + mp[1].toFixed(1) + '" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
-    var colors = { done: 'var(--ok)', overdue: 'var(--danger)', soon: 'var(--amber)', upcoming: 'var(--accent)', anytime: 'var(--accent)' };
+    var colors = { done: 'var(--ok)', overdue: 'var(--red)', soon: 'var(--orange)', upcoming: 'var(--accent)', anytime: 'var(--accent)' };
     all.forEach(function (t) {
       var m = minutesOf(t.time); if (m === null) return;
       var p = polar(cx, cy, R - 16, m / 1440 * 360), st = status(t, sel);
@@ -4009,19 +4178,18 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '1.8.0';
+  var VERSION = '1.9.0';
   var WHATS_NEW = [
-    'New Calendar (key 3): month, week and agenda views, ISO week numbers, a day panel to tick off and add tasks, upcoming list, month stats and heat map. Drag a task to another day to move it.',
-    'Red mode: the RED button in the bottom bar (or key R) turns the whole screen red to cut blue light at night.',
-    'The volume slider has a 0\u2013100% ruler. Tap a number to jump straight to it.',
-    'Code typing has been removed.',
-    'The empty schedule no longer shows an icon.'
+    'Everything lines up: boxes inside a panel now run to its edges and share its line, and the menu bar and bottom bar are full-height segments.',
+    'Checked on phones, tablets and computers, upright and sideways. On short landscape screens the top bars scroll away to give you more room.',
+    'Orange means go: Add, Play, Start focus, Save, today on the calendar, tasks due soon.',
+    'Red means stop, delete or late: Stop music, Delete, overdue tasks, a ringing timer, and the Red mode button.'
   ];
 
   /* ---------- themes ---------- */
   var THEMES = [
     { id: 'mono', name: 'Mono', sw: '#e0e0e0', bg: '#000000', desc: 'White on black, like an old terminal. Sharp and clear.', who: 'Everyone' },
-    { id: 'white', name: 'White', sw: '#1a1a1a', bg: '#f2f2f2', desc: 'White on white with dark text. Bright rooms and daytime.', who: 'Daytime \u00b7 bright screens' },
+    { id: 'white', name: 'White', sw: '#1a1a1a', bg: '#ffffff', desc: 'White on white with dark text. Bright rooms and daytime.', who: 'Daytime \u00b7 bright screens' },
     { id: 'dark', name: 'Dark', sw: '#8a8a8a', bg: '#141414', desc: 'Dark on dark with soft gray text. Low glare for late nights.', who: 'Night owls \u00b7 late study' }
   ];
   function themeOf(id) { return THEMES.filter(function (t) { return t.id === id; })[0] || THEMES[0]; }
@@ -4819,7 +4987,7 @@ var AudioUI = (function () {
   }
   function renderPlay() {
     var p = Music.isPlaying(), b = $('#play-btn');
-    b.textContent = p ? 'Stop' : 'Play';
+    b.textContent = p ? 'Stop' : 'Play'; b.classList.toggle('is-stop', p);
     b.setAttribute('aria-label', p ? 'Stop music' : 'Play music');
     b.setAttribute('aria-pressed', String(p));
     var st = $('#np-state'); st.textContent = p ? '\u25a0 PLAYING' : '\u25a1 STOPPED'; st.classList.toggle('on', p);
@@ -5090,6 +5258,7 @@ var Focus = (function () {
     var p = clamp(1 - rem / total, 0, 1), n = Math.round(p * BAR);
     $('#focus-bar').textContent = '[' + new Array(n + 1).join('#') + new Array(BAR - n + 1).join('.') + ']';
     $('#focus-pct').textContent = Math.floor(p * 100) + '%';
+    $('#focus-panel').classList.toggle('running', running());
     document.title = running() ? fmt(rem) + ' \u00b7 ' + (mode === 'focus' ? 'Focus' : 'Break') + ' \u2013 ' + baseTitle : baseTitle;
     Mini.update();
   }
