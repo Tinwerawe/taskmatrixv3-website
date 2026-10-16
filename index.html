@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Task Matrix: a sci-fi daily planner with focus music and Python typing practice.">
+<meta name="description" content="Task Matrix: a terminal-style daily planner with a calendar, focus music and timers.">
 <title>Task Matrix</title>
 <script>
 /* apply the saved theme before anything paints, so the loading screen already has the right colors */
@@ -20,22 +20,25 @@
     var s = JSON.parse(localStorage.getItem('taskmatrix.v3') || 'null'), st = s && s.settings;
     if (st && ['mono', 'white', 'dark'].indexOf(st.theme) >= 0) document.documentElement.setAttribute('data-theme', st.theme);
     if (st && st.scene === 'custom') document.documentElement.classList.add('wallpaper');
+    if (st && st.redMode === true) document.documentElement.classList.add('red');
     if (!st || st.sideRails !== false) document.documentElement.classList.add('rails');
   } catch (e) { /* first visit or storage blocked */ }
-  /* app install files (manifest + icons) only exist on the website, so link them only there */
+  /* the app install file (manifest) only exists on the website, so link it only there.
+     The icons themselves are built into this page (see the <link> tags below), so Safari
+     favourites, the home screen and the browser tab always find the logo. */
   if (/^https?:$/.test(location.protocol)) {
-    [['manifest', 'manifest.webmanifest'], ['apple-touch-icon', 'icons/apple-touch-icon.png'], ['icon', 'icons/favicon-32.png']].forEach(function (l) {
-      var el = document.createElement('link'); el.rel = l[0]; el.href = l[1];
-      if (l[0] === 'icon') { el.type = 'image/png'; el.sizes = '32x32'; }
-      document.head.appendChild(el);
-    });
+    var mf = document.createElement('link'); mf.rel = 'manifest'; mf.href = 'manifest.webmanifest';
+    document.head.appendChild(mf);
   }
 }());
 </script>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4 56 18v28L32 60 8 46V18z' fill='%2305080f' stroke='%233df2ff' stroke-width='4'/%3E%3Cpath d='M22 33l7 7 14-16' fill='none' stroke='%233df2ff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Cpath fill='%23e8e8e8' fill-rule='evenodd' d='M6 6h52v52H6zM9 17v38h46V17zM11 10v3h3v-3zM16 10v3h3v-3zM21 10v3h3v-3z'/%3E%3Cpath fill='%23fff' d='M12 37 26 50.9 31.9 45 18 31zM29 48 52 25 46 19 23 42z'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAADQklEQVR42r1Wu04rMRD1eB2yWZZdiIR4KFIWiQpQgqhIAwUoQjz+gyIVP0FNBzVfQIWARAmiQEg0FCBqCIgCpICWwMZr+xbWdZZNyIt7mcpeJ+fMzBmPB9BfAwD070wIgX7HQLlvWRYASGa16C04IcTb25tEIBLLsqyTk5N4PM45xxgzxjRN45wjhOS2w5CFEJFI5OXlJZvNvr6+AgBRPsbj8eHhYdd1KaW2bb+/v0ejUYSQ53m2bXcYhCQIBo3V2cfHh2ma29vbExMT5XLZcZzd3d29vT3HcSqVihCiVqvRjk3BErXSNK1arWYyGYxxLBbL5XKzs7MIoVwup2kapVRmrG0EhJBguCA1GBwcPD8/TyQSpmkihHzfJ6TOTSltoQHGGCEk6YUQjLG7u7tMJlOpVOoacM5jsVixWCwWiwCAMfZ9X/0zSBauQgDP8zjnhmEghBhji4uLqVRKhVsnMAyjUCjs7Ox0W+mWZZmm+fj4KLeMsfn5eUWAg+nr7+8nhOi6TjqwaDQKAIlE4urq6vb2NpVKIYQIIYZhBPOJg75wzv3OTAjhed7IyMjR0ZHjOAMDA4eHh+l02vf9sEI93H5N0xhjo6OjhUJhamqKMUYpHR8fPzg4kEfBKsItakOK3Brd930AiEQirutubm7KFhBMEfmuNlSfCJZ/I7r0o1qtbmxslEolVa+tIpAuJJPJ6elpzrmmaW3R19bWSqWSrutNMtH4yfO8sbGxfD5/dnYmU0wIaYtOCGlUOEwgxUkmk8fHx5OTk0NDQwquN/QvBAAgCfb392dmZmq1mgTN5/Mhss7RwxdNLra2th4eHvr6+uS1DKWrK/QmFw0hdHl5mc1mn56epLxBwWWb6hy9uci6rt/c3CwtLUkOzrkQQlVtV+jNCWSvDnH0hv7tTW7kAIAe0Fu1CsWxvLz8/PzMGFtdXe0WPdwqMMayFQf1uL6+Xl9ft2379PRU1/XQY/cFixD1wDUncF1XduNgHAihi4sLuf38/GzhrPyx67pNCDDGlNKVlRXDMEINTp4CAGOsTbox5pwvLCxQSlUc9bmoXC6n0+m5ubmfDKny0b+/v1cgX0ZHVe8/MRmuGh1/a/j9f+P7HyMWkiQ5oTm2AAAAAElFTkSuQmCC">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAHhUlEQVR42u3dPW/TXhuA8XNsJ5BWooztkokNBEJqFwSiov0AbJQuSHyCKqUDFRITQkKkjIxMCCYGRDcQA2zdycLSLkWoUiuhtElsH/+H86hPlIaSpH65HV/XBpwC8vnFL4lzrBQRERERERERERERERERESWXHuFnHMdhw+UuYwwbgbLbc5TL5Wq1yobLXTs7O51OZ6gf8YY6mhhjqtXq9+/f2da56+bNmz9//rSTOOiMs9UIHAQOAgeBg8BB4CBwEDgIHFTYvCT+0iiKPM/b39+/d+/enz9/tNZRFP0Po+MYY9bX15eWlvb39x3H+dtI13XDMHz48OHKyspQI13XZV7l4lBKaa3DMGw0Gq1W6+SfHhwcuK5rZ/f0kb9///Y8b9iRJBqHncuJiYlOp3PyVd4zi31Hep4XBEGpVBptJInGoZQyxhhjuidSa22MOTmLJ0fa3znLSOKElMBBY3ZY8TzP87yecw6ttdb6nyM9z1P97lcdfCTJxRFF0d7eXs9vBkGglGq3290+ThnZbDZHG0lycRhjKpXKkydPei477Sv++vXrR0dH9rX+t5H2HZEbN24cHh4OO5Liud4c4vTEcYwxly5dGvAeUq311NRU31dzs9ns3nmcMrLVah0eHo4wknoa4R7StA8r3Wceg4x0HKd7ZzD4SMrBCWmGI4lLWQIHgYPAQeAgrlZsfDSaeVrrGK/nY8MRRdHk5CR3YWVbGIYxvhPoxSXD87ytra2Dg4Puj8QozX1GFEUXL168du1aEASx+IgNx7lz5x4/fry1tcU8Zdjc3NyXL1983xeEw1apVBzHsTcCMk8pZzd7pVKRe0Jqb+Bj+alMDit2+3MpO24vepn/MXBkPQGOE4ahzDsNwJGxDGPM/Px8FEV9754ER0HzPM8Ys7Ky8vXr15cvX0ZR1HObCziKKyMIglqt9urVK9/3V1dX6/V6EASifIAjSxn1et1+/+/4l6J8gCNLGUEQOI6jtZbpAxxZyuhGINAH92OKkNEzQCm1urrqum62H3Sz55Aio+/pSLb7D3AIknE82Pf9Wq324sULOxgcyOj9kbW1tVqtFgRBVt/GAIc4GUoprbXrukEQ1Ov1DH2AQ5wMOT7AIVGGEB/gECpDgg9wyJWRuQ/eBBMt46QPpdTGxkY6d3GDQ7qMbh9hGNbr9VKptLGxEYZh0rdjcljJgYxjH3Zvsba2NjU1Ze8PAgcylFLKfri/u7t769atvb29FI4s4MiNDNd1f/36tbi42Gg0hlq9CRyFkLGwsPDjxw97fyGXssjoI8MurQkOZGQmAxzIAAcywIEMcCADHMjIVAY4kAEOZIADGeBARoFx2HsXJHxZtMgyJOKwn0SHYZjC/QrIyBOO43sU1tfX7f0sWT1fBxmycByve/T27dtnz559+PBhcnLSGJO+D2TIwmFlGGPevXu3vLzcarXu3Lnz6dOniYmJlH0gQxaObhlLS0u+758/fz4Igvn5+c3NzTR9IEMWjpMySqXS8Tyl6QMZsnD8TUb3bKXjAxmycJwuI00fyJCFwz42JoqiU2Sk4wMZsnAcf3/rzZs3p8tI2gcyZOHo/ubngwcP/ikjOR/IkIXj5HfGB5GRhA9kyMJx9tUE4vKBDFk44lpn4uw+kCELR7wrkJzFBzJk4bBXrfGuTTOaD2TIwmG3vl11JN5Vi4b1gQyJODzPe/36dRLrWQ3uAxnicNgJ0FrPzMwopZJYbGQQH8iQiCOKoiiKfN+/e/fu+/fvS6WS7/sp+OheLxwZcg8rdm/hOM79+/fT8XHhwgU7W8jIwdWK3X+k5uPbt2/T09NhGJbLZWTk4H2ONH1cvXr18+fPMzMznU7n0aNHyBh9e6b2L3UfX5RSg3wYO7KPy5cvf/z4cXNz8+nTp/YUBBmicaTpwxgzOzs7Ozub0JcbiiBDpb+CcTo+7EqM9jG+yMgNjjR9JPGfL44MldXa5+n4QEYuceTRR9FkqGyfmpAjHwWUoTJ/pEYufBRThpLwvBXhPgorQwl5GI9YH0WWoeQ8qUmgj4LLUKIe4yXKBzKUtGe8CfGBDIk4JPhAhlwc2fpAhnQcWflARj5wpO8DGXnCkaYPZOQPRzo+kJFXHEn7QEa+cSTnAxnjgCMJH8gYHxzx+kDGuOGIywcyxhPH2X0gY5xxnMUHMsYfx2g+kFEUHMP6QEaxcAzuAxlFxDGID2QUF8fpPpBRdBx9fQRBYBc/RUbRcfT1oZTa3d1dXFxERtFx9Pgol8u3b99eWFhoNBrIAMf/fSillpeXp6ent7e37bLazPQIjeGz7O2jrNvt9vb2tuM4YRgyzew5en3YB8gxx+Do4yOJBZM5rBCBg8BB4CBwUB6vVhzHcV03iXVh6Z/ZzR7zs7rj+ou01s1mMwxD3nTKJLvZm81mjKu8e3HJCIJgbm6uUqnYpaWZrbTPDxzHGHPlyhX7cbQsHO12+/nz5xxTMt9/tNttWThsR0dHTI+EXYjQE1LmhktZAgeBgwgcBA6KqaEviMvlcrVaZcPlrp2dnU6nw3agjPYcivcz8hmfaRARERERERERERERERERCes/aKtzx8jrV68AAAAASUVORK5CYII=">
+<link rel="mask-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e8e8e8' fill-rule='evenodd' d='M6 6h52v52H6zM9 17v38h46V17zM11 10v3h3v-3zM16 10v3h3v-3zM21 10v3h3v-3z'/%3E%3Cpath fill='%23fff' d='M12 37 26 50.9 31.9 45 18 31zM29 48 52 25 46 19 23 42z'/%3E%3C/svg%3E" color="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
    TASK MATRIX v3  —  design tokens
@@ -72,7 +75,6 @@
   --radius: 0px;
   --font-ui: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --fs: 18px; /* code font size; the typing trainer changes it with A- / A+ */
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -556,70 +558,48 @@ input[type="range"].range::-moz-range-thumb {
 .mini-text { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-text small { display: block; font-weight: 500; font-size: 0.72rem; color: var(--amber); }
 
-/* =====================================================================
-   TYPING VIEW
-   ===================================================================== */
-.typing { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-.type-config { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; padding: 10px; }
-.type-config .grp { display: flex; align-items: center; gap: 6px; }
-.type-config .sep { width: 1px; height: 26px; background: var(--line-2); }
-.type-live { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 0 4px; min-height: 48px; }
-.live-main { font-family: var(--font-display), sans-serif; font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(var(--accent-rgb), 0.5); }
-.live-stats { display: flex; gap: 18px; color: var(--text-2); font-size: 0.9rem; }
-.live-stats b { color: var(--text); font-family: var(--font-display), sans-serif; font-size: 1rem; font-variant-numeric: tabular-nums; margin-left: 4px; }
 .progress-line { height: 2px; background: rgba(var(--tint-rgb), 0.12); border-radius: 1px; overflow: hidden; }
 .progress-line i { display: block; height: 100%; width: 0; background: var(--accent); box-shadow: 0 0 8px var(--accent); transition: width 0.2s linear; }
 
-.code-box { position: relative; padding: 0; overflow: hidden; }
-.code-scroll { position: relative; max-height: calc(var(--fs) * 1.7 * 10 + 40px); overflow-y: auto; padding: 20px 20px 20px 0; scroll-behavior: smooth; scrollbar-width: thin; }
-.code { position: relative; font-family: var(--font-mono), monospace; font-size: var(--fs); line-height: 1.7; color: var(--dim); counter-reset: ln; }
-.cl { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); }
-.cl::before { counter-increment: ln; content: counter(ln); text-align: right; padding-right: 1.1em; color: rgba(var(--dim-rgb), 0.45); user-select: none; -webkit-user-select: none; font-size: 0.8em; line-height: 2.125; }
-.cl.active::before { color: var(--accent); }
-.cl-text { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; min-height: 1.7em; }
-.code span { transition: color 0.05s; }
-.code span.ok { color: var(--text); }
-.code span.bad { color: var(--danger); background: rgba(var(--tint-rgb), 0.14); border-radius: 2px; }
-.code span.nl { color: rgba(var(--dim-rgb), 0.35); }
-.code span.nl.ok { color: rgba(var(--tint-rgb), 0.45); }
-.code span.nl.bad { color: var(--danger); }
-.code span.auto { color: var(--text-2); }
-.caret {
-  position: absolute; left: 0; top: 0; width: 2px; background: var(--accent); box-shadow: 0 0 8px var(--accent);
-  border-radius: 1px; pointer-events: none; transition: transform 0.08s linear; will-change: transform;
-}
-.caret.blink { animation: blink 1.05s step-end infinite; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @keyframes blink { 50% { opacity: 0; } }
-.type-input {
-  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; z-index: 3;
-  resize: none; border: 0; padding: 0; margin: 0; font-size: 16px; color: transparent; background: transparent;
-  caret-color: transparent; cursor: text; overflow: hidden; white-space: pre;
-}
-.focus-hint {
-  position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none;
-  background: rgba(var(--deep-rgb), 0.72); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-  color: var(--text); font-weight: 600; font-size: 1rem; text-align: center; padding: 20px;
-}
-.focus-hint span { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line-2); padding: 10px 16px; border-radius: 4px; background: rgba(var(--well-rgb), 0.8); }
-.type-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.kbd-hint { font-size: 0.82rem; color: var(--dim); }
+
+
+
+
+
 kbd { font-family: var(--font-mono), monospace; font-size: 0.78rem; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 3px; padding: 1px 5px; color: var(--text-2); background: rgba(var(--well-rgb), 0.7); }
 
-.results { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 18px; }
-.res-big { display: flex; flex-direction: column; gap: 14px; }
-.res-big div span { display: block; font-size: 0.85rem; color: var(--text-2); }
-.res-big div b { font-family: var(--font-display), sans-serif; font-size: 3rem; font-weight: 800; line-height: 1; color: var(--accent); text-shadow: 0 0 18px rgba(var(--accent-rgb), 0.5); font-variant-numeric: tabular-nums; }
-.res-big div:nth-child(2) b { color: var(--hi); text-shadow: none; font-size: 2.3rem; }
-.res-chart { position: relative; min-height: 190px; }
-.res-chart canvas { width: 100%; height: 200px; display: block; }
-.res-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 12px; grid-column: 1 / -1; }
-.res-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; grid-column: 1 / -1; }
-.pb { display: inline-block; font-size: 0.75rem; font-weight: 700; color: var(--bg); background: var(--amber); padding: 2px 8px; border-radius: 3px; margin-top: 6px; }
-.hist { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.hist th { text-align: left; color: var(--dim); font-weight: 600; font-size: 0.78rem; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-.hist td { padding: 8px; border-bottom: 1px solid var(--line); color: var(--text-2); font-variant-numeric: tabular-nums; }
-.hist td:first-child { color: var(--accent); font-weight: 700; font-family: var(--font-display), sans-serif; }
-.hist-wrap { overflow-x: auto; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* =====================================================================
    Modals + toasts
@@ -712,9 +692,9 @@ kbd { font-family: var(--font-mono), monospace; font-size: 0.78rem; border: 1px 
   .deck { order: 1; } #programs-panel { order: 2; } #focus-panel { order: 3; } #controls-panel { order: 4; }
   .mini { bottom: calc(var(--nav-h) + var(--safe-b) + 12px); left: 12px; }
   .toasts { bottom: calc(var(--nav-h) + var(--safe-b) + 12px); right: 12px; left: 12px; max-width: none; align-items: stretch; }
-  .results { grid-template-columns: minmax(0, 1fr); }
-  .res-big { flex-direction: row; justify-content: space-around; }
-  .res-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  
+  
+  
 }
 @media (min-width: 901px) {
   .side-extra-m { display: none; }
@@ -741,12 +721,12 @@ kbd { font-family: var(--font-mono), monospace; font-size: 0.78rem; border: 1px 
   .mix-row { grid-template-columns: 50px minmax(0, 1fr) 42px; }
   .mix-row .name { grid-column: 2 / -1; }
   .mix-row input[type="range"] { grid-column: 1 / 3; }
-  .type-config .sep { display: none; }
-  .live-main { font-size: 1.6rem; }
-  .code-scroll { padding: 14px 12px 14px 0; }
-  .cl { grid-template-columns: 2.4em minmax(0, 1fr); }
-  .cl::before { padding-right: 0.7em; }
-  .res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  
+  
+  
+  
+  
+  
   .ach-grid, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .modal { padding: calc(8px + var(--safe-t)) 8px calc(8px + var(--safe-b)); align-items: flex-end; }
   .modal-card { max-height: calc(100% - 20px); }
@@ -948,17 +928,8 @@ body.reduce-motion .dock-id .dot { animation: none; }
 }
 .boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
 @keyframes bootFailSafe { to { opacity: 0; visibility: hidden; } }
-.boot-term { width: min(760px, 94vw); font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.6; color: var(--text-2); background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(var(--tint-rgb), 0.4); }
-.boot-title { display: flex; justify-content: space-between; padding: 2px 10px; background: var(--text-2); color: var(--bg); font-weight: 700; letter-spacing: 0.06em; }
-.boot-log { height: min(340px, 56vh); overflow: hidden; padding: 10px 14px 2px; }
-.boot-log > div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.boot-log .ok { color: var(--ok); } .boot-log .run { color: var(--amber); } .boot-log .fail { color: var(--danger); }
-.boot-log .dim { color: var(--dim); } .boot-log .cmd { color: var(--text); } .boot-log .acc { color: var(--accent); }
-.boot-prog { padding: 4px 14px 10px; color: var(--accent); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-#boot-step { color: var(--text-2); }
 .boot-cursor { display: inline-block; width: 0.6em; height: 1.05em; margin-left: 4px; background: var(--accent); vertical-align: text-bottom; animation: bootBlink 1s steps(1) infinite; }
 @keyframes bootBlink { 50% { opacity: 0; } }
-@media (max-width: 560px) { .boot-term { font-size: 11px; } }
 
 /* ================= quick timer (system bar) ================= */
 .dock-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
@@ -1149,7 +1120,7 @@ html.wallpaper .view-title, html.wallpaper .list-head, html.wallpaper .now-line,
 .stat, .wday { background: rgba(var(--well-rgb), 0.42); }
 .panel, .task, .topbar, .dock, .bottom-nav, .list-head, .datebar, .view-title, .now-line, .group-label { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
 /* reading surfaces stay nearly solid */
-#code-box, #type-results { background: rgba(var(--well-rgb), 0.88); }
+
 .qt-pop, .notes-panel, .modal-card { text-shadow: none; }
 /* over the player's own photo: frosted glass that follows the Dim slider */
 html.wallpaper .panel, html.wallpaper .topbar, html.wallpaper .dock {
@@ -1160,12 +1131,11 @@ html.wallpaper .task, html.wallpaper .date-nav, html.wallpaper .wday, html.wallp
 html.wallpaper .field { background: rgba(var(--well-rgb), 0.78); }
 
 /* text that sits straight on the background gets a dark halo over photos */
-html.wallpaper .list-head, html.wallpaper .now-line, html.wallpaper .group-label, html.wallpaper .view-title, html.wallpaper .datebar,
-html.wallpaper .type-live, html.wallpaper .type-foot, html.wallpaper .kbd-hint {
+html.wallpaper .list-head, html.wallpaper .now-line, html.wallpaper .group-label, html.wallpaper .view-title, html.wallpaper .datebar {
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.85), 0 1px 2px rgba(0, 0, 0, 1);
 }
-html.wallpaper .kbd-hint kbd { background: rgba(var(--well-rgb), 0.85); }
-html.wallpaper .type-live .live-stats, html.wallpaper .kbd-hint { color: var(--text); }
+
+
 html.wallpaper .btn:not(.btn-primary):not(.btn-danger) { background-color: rgba(var(--well-rgb), 0.82); }
 
 .topbar .tab { white-space: nowrap; }
@@ -1225,7 +1195,7 @@ html.tui .tui-status {
   display: flex; justify-content: space-between; gap: 16px; margin: 0 0 6px; padding: 1px 8px;
   background: var(--text-2); color: var(--bg); font: 700 0.74rem var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden;
 }
-html.tui .tui-status span { overflow: hidden; text-overflow: ellipsis; }
+html.tui .tui-status span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 @media (max-width: 560px) { html.tui #ts-right { display: none; } }
 /* menu bar */
 html.tui .topbar { top: var(--safe-t); background: rgba(var(--well-rgb), 0.95); border: 1px solid var(--frame); box-shadow: none; padding: 3px 6px; margin-bottom: 16px; gap: 12px; -webkit-backdrop-filter: none; backdrop-filter: none; }
@@ -1277,7 +1247,7 @@ html.tui .task::before { box-shadow: none; }
 html.tui .task:hover { border-color: rgba(var(--accent-rgb), 0.7); box-shadow: none; }
 html.tui .task-title { font-size: 0.95rem; }
 html.tui .stat, html.tui .wday { background: transparent; border-color: rgba(var(--tint-rgb), 0.22); }
-html.tui .stat b, html.tui .dial-pct, html.tui .live-main, html.tui .res-big div b, html.tui .np-name, html.tui .qt-big .qt-time, html.tui .rail-num { text-shadow: none; }
+html.tui .stat b, html.tui .dial-pct, html.tui .np-name, html.tui .qt-big .qt-time, html.tui .rail-num { text-shadow: none; }
 html.tui .wd-bar i { box-shadow: none; }
 html.tui .now-line::before { box-shadow: none; }
 html.tui .empty { border-style: dashed; border-color: var(--frame); }
@@ -1295,12 +1265,16 @@ html.tui .dock-timer, html.tui .dock-notes, html.tui .dock-deck, html.tui .dock-
 html.tui .dock-timer:hover, html.tui .dock-notes:hover, html.tui .dock-deck:hover, html.tui .dock-btn:hover { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.1); box-shadow: none; }
 html.tui .dd-pill { box-shadow: none; }
 html.tui .qt-ring .fg { filter: none; }
-html.tui .tui-keys { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.tk { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--text-2); font: 600 0.66rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
-.tk kbd { padding: 2px 6px; border: 0; background: var(--text-2); color: var(--bg); font: 700 0.66rem var(--font-mono); }
-.tk:hover { color: var(--text); } .tk:hover kbd { background: var(--accent); color: var(--accent-ink); }
-@media (max-width: 1380px) { .tk span { display: none; } .tui-keys { gap: 5px; } }
-@media (max-width: 1080px) { .tk.tk-x { display: none; } }
+/* key strip: each key is a rectangle, the key on the left, what it does on the right */
+html.tui .tui-keys { display: flex; align-items: center; gap: 0; min-width: 0; }
+.tk { display: inline-flex; align-items: stretch; gap: 8px; height: 30px; padding: 0 10px 0 0; border: 1px solid var(--frame); background: transparent; color: var(--text-2); font: 600 0.64rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; flex: none; }
+.tk + .tk { margin-left: -1px; }
+.tk kbd { display: flex; align-items: center; justify-content: center; min-width: 26px; padding: 0 8px; border: 0; border-radius: 0; font: 700 0.7rem var(--font-mono); }
+.tk span { align-self: center; }
+.tk .tk-s { display: none; }
+.tk:hover { color: var(--text); border-color: var(--hi); position: relative; z-index: 1; }
+@media (max-width: 1500px) { .tk .tk-l { display: none; } .tk .tk-s { display: inline; } }
+@media (max-width: 1180px) { .tk { gap: 6px; padding-right: 7px; font-size: 0.6rem; } .tk kbd { min-width: 22px; padding: 0 6px; } }
 /* phones */
 html.tui .bottom-nav { background: var(--bg); border-top: 1px solid var(--frame); -webkit-backdrop-filter: none; backdrop-filter: none; }
 html.tui .bottom-nav .tab[aria-selected="true"]::after { display: none; }
@@ -1326,12 +1300,12 @@ html.tui .qt-presets button, html.tui .fd-lens button, html.tui .fd-prog { borde
 html.tui .qt-presets button:hover, html.tui .fd-lens button[aria-pressed="true"], html.tui .fd-prog[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 html.tui .fd-prog[aria-pressed="true"] svg { color: var(--accent-ink); filter: none; }
 html.tui .mini { background: var(--bg); border: 1px solid var(--frame); box-shadow: none; }
-/* audio + typing */
+/* audio */
 html.tui .prog { background: transparent; border-color: rgba(var(--tint-rgb), 0.22); }
 html.tui .prog[aria-pressed="true"] { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.12); }
 html.tui .ctl-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-bottom-color: var(--accent); }
 html.tui .steps i.on { box-shadow: none; }
-html.tui .caret { box-shadow: none; }
+
 html.tui .progress-line i { box-shadow: none; }
 /* side panels */
 html.tui .rail-block { background: rgba(var(--well-rgb), 0.92); border: 1px solid var(--frame); box-shadow: none; }
@@ -1354,17 +1328,17 @@ html.tui ::selection { background: var(--sel); color: var(--sel-ink); }
 html.tui .view, html.tui .modal, html.tui .modal-card, html.tui .toast, html.tui .toast.out, html.tui .qt-pop, html.tui .notes-panel,
 html.tui .task.flash, html.tui .task.pop, html.tui .mini-bars i, html.tui .dock-id .dot, html.tui .dock-timer.ring { animation: none !important; }
 html.tui .toast.out { opacity: 0; }
-html.tui #view-audio *, html.tui .xpbar > i, html.tui .wd-bar i, html.tui .rail-meter i, html.tui .progress-line i, html.tui .caret { transition: none !important; }
+html.tui #view-audio *, html.tui .xpbar > i, html.tui .wd-bar i, html.tui .rail-meter i, html.tui .progress-line i { transition: none !important; }
 html.tui .mini-bars i { height: 10px; }
 html.tui .mini-bars i:nth-child(2) { height: 14px; } html.tui .mini-bars i:nth-child(3) { height: 7px; } html.tui .mini-bars i:nth-child(4) { height: 12px; }
 html.tui .mini-bars.paused i { height: 3px; }
 
 /* ---------- inverted bars and selected items ---------- */
-html.tui .tui-status, html.tui .modal-head, html.tui .boot-title { background: var(--bar); color: var(--bar-ink); }
+html.tui .tui-status, html.tui .modal-head { background: var(--bar); color: var(--bar-ink); }
 html.tui .modal-head h2, html.tui .modal-head .icon-btn { color: var(--bar-ink); }
 html.tui .modal-head .icon-btn:hover { background: var(--bar-ink); color: var(--bar); }
 html.tui .tk kbd { background: var(--bar); color: var(--bar-ink); }
-html[data-theme="white"].tui .tui-status, html[data-theme="white"].tui .boot-title, html[data-theme="white"].tui .tk kbd { box-shadow: inset 0 0 0 1px var(--frame); }
+html[data-theme="white"].tui .tui-status, html[data-theme="white"].tui .tk kbd { box-shadow: inset 0 0 0 1px var(--frame); }
 html.tui .tab[aria-selected="true"], html.tui .seg button[aria-pressed="true"], html.tui .ctl-tab[aria-selected="true"],
 html.tui .qt-presets button:hover, html.tui .fd-lens button[aria-pressed="true"], html.tui .fd-prog[aria-pressed="true"],
 html.tui .theme-btn[aria-checked="true"], html.tui .tk:hover kbd, html.tui .icon-btn:hover, html.tui .btn-primary, html.tui .wday[aria-current="date"] {
@@ -1384,10 +1358,6 @@ html.tui .field:focus { border-color: var(--hi); }
 html.tui .tab:hover { background: rgba(var(--tint-rgb), 0.1); }
 html.tui .tab[aria-selected="true"]:hover { background: var(--sel); }
 html.tui .boot { background: var(--bg); }
-html.tui .boot-term { background: var(--bg); border: 1px solid var(--frame); box-shadow: none; }
-html.tui .boot-log .ok, html.tui .boot-log .acc, html.tui .boot-prog { color: var(--hi); }
-html.tui .boot-log .run { color: var(--text-2); }
-html.tui .boot-log .fail { background: var(--hi); color: var(--bg); }
 html.tui .boot-cursor { background: var(--hi); }
 html.tui .toast { border-left-color: var(--hi); }
 /* colour codes become shapes and weight */
@@ -1404,13 +1374,13 @@ html.tui .now-line { color: var(--hi); }
 html.tui .now-line::before { background: var(--hi); border-radius: 0 !important; width: 7px; height: 7px; }
 html.tui .now-line::after { background: var(--hi); opacity: 0.6; }
 html.tui .nextup-when { color: var(--hi); }
-html.tui .wd-bar i, html.tui .wd-bar.full i, html.tui .xpbar > i, html.tui .progress-line i, html.tui .rail-meter i, html.tui .caret { box-shadow: none; }
+html.tui .wd-bar i, html.tui .wd-bar.full i, html.tui .xpbar > i, html.tui .progress-line i, html.tui .rail-meter i { box-shadow: none; }
 html.tui .rail-meter i { background: var(--accent); }
 html.tui .rail-dia, html.tui .dock-hex { box-shadow: none; }
-html.tui .code span.bad { background: var(--hi); color: var(--bg); }
-html.tui .code span.nl.bad { background: var(--hi); color: var(--bg); }
+
+
 html.tui .ach.got svg { filter: none; }
-html.tui .pb { background: var(--sel); color: var(--sel-ink); }
+
 html.tui .badge { color: var(--hi); border-color: var(--frame); }
 html.tui .dd-pill, html.tui .dock-deck.brk .dd-pill { background: var(--sel); color: var(--sel-ink); box-shadow: none; }
 html.tui .theme-card b { color: var(--text); }
@@ -1428,13 +1398,27 @@ html.tui .switch[aria-checked="true"] { background: rgba(var(--tint-rgb), 0.18);
 html.tui .switch[aria-checked="true"]::after { background: var(--hi); }
 
 /* ---------- full block: shared borders everywhere ---------- */
-html.tui .tui-status { margin: 0; }
-html.tui .topbar { margin-bottom: 0; }
+/* header: the status line and the menu bar stay pinned together while the page scrolls,
+   on a solid background, so nothing shows through or above them */
+html.tui { --pad-t: 12px; --status-h: 18px; }
+@media (max-width: 900px) { html.tui { --pad-t: 8px; } }
+html.tui .tui-status { margin: 0; position: sticky; z-index: 51; top: calc(var(--safe-t) + var(--pad-t)); height: var(--status-h); line-height: 16px; padding-top: 1px; padding-bottom: 1px; overflow: visible; }
+html.tui .tui-status::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--safe-t) + var(--pad-t) + 1px); background: var(--bg); }
+html.tui .tui-status span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+html.tui .topbar { margin-bottom: 0; top: calc(var(--safe-t) + var(--pad-t) + var(--status-h)); background: var(--bg); }
+html.tui.wallpaper .topbar { background: var(--bg); }
 html.tui .topbar .tabs { gap: 0; }
-html.tui .top-right { gap: 0; }
+/* right side of the menu bar: level, clock and buttons are one row of equal boxes */
+html.tui .top-right { gap: 0; align-items: stretch; }
+html.tui .top-right > * { height: 40px; min-height: 40px; }
 html.tui .top-right > * + * { margin-left: -1px; }
-html.tui .top-right .icon-btn { border: 1px solid var(--frame); }
-@media (min-width: 901px) { html.tui .top-right .clock { align-self: stretch; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--frame); padding: 0 10px; } }
+html.tui .top-right .icon-btn { width: 40px; border: 1px solid var(--frame); }
+html.tui .rank-chip { padding: 0 10px; }
+@media (min-width: 901px) {
+  html.tui .top-right .clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid var(--frame); padding: 0 10px; text-align: center; }
+  html.tui .clock-time { font-size: 0.86rem; line-height: 1.1; letter-spacing: 0.04em; }
+  html.tui .clock-date { font-size: 0.6rem; line-height: 1.1; letter-spacing: 0.06em; text-transform: uppercase; }
+}
 html.tui main > .view > :first-child { margin-top: -1px; }
 html.tui .panel { background: rgba(var(--well-rgb), 0.92); }
 html.tui .view-title { margin: 0; padding: 6px 12px 9px; border: 1px solid var(--frame); background: rgba(var(--well-rgb), 0.92); }
@@ -1510,22 +1494,21 @@ html.tui .user-presets .preset-chip { margin: 0 -1px -1px 0; border-color: var(-
 html.tui .ctl-tabs { gap: 0; margin: 0 0 14px; border: 1px solid var(--line-2); }
 html.tui .ctl-tab { border-bottom: 0; margin: 0; border-right: 1px solid var(--line); }
 html.tui .ctl-tab:last-child { border-right: 0; }
-/* code typing */
-html.tui .typing { max-width: none; margin-left: 0; margin-right: 0; gap: 0; }
-html.tui .typing > * + * { margin-top: -1px; }
-html.tui .type-config { justify-content: flex-start; padding: 8px 12px; }
-html.tui #type-test { border: 1px solid var(--frame); background: rgba(var(--well-rgb), 0.92); }
-html.tui .type-live { padding: 8px 12px; min-height: 0; align-items: center; }
-html.tui #type-test .progress-line { margin: 0 !important; height: 3px; }
-html.tui #code-box { border-width: 1px 0; }
-html.tui .type-foot { margin: 0 !important; padding: 6px 12px; }
-html.tui .type-foot > div { gap: 0 !important; }
-html.tui .type-foot > div > * + * { margin-left: -1px; }
-html.tui .type-config .seg + .seg { margin-left: -1px; }
-html.tui .res-grid, html.tui .stat-grid, html.tui .ach-grid { gap: 0; }
-html.tui .res-grid > *, html.tui .stat-grid > *, html.tui .ach-grid > * { margin: 0 -1px -1px 0; }
-html.tui .res-actions, html.tui .modal-foot { gap: 0; }
-html.tui .res-actions > * + *, html.tui .modal-foot > * + * { margin-left: -1px; }
+
+
+
+
+
+
+
+
+
+
+
+html.tui .stat-grid, html.tui .ach-grid { gap: 0; }
+html.tui .stat-grid > *, html.tui .ach-grid > * { margin: 0 -1px -1px 0; }
+html.tui .modal-foot { gap: 0; }
+html.tui .modal-foot > * + * { margin-left: -1px; }
 /* system bar: one segmented strip */
 html.tui .dock { padding-top: 0; padding-bottom: var(--safe-b); align-items: stretch; }
 html.tui .dock-left, html.tui .dock-console, html.tui .dock-sys { align-self: stretch; }
@@ -1545,12 +1528,11 @@ html.tui #rail-audio.live .mini-bars i { background: var(--sel-ink); }
 html.tui .rail-clock, html.tui .rail-small { color: var(--hi); }
 /* over the player's own wallpaper: the block turns see-through (the Dim slider sets how much) */
 html.tui.wallpaper body { background: transparent; }
-html.tui.wallpaper .panel:not(.addbar):not(.code-box), html.tui.wallpaper .sched-main, html.tui.wallpaper #type-test, html.tui.wallpaper .view-title,
-html.tui.wallpaper .topbar, html.tui.wallpaper .dock, html.tui.wallpaper .rail-block {
+html.tui.wallpaper .panel:not(.addbar), html.tui.wallpaper .sched-main, html.tui.wallpaper .view-title, html.tui.wallpaper .topbar, html.tui.wallpaper .dock, html.tui.wallpaper .rail-block {
   background: rgba(var(--well-rgb), clamp(0.55, calc(0.9 - var(--wp-dim, 0.35) * 0.6), 0.9)); -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 html.tui.wallpaper .tasklist > .task, html.tui.wallpaper .date-nav, html.tui.wallpaper .wday:not([aria-current="date"]), html.tui.wallpaper .empty { background: transparent; }
-html.tui.wallpaper .code-box { background: rgba(var(--well-rgb), 0.6); }
+
 html[data-theme="white"] #wallpaper::after { background: #fff; }
 html.tui #wallpaper { filter: grayscale(1); }
 /* desktop: the block fills the screen down to the system bar */
@@ -1559,8 +1541,8 @@ html.tui #wallpaper { filter: grayscale(1); }
   html.tui main { flex: 1; display: flex; flex-direction: column; }
   html.tui main > .view:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
   html.tui .sched, html.tui .audio-grid { flex: 1; }
-  html.tui .typing { flex: 1; }
-  html.tui .typing > :last-child { flex: 1; }
+  
+  
 }
 /* phones and tablets: one column, still joined */
 @media (max-width: 900px) {
@@ -1581,20 +1563,219 @@ html.tui #wallpaper { filter: grayscale(1); }
   .focus-bar { font-size: 0.62rem; }
   html.tui .datebar > .btn { min-height: 0; }
 }
+
+/* =====================================================================
+   1.7.0 — bigger day dial with a clock inside, live spectrum, terminal boot
+   ===================================================================== */
+@media (min-width: 1081px) { html.tui .sched { grid-template-columns: minmax(0, 1fr) 390px; } }
+html.tui .dial-panel { padding-left: 12px; padding-right: 12px; }
+html.tui .dial-wrap { max-width: 360px; width: calc(100% - 24px); margin: 6px auto 4px; }
+html.tui .dial-pct { font-size: 2.3rem; }
+html.tui .dial-sub { font-size: 0.74rem; margin-top: 4px; }
+@media (max-width: 900px) {
+  html.tui .sched-side .dial-panel { grid-template-columns: 200px minmax(0, 1fr); }
+  html.tui .dial-wrap { width: 100%; margin: 0; }
+  html.tui .dial-pct { font-size: 1.7rem; }
+  html.tui .dial-sub { font-size: 0.62rem; }
+}
+@media (max-width: 560px) { html.tui .sched-side .dial-panel { grid-template-columns: 168px minmax(0, 1fr); } }
+.spectrum { position: relative; height: 170px; border: 1px solid var(--line-2); padding: 8px 8px 4px; background: rgba(var(--well-rgb), 0.6); }
+.spectrum canvas { display: block; width: 100%; height: 100%; }
+@media (max-width: 560px) { .spectrum { height: 130px; } }
+/* loading screen: no box, just the program's output scrolling up the screen */
+html.tui .boot { transition: opacity 0.15s linear, visibility 0.15s; display: block; place-items: normal; padding: calc(var(--safe-t) + 18px) calc(var(--safe-r) + 22px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 22px); }
+.boot-log { height: 100%; overflow: hidden; font: 400 13px/1.55 "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--text-2); }
+.boot-log > div { white-space: pre-wrap; word-break: break-all; }
+.boot-log .dim { color: var(--dim); } .boot-log .cmd, .boot-log .hi { color: var(--hi); } .boot-log .ts { color: var(--dim); }
+.boot-log .err { background: var(--hi); color: var(--bg); }
+@media (max-width: 560px) { .boot-log { font-size: 11px; } }
+
+/* =====================================================================
+   1.8.0 — red mode, calendar, volume scale
+   ===================================================================== */
+/* RED MODE: one layer over everything that multiplies the screen by pure red,
+   so no blue or green light is left. Works with every theme, the wallpaper and the music meter. */
+#redmode { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: #ff0000; mix-blend-mode: multiply; display: none; }
+html.red #redmode { display: block; }
+/* at night red mode always runs on black (so the White theme does not turn into a bright red screen) */
+html.red, html.red[data-theme] {
+  --bg: #000000; --bg-2: #0b0b0b; --deep-rgb: 10, 10, 10; --well-rgb: 0, 0, 0; --tint-rgb: 225, 225, 225; --dim-rgb: 140, 140, 140;
+  --panel: rgba(0, 0, 0, 0.9); --panel-2: rgba(8, 8, 8, 0.92);
+  --accent: #f0f0f0; --accent-rgb: 240, 240, 240; --accent-ink: #000000; --accent-2: #b4b4b4;
+  --amber: #e6e6e6; --danger: #ffffff; --ok: #cfcfcf; --violet: #bdbdbd;
+  --text: #d2d2d2; --text-2: #a4a4a4; --dim: #767676; --hi: #ffffff;
+  --bar: #c4c4c4; --bar-ink: #000000; --sel: #d8d8d8; --sel-ink: #000000; --frame: rgba(var(--tint-rgb), 0.42);
+  color-scheme: dark;
+}
+html.red #wallpaper::after { background: #000; }
+.dock-red { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; flex: none; border: 1px solid var(--line-2); background: transparent; color: var(--text-2); font: 600 0.66rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.dock-red .dr-ic { display: grid; place-items: center; }
+.dock-red .dr-ic svg { width: 15px; height: 15px; }
+.dock-red:hover { color: var(--text); border-color: var(--hi); }
+html.tui .dock-red[aria-pressed="true"] { background: var(--sel); color: var(--sel-ink); }
+html.tui .dock-sys > .dock-red { height: auto; border-width: 0 0 0 1px; }
+@media (max-width: 1100px) { .dock-red b { display: none; } .dock-red { padding: 0 11px; } }
+
+/* VOLUME: a ruler under the slider, 0-100 in steps of 10; tap a number to jump there */
+.vol-track { position: relative; flex: 1; min-width: 0; padding-bottom: 22px; }
+.vol-scale { position: absolute; left: 5px; right: 5px; bottom: 0; height: 22px; }
+.vol-scale::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--line-2); }
+.vt { position: absolute; top: 0; left: calc(var(--p) * 1%); transform: translateX(-50%); width: 32px; height: 22px; padding: 0; border: 0; background: none; color: var(--dim); font: 600 0.58rem var(--font-mono); cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+.vt::before { content: ""; width: 1px; height: 5px; background: currentColor; flex: none; }
+.vt.maj::before { height: 8px; width: 2px; }
+.vt b { font-weight: 600; margin-top: 2px; line-height: 1; }
+.vt.on { color: var(--text-2); }
+.vt.cur { color: var(--hi); }
+.vt:hover { color: var(--hi); }
+.vol-block .row { align-items: flex-start; }
+.vol-block .row .label, .vol-block .row .val { padding-top: 6px; }
+@media (max-width: 560px) { .vt:nth-child(even) b { display: none; } }
+
+/* CALENDAR */
+html.tui .cal-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 5px 8px 5px 12px; }
+html.tui .cal-bar h1 { margin-right: auto; }
+.cal-nav { display: flex; align-items: stretch; gap: 0; }
+.cal-nav > * + * { margin-left: -1px; }
+.cal-nav .icon-btn { width: 36px; height: 34px; border: 1px solid var(--frame); }
+.cal-nav .btn { min-height: 34px; }
+.cal-label { position: relative; display: flex; align-items: center; justify-content: center; min-width: 200px; padding: 0 14px; border: 1px solid var(--frame); font: 700 0.8rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--hi); cursor: pointer; white-space: nowrap; }
+.cal-label:hover { background: rgba(var(--tint-rgb), 0.08); }
+.cal-label input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; border: 0; padding: 0; pointer-events: none; }
+#cal-view { flex: none; }
+html.tui .cal { display: grid; grid-template-columns: minmax(0, 1fr) 390px; align-items: stretch; margin-top: -1px; }
+.cal-main { border: 1px solid var(--frame); background: rgba(var(--well-rgb), 0.92); min-width: 0; display: flex; flex-direction: column; }
+.cal-side { display: flex; flex-direction: column; margin-left: -1px; min-width: 0; }
+.cal-side > .panel + .panel { margin-top: -1px; }
+.cal-side > .panel:last-child { flex: 1; }
+.cal-empty { color: var(--dim); font-size: 0.8rem; padding: 6px 0; }
+.cc-t { font: 700 0.92em var(--font-mono); color: var(--text); font-variant-numeric: tabular-nums; }
+/* month grid */
+.cal-grid { flex: 1; display: grid; min-height: 0; }
+.cal-grid.month { grid-template-columns: 34px repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(6, minmax(96px, 1fr)); }
+.cal-dh { padding: 6px 8px; font: 700 0.64rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); border-bottom: 1px solid var(--frame); border-right: 1px solid var(--line); background: rgba(var(--tint-rgb), 0.04); }
+.cal-dh.wknd { color: var(--dim); }
+.cal-wkh { text-align: center; padding-left: 0; padding-right: 0; color: var(--dim); }
+.cal-wk { display: flex; justify-content: center; padding-top: 7px; font: 600 0.6rem var(--font-mono); color: var(--dim); border-right: 1px solid var(--frame); border-bottom: 1px solid var(--line); background: rgba(var(--tint-rgb), 0.03); }
+.cal-cell { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 5px 6px 9px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: pointer; overflow: hidden; }
+.cal-grid.month > :nth-child(8n) { border-right: 0; }
+.cal-grid.month > :nth-last-child(-n+8) { border-bottom: 0; }
+.cal-cell.wknd { background: rgba(var(--tint-rgb), 0.03); }
+.cal-cell.other .cc-num, .cal-cell.other .cc-list { opacity: 0.4; }
+.cal-cell:hover { background: rgba(var(--tint-rgb), 0.07); }
+.cal-cell.sel { box-shadow: inset 0 0 0 1px var(--hi); }
+.cal-cell.drop, .cw-col.drop, .ag-day.drop { background: rgba(var(--tint-rgb), 0.16); box-shadow: inset 0 0 0 1px var(--hi); }
+.cc-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cc-num { font: 700 0.8rem var(--font-mono); color: var(--text); padding: 0 3px; min-width: 22px; text-align: center; }
+.cal-cell.today .cc-num { background: var(--sel); color: var(--sel-ink); }
+.cal-cell.past:not(.today) .cc-num { color: var(--dim); }
+.cc-meta { font: 600 0.58rem var(--font-mono); color: var(--dim); }
+.cc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cc-task { font: 500 0.64rem/1.35 var(--font-mono); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 4px; border-left: 2px solid rgba(var(--tint-rgb), 0.45); background: rgba(var(--tint-rgb), 0.06); }
+.cc-task[draggable="true"] { cursor: grab; }
+.cc-task:hover, .cw-task:hover { background: var(--sel); color: var(--sel-ink); }
+.cc-task:hover .cc-t, .cw-task:hover .cc-t { color: inherit; }
+.cc-task.done, .cw-task.done { text-decoration: line-through; opacity: 0.5; }
+.cc-task.late, .cw-task.late { border-left-color: var(--hi); color: var(--hi); }
+.cc-task.soon, .cw-task.soon { border-left-color: var(--hi); }
+.cc-more { font: 600 0.58rem var(--font-mono); color: var(--dim); padding-left: 4px; }
+.cc-dots { display: none; gap: 3px; }
+.cc-dots i { width: 5px; height: 5px; background: var(--text-2); }
+.cc-bar { position: absolute; left: 6px; right: 6px; bottom: 4px; height: 2px; background: rgba(var(--tint-rgb), 0.12); }
+.cc-bar i { display: block; height: 100%; background: var(--text-2); }
+/* week */
+.cal-grid.week { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cw-col { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--line); min-height: 420px; }
+.cw-col:last-child { border-right: 0; }
+.cw-col.wknd { background: rgba(var(--tint-rgb), 0.03); }
+.cw-col.sel { box-shadow: inset 0 0 0 1px var(--hi); }
+.cw-head { display: flex; align-items: baseline; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--frame); cursor: pointer; font: 700 0.64rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); background: rgba(var(--tint-rgb), 0.04); }
+.cw-head b { font-size: 1rem; color: var(--text); letter-spacing: 0; }
+.cw-head small { margin-left: auto; color: var(--dim); font-size: 0.58rem; }
+.cw-col.today .cw-head { background: var(--sel); color: var(--sel-ink); }
+.cw-col.today .cw-head b, .cw-col.today .cw-head small { color: var(--sel-ink); }
+.cw-list { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.cw-task { display: flex; flex-direction: column; gap: 1px; padding: 4px 6px; border-left: 2px solid rgba(var(--tint-rgb), 0.45); background: rgba(var(--tint-rgb), 0.06); font: 500 0.68rem/1.3 var(--font-mono); color: var(--text-2); cursor: pointer; word-break: break-word; }
+.cw-task .cc-t { font-size: 0.6rem; }
+.cw-add { margin: 0 6px 6px; padding: 5px; border: 1px dashed var(--line-2); background: transparent; color: var(--dim); font: 600 0.62rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+.cw-add:hover { border-style: solid; border-color: var(--hi); color: var(--hi); }
+/* agenda */
+.cal-agenda { padding: 0; }
+.cal-agenda > .cal-empty { padding: 18px; }
+.ag-day { border-bottom: 1px solid var(--line-2); }
+.ag-day.sel .ag-head { box-shadow: inset 3px 0 0 var(--hi); }
+.ag-head { display: flex; align-items: baseline; gap: 12px; padding: 6px 12px; background: rgba(var(--tint-rgb), 0.05); border-bottom: 1px solid var(--line); font: 600 0.7rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); cursor: pointer; }
+.ag-head b { color: var(--hi); }
+.ag-head small { margin-left: auto; color: var(--dim); }
+.ag-row { display: grid; grid-template-columns: 34px 64px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 0.86rem; }
+.ag-row:last-child { border-bottom: 0; }
+.ag-row:hover { background: rgba(var(--tint-rgb), 0.07); }
+.ag-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ag-row.done .ag-title { text-decoration: line-through; color: var(--dim); }
+.ag-row.late .ag-title, .ag-row.late .cc-t { color: var(--hi); }
+.cbox { border: 0; background: none; padding: 0; font: 700 0.8rem var(--font-mono); color: var(--text-2); cursor: pointer; white-space: nowrap; }
+.cbox:hover, .cbox[aria-pressed="true"] { color: var(--hi); }
+/* side: the selected day */
+.cal-day-list { display: flex; flex-direction: column; border: 1px solid var(--line-2); margin-bottom: 10px; }
+.cal-day-list > .cal-empty { padding: 10px; }
+.cd-row { display: grid; grid-template-columns: 34px 58px minmax(0, 1fr); align-items: center; gap: 6px; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+.cd-row:last-child { border-bottom: 0; }
+.cd-title { border: 0; background: none; padding: 0; text-align: left; color: var(--text); font: inherit; font-size: 0.86rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.cd-title:hover { color: var(--hi); text-decoration: underline; }
+.cd-title small { color: var(--dim); }
+.cd-row.done .cd-title { text-decoration: line-through; color: var(--dim); }
+.cd-row.late .cd-title, .cd-row.late .cc-t { color: var(--hi); }
+.cal-add { display: flex; flex-direction: column; }
+.cal-add-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px auto; }
+.cal-add-row.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: -1px; }
+.cal-add-row > * + * { margin-left: -1px; }
+.cal-add .field { min-height: 40px; }
+.cal-add .btn { min-height: 40px; }
+.cal-open { margin-top: 10px; width: 100%; }
+/* side: upcoming + month stats */
+.cal-up { display: flex; flex-direction: column; border: 1px solid var(--line-2); }
+.cal-up > .cal-empty { padding: 10px; }
+.up-row { display: grid; grid-template-columns: 52px 58px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; color: var(--text); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.up-row:last-child { border-bottom: 0; }
+.up-row:hover { background: rgba(var(--tint-rgb), 0.08); }
+.up-d { font: 700 0.62rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
+.up-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-in { font: 600 0.6rem var(--font-mono); color: var(--dim); }
+.cal-stat-row { margin-top: 0; margin-bottom: 10px; }
+.cal-heat { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cal-heat .pad { display: block; }
+.hc { aspect-ratio: 2.1; border: 1px solid var(--line); padding: 0; font: 600 0.58rem var(--font-mono); color: var(--dim); background: rgba(var(--tint-rgb), calc(var(--h) * 0.55)); cursor: pointer; }
+.hc:hover { border-color: var(--hi); }
+.hc.today { color: var(--hi); border-color: var(--text-2); }
+.hc.sel { box-shadow: inset 0 0 0 1px var(--hi); color: var(--hi); }
+.cal-note { margin-top: 10px; font-size: 0.74rem; color: var(--dim); }
+.cal-note b { color: var(--text-2); }
+@media (min-width: 901px) { html.tui .cal { flex: 1; } }
+@media (max-width: 1080px) and (min-width: 901px) { html.tui .cal { grid-template-columns: minmax(0, 1fr) 320px; } }
+@media (max-width: 900px) {
+  html.tui .cal { grid-template-columns: minmax(0, 1fr); }
+  .cal-side { margin-left: 0; margin-top: -1px; }
+  .cal-label { min-width: 0; flex: 1; }
+  .cal-nav { flex: 1; }
+  html.tui .cal-bar h1 { width: 100%; }
+  #cal-view { width: 100%; display: flex; } #cal-view button { flex: 1; }
+  .cal-grid.month { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat(6, minmax(52px, auto)); }
+  .cal-wk, .cal-wkh { display: none; }
+  .cal-dh { padding: 5px 2px; text-align: center; letter-spacing: 0.04em; }
+  .cal-cell { padding: 4px 3px 7px; align-items: center; }
+  .cc-list, .cc-more, .cc-meta { display: none; }
+  .cc-dots { display: flex; }
+  .cc-bar { left: 3px; right: 3px; bottom: 2px; }
+  .cal-grid.week { grid-template-columns: minmax(0, 1fr); }
+  .cw-col { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .cw-list:empty { display: none; }
+}
 </style>
 </head>
 <body>
+<div id="redmode" aria-hidden="true"></div>
 <!-- ================= LOADING SCREEN ================= -->
 <div class="boot" id="boot" role="status" aria-live="polite" aria-label="Loading Task Matrix">
-  <div class="boot-term">
-    <div class="boot-title"><span>TASK MATRIX :: BOOT</span><span id="boot-pct">0%</span></div>
-    <div class="boot-log" id="boot-log">
-<div class="dim">TASK MATRIX BIOS 1.6.0 · node 01 · tty0</div>
-<div class="dim">memory check ............................ ok</div>
-<div><span class="cmd">$</span> ./taskmatrix --boot --verbose</div>
-    </div>
-    <div class="boot-prog"><span id="boot-bar">[............................]</span> <span id="boot-step">init</span></div>
-  </div>
+  <div class="boot-log" id="boot-log"><div class="dim">Task Matrix BIOS 1.8.0  tty0  node 01</div><div><span class="cmd">$</span> ./taskmatrix --boot</div></div>
 </div>
 <div class="app" id="app">
   <div class="tui-status" id="tui-status" aria-hidden="true"><span id="ts-left">TASK MATRIX</span><span id="ts-right"></span></div>
@@ -1603,9 +1784,8 @@ html.tui #wallpaper { filter: grayscale(1); }
   <header class="topbar">
     <div class="brand">
       <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M32 4 56 18v28L32 60 8 46V18z" fill="rgba(var(--accent-rgb),0.08)" stroke="var(--accent)" stroke-width="3"/>
-        <path d="M32 14 47 23v18L32 50 17 41V23z" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".45"/>
-        <path d="M23 33l6 6 13-15" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path fill="var(--text)" fill-rule="evenodd" d="M6 6h52v52H6zM9 17v38h46V17zM11 10v3h3v-3zM16 10v3h3v-3zM21 10v3h3v-3z"/>
+        <path fill="var(--hi)" d="M12 37 26 50.9 31.9 45 18 31zM29 48 52 25 46 19 23 42z"/>
       </svg>
       <div class="brand-text">
         <span class="brand-name">TASK MATRIX</span>
@@ -1615,7 +1795,7 @@ html.tui #wallpaper { filter: grayscale(1); }
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" data-tab="schedule" aria-selected="true" data-sfx="none"></button>
       <button class="tab" role="tab" data-tab="audio" aria-selected="false" data-sfx="none"></button>
-      <button class="tab" role="tab" data-tab="typing" aria-selected="false" data-sfx="none"></button>
+      <button class="tab" role="tab" data-tab="calendar" aria-selected="false" data-sfx="none"></button>
     </nav>
     <div class="top-right">
       <button class="rank-chip" id="rank-chip" aria-label="Open profile" data-sfx="open">
@@ -1736,6 +1916,7 @@ html.tui #wallpaper { filter: grayscale(1); }
         <div class="audio-col">
         <div class="panel deck" id="deck-panel">
           <div class="panel-head"><h2 class="panel-title">Now playing</h2><small class="np-state" id="np-state">STOPPED</small></div>
+          <div class="spectrum" id="spectrum" title="Live spectrum of the music"><canvas id="spec" aria-hidden="true"></canvas></div>
           <dl class="kv">
             <dt>Program</dt><dd><span id="np-name">Deep Space Drift</span><span class="badge" id="np-mod" hidden>Edited</span></dd>
             <dt>Key</dt><dd id="np-key">-</dd>
@@ -1743,10 +1924,15 @@ html.tui #wallpaper { filter: grayscale(1); }
             <dt>Layers</dt><dd id="np-layers">-</dd>
             <dt>Focus beat</dt><dd id="np-beat">Off</dd>
           </dl>
-          <div class="row">
-            <label class="label" for="master-vol">Volume</label>
-            <input class="range" type="range" id="master-vol" min="0" max="100" step="1">
-            <span class="val" id="master-val">70%</span>
+          <div class="vol-block">
+            <div class="row">
+              <label class="label" for="master-vol">Volume</label>
+              <div class="vol-track">
+                <input class="range" type="range" id="master-vol" min="0" max="100" step="1">
+                <div class="vol-scale" role="group" aria-label="Volume steps"><button type="button" class="vt maj" data-vol="0" style="--p:0" aria-label="Set volume to 0%" data-sfx="none"><b>0%</b></button><button type="button" class="vt" data-vol="10" style="--p:10" aria-label="Set volume to 10%" data-sfx="none"><b>10%</b></button><button type="button" class="vt" data-vol="20" style="--p:20" aria-label="Set volume to 20%" data-sfx="none"><b>20%</b></button><button type="button" class="vt" data-vol="30" style="--p:30" aria-label="Set volume to 30%" data-sfx="none"><b>30%</b></button><button type="button" class="vt" data-vol="40" style="--p:40" aria-label="Set volume to 40%" data-sfx="none"><b>40%</b></button><button type="button" class="vt maj" data-vol="50" style="--p:50" aria-label="Set volume to 50%" data-sfx="none"><b>50%</b></button><button type="button" class="vt" data-vol="60" style="--p:60" aria-label="Set volume to 60%" data-sfx="none"><b>60%</b></button><button type="button" class="vt" data-vol="70" style="--p:70" aria-label="Set volume to 70%" data-sfx="none"><b>70%</b></button><button type="button" class="vt" data-vol="80" style="--p:80" aria-label="Set volume to 80%" data-sfx="none"><b>80%</b></button><button type="button" class="vt" data-vol="90" style="--p:90" aria-label="Set volume to 90%" data-sfx="none"><b>90%</b></button><button type="button" class="vt maj" data-vol="100" style="--p:100" aria-label="Set volume to 100%" data-sfx="none"><b>100%</b></button></div>
+              </div>
+              <span class="val" id="master-val">70%</span>
+            </div>
           </div>
           <div class="deck-actions">
             <button class="btn btn-primary btn-sm" id="play-btn" aria-label="Play music" aria-pressed="false" data-sfx="none">Play</button>
@@ -1796,46 +1982,56 @@ html.tui #wallpaper { filter: grayscale(1); }
       </div>
     </section>
 
-    <!-- ================= 3. CODE TYPING ================= -->
-    <section class="view" id="view-typing" role="tabpanel" aria-label="Code typing" hidden>
-      <div class="typing">
-        <div class="view-title" style="margin-bottom:0">
-          <h1>Code typing</h1>
+    <!-- ================= 3. CALENDAR ================= -->
+    <section class="view" id="view-calendar" role="tabpanel" aria-label="Calendar" hidden>
+      <div class="view-title cal-bar">
+        <h1>Calendar</h1>
+        <div class="cal-nav">
+          <button class="icon-btn" type="button" id="cal-prev" aria-label="Previous"></button>
+          <label class="cal-label" id="cal-label-wrap"><span id="cal-label">Month</span><input type="month" id="cal-month" tabindex="-1" aria-label="Jump to month"></label>
+          <button class="icon-btn" type="button" id="cal-next" aria-label="Next"></button>
+          <button class="btn btn-sm" type="button" id="cal-today">Today</button>
         </div>
-        <div class="panel type-config" id="type-config"></div>
-
-        <div id="type-test">
-          <div class="type-live">
-            <div class="live-main" id="live-main">30</div>
-            <div class="live-stats">
-              <span>WPM<b id="live-wpm">0</b></span>
-              <span>Accuracy<b id="live-acc">100%</b></span>
-            </div>
-          </div>
-          <div class="progress-line" style="margin:10px 0 12px"><i id="type-progress"></i></div>
-          <div class="panel code-box" id="code-box">
-            <div class="code-scroll" id="code-scroll">
-              <div class="code" id="code"></div>
-              <div class="caret blink" id="caret"></div>
-            </div>
-            <textarea class="type-input" id="type-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type the code shown" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></textarea>
-            <div class="focus-hint" id="focus-hint"><span></span></div>
-          </div>
-          <div class="type-foot" style="margin-top:12px">
-            <div class="kbd-hint" id="kbd-hint"><kbd>Tab</kbd> indent &nbsp; <kbd>Esc</kbd> restart &nbsp; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> new snippet</div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-sm" id="type-restart"></button>
-              <button class="btn btn-sm" id="type-next"></button>
-            </div>
-          </div>
+        <div class="seg" id="cal-view" role="group" aria-label="Calendar view">
+          <button type="button" data-cv="month" aria-pressed="true">Month</button>
+          <button type="button" data-cv="week" aria-pressed="false">Week</button>
+          <button type="button" data-cv="agenda" aria-pressed="false">Agenda</button>
         </div>
-
-        <div class="panel" id="type-results" hidden></div>
-
-        <div class="panel" id="type-history-panel">
-          <div class="panel-head"><h2 class="panel-title">Recent runs</h2><small class="muted" id="type-best"></small></div>
-          <div class="hist-wrap" id="type-history"></div>
-        </div>
+      </div>
+      <div class="cal">
+        <div class="cal-main" id="cal-main"></div>
+        <aside class="cal-side" aria-label="Selected day">
+          <div class="panel" id="cal-day-panel">
+            <div class="panel-head"><h2 class="panel-title" id="cal-day-title">Today</h2><small class="muted" id="cal-day-rel"></small></div>
+            <div class="cal-day-list" id="cal-day-list"></div>
+            <form class="cal-add" id="cal-add" autocomplete="off" novalidate>
+              <div class="cal-add-row">
+                <label class="sr-only" for="cal-add-title">New task for this day</label>
+                <input class="field" id="cal-add-title" type="text" maxlength="140" placeholder="Add to this day..." enterkeyhint="done">
+                <label class="sr-only" for="cal-add-time">Time</label>
+                <input class="field" id="cal-add-time" type="time">
+                <button class="btn btn-primary" type="submit" id="cal-add-btn" data-sfx="none">Add</button>
+              </div>
+              <div class="cal-add-row two">
+                <label class="sr-only" for="cal-add-cat">Category</label>
+                <select class="field" id="cal-add-cat"></select>
+                <label class="sr-only" for="cal-add-rep">Repeat</label>
+                <select class="field" id="cal-add-rep">
+                  <option value="none">Once</option><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekly">Every week</option>
+                </select>
+              </div>
+            </form>
+            <button class="btn btn-sm cal-open" type="button" id="cal-open-sched">Open this day in Schedule</button>
+          </div>
+          <div class="panel" id="cal-up-panel">
+            <div class="panel-head"><h2 class="panel-title">Upcoming</h2><small class="muted">next 14 days</small></div>
+            <div class="cal-up" id="cal-up"></div>
+          </div>
+          <div class="panel" id="cal-stats-panel">
+            <div class="panel-head"><h2 class="panel-title" id="cal-stats-title">This month</h2></div>
+            <div class="cal-stats" id="cal-stats"></div>
+          </div>
+        </aside>
       </div>
     </section>
   </main>
@@ -1845,7 +2041,7 @@ html.tui #wallpaper { filter: grayscale(1); }
 <nav class="bottom-nav" role="tablist" aria-label="Sections">
   <button class="tab" role="tab" data-tab="schedule" aria-selected="true" data-sfx="none"></button>
   <button class="tab" role="tab" data-tab="audio" aria-selected="false" data-sfx="none"></button>
-  <button class="tab" role="tab" data-tab="typing" aria-selected="false" data-sfx="none"></button>
+  <button class="tab" role="tab" data-tab="calendar" aria-selected="false" data-sfx="none"></button>
   <button class="tab nav-timer" type="button" id="nav-timer" aria-label="Quick timer" data-sfx="none"></button>
   <button class="tab nav-theme" type="button" id="nav-theme" aria-label="Themes and shortcuts" data-sfx="none"></button>
   <button class="tab nav-notes" type="button" id="nav-notes" aria-label="Notes" aria-expanded="false" data-sfx="none"></button>
@@ -1868,6 +2064,7 @@ html.tui #wallpaper { filter: grayscale(1); }
     <div class="dock-themes" role="radiogroup" aria-label="Theme" id="dock-themes"></div>
   </div>
   <div class="dock-sys">
+  <button type="button" class="dock-red" id="dock-red" aria-pressed="false" aria-label="Red mode" data-sfx="none"><span class="dr-ic" aria-hidden="true"></span><b>Red</b></button>
   <button type="button" class="dock-timer" id="dock-timer" data-sfx="none" aria-haspopup="dialog" aria-expanded="false" aria-label="Quick timer">
     <svg class="qt-ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="bg" cx="12" cy="12" r="9.5"/><circle class="fg" id="dock-timer-arc" cx="12" cy="12" r="9.5" stroke-dasharray="59.69" stroke-dashoffset="59.69"/><circle class="dot" cx="12" cy="12" r="2.2"/></svg>
     <b id="dock-timer-text">Timer</b>
@@ -1959,18 +2156,17 @@ var Store = {
 function defaultState() {
   return {
     v: 3,
-    profile: { callsign: '', xp: 0, ach: {}, stats: { completed: 0, focus: 0, bestStreak: 0, typingRuns: 0 }, created: Date.now(), welcomed: false, version: '' },
-    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'mono', scene: 'none', wpDim: 0.35, sideRails: true, clock24: true, reminders: true, lead: 0, reduceMotion: false },
+    profile: { callsign: '', xp: 0, ach: {}, stats: { completed: 0, focus: 0, bestStreak: 0, calAdds: 0 }, created: Date.now(), welcomed: false, version: '' },
+    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'mono', scene: 'none', wpDim: 0.35, sideRails: true, redMode: false, clock24: true, reminders: true, lead: 0, reduceMotion: false },
     tasks: [],
     logs: {},
     notified: {},
-    ui: { tab: 'schedule', filter: 'all', cat: 'all', moreOpen: false, ctlTab: 'mixer', presetName: '' },
+    ui: { tab: 'schedule', filter: 'all', cat: 'all', moreOpen: false, ctlTab: 'mixer', presetName: '', calView: 'month' },
     audio: null,
     audioPresets: [],
     notes: { text: '', at: 0 },
     qtimer: { run: null, last: 10 },
-    focus: { mode: 'focus', focusMins: 25, breakMins: 5, stopMusic: false, run: null, log: {} },
-    typing: { mode: 'time', time: 30, level: 'beginner', autoIndent: true, fontSize: 18, best: {}, history: [], custom: '' }
+    focus: { mode: 'focus', focusMins: 25, breakMins: 5, stopMusic: false, run: null, log: {} }
   };
 }
 
@@ -2027,7 +2223,6 @@ function loadState() {
   if (raw) { try { saved = JSON.parse(raw); } catch (e) { saved = null; } }
   var st = mergeDefaults(defaultState(), saved || {});
   st.tasks = (st.tasks || []).map(sanitizeTask).filter(Boolean);
-  if (!Array.isArray(st.typing.history)) st.typing.history = [];
   if (!Array.isArray(st.audioPresets)) st.audioPresets = [];
 
   // One-time import from the old v2 checklist (key "scifi_tasks").
@@ -2068,7 +2263,8 @@ var I = {
   // oscilloscope pulse
   audio: svg('<path d="M2 12h3l2-5 3 10 3-13 3 11 2-6 1.2 3H22"/>'),
   // terminal with prompt
-  code: svg('<path d="M5 4h14l2 2v12l-2 2H5l-2-2V6z"/><path d="M7 9l3 3-3 3M12.5 15.5H17"/>'),
+  cal: svg('<path d="M3.5 5h17v15.5h-17z"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M7 13h2M11 13h2M15 13h2M7 16.5h2M11 16.5h2"/><path d="M14.5 15.5h3v3h-3z" fill="currentColor" stroke="none"/>'),
+  red: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>'),
   left: svg('<path d="M15 4.5L7.5 12l7.5 7.5"/>'),
   right: svg('<path d="M9 4.5l7.5 7.5L9 19.5"/>'),
   down: svg('<path d="M5.5 9l6.5 6.5L18.5 9"/>'),
@@ -2099,7 +2295,6 @@ var I = {
   target: svg('<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/><path d="M11 11h2v2h-2z" fill="currentColor" stroke="none"/>'),
   // rank insignia chevrons
   trophy: svg('<path d="M5 10l7-5 7 5M5 14.5l7-5 7 5M5 19l7-5 7 5"/>'),
-  keyboard: svg('<path d="M2.5 6.5h19v11h-19z"/><path d="M6 10h1.5M9.5 10H11M13 10h1.5M16.5 10H18M7 14h10"/>'),
   next: svg('<path d="M5 5v14l10-7z" fill="currentColor"/><path d="M18.5 5v14" stroke-width="2.6"/>'),
   upload: svg('<path d="M12 15.5V3.5M7 8.5l5-5 5 5M3.5 15v5.5h17V15"/>'),
   download: svg('<path d="M12 3.5v12M7 10.5l5 5 5-5M3.5 15v5.5h17V15"/>'),
@@ -2270,22 +2465,6 @@ var SFX = (function () {
     if (pan && c.createStereoPanner) { var p = c.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); node.connect(p); p.connect(AC.sfx); }
     else node.connect(AC.sfx);
   }
-  /* FM voice: carrier + modulator. Decaying modulation index = crisp metallic "ping". */
-  function fm(o) {
-    var t = o.at != null ? o.at : now(), d = o.dur || 0.1, ratio = o.ratio || 2;
-    var car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(), g = c.createGain();
-    car.type = o.type || 'sine';
-    car.frequency.setValueAtTime(o.f, t); mod.frequency.setValueAtTime(o.f * ratio, t);
-    if (o.f2) { car.frequency.exponentialRampToValueAtTime(o.f2, t + d); mod.frequency.exponentialRampToValueAtTime(o.f2 * ratio, t + d); }
-    var i1 = o.index != null ? o.index : o.f, i2 = o.index2 != null ? o.index2 : 0;
-    mg.gain.setValueAtTime(i1, t); mg.gain.linearRampToValueAtTime(i2, t + d);
-    mod.connect(mg); mg.connect(car.frequency);
-    env(g, t, o.attack || 0.002, o.vol || 0.06, d);
-    var n = car;
-    if (o.lp) { var f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; car.connect(f); n = f; }
-    n.connect(g); out(g, o.pan);
-    car.start(t); mod.start(t); car.stop(t + d + 0.05); mod.stop(t + d + 0.05);
-  }
   function tone(o) {
     var t = o.at != null ? o.at : now(), d = o.dur || 0.1;
     var osc = c.createOscillator(), g = c.createGain();
@@ -2313,91 +2492,54 @@ var SFX = (function () {
     src.start(t, Math.random() * 1.5); src.stop(t + d + 0.05);
   }
 
-  /* Starship-computer palette: clean sine chirps with pitch glides, air hiss, low hums. No melodies. */
-  function pip(f, t, d, vol, f2) { tone({ f: f, f2: f2, at: t, dur: d, vol: vol, attack: 0.003 }); }
-  function hum(f1, f2, lp1, lp2, t, d, vol, attack) { tone({ f: f1, f2: f2, type: 'sawtooth', at: t, dur: d, vol: vol, attack: attack || 0.1, lp: lp1, lp2: lp2, q: 3 }); }
+  /* Terminal palette: short, filtered square-wave bleeps and dry noise ticks, like an old
+     computer. Every UI sound is over in well under a tenth of a second; only the timer
+     alarms run longer. No chords, no hums, no sweeps. */
+  function bl(f, t, d, vol, f2) { tone({ f: f, f2: f2, at: t, dur: d, vol: vol, attack: 0.001, type: 'square', lp: 3800, q: 0.7 }); }
+  function tk(t, vol, ff) { noise({ ft: 'highpass', ff: ff || 5500, dur: 0.006, vol: vol || 0.03, attack: 0.0005, at: t }); }
+  function thump(t, vol) { tone({ f: 130, f2: 55, at: t, dur: 0.05, vol: vol || 0.06, attack: 0.001 }); }
+  function seq(fs, t, step, d, vol) { fs.forEach(function (f, i) { bl(f, t + i * step, d, vol); }); }
   var fx = {
-    click: function () { var t = now(); pip(1760, t, 0.028, 0.034, 2093); noise({ ft: 'highpass', ff: 5000, dur: 0.006, vol: 0.012, at: t }); },
-    // section change: one short, soft tone
-    tab: function () { tone({ f: 784, dur: 0.07, vol: 0.03, attack: 0.004, lp: 2400 }); },
-    open: function () { var t = now(); pip(880, t, 0.07, 0.032, 1760); tone({ f: 2637, at: t + 0.06, dur: 0.14, vol: 0.011, attack: 0.012 }); noise({ ft: 'highpass', ff: 6000, dur: 0.15, vol: 0.006, attack: 0.05, at: t }); },
-    close: function () { var t = now(); pip(1760, t, 0.08, 0.028, 880); noise({ ft: 'lowpass', ff: 2000, ff2: 300, dur: 0.1, vol: 0.012, at: t }); },
-    // entry logged
-    add: function () { var t = now(); pip(1318.5, t, 0.045, 0.034); pip(1760, t + 0.07, 0.07, 0.034); },
-    // task confirmed: soft pip then an open fifth, with a low pulse under it
-    complete: function () {
-      var t = now();
-      pip(880, t, 0.06, 0.028);
-      tone({ f: 1318.5, at: t + 0.08, dur: 0.3, vol: 0.024, attack: 0.012 });
-      tone({ f: 1977.5, at: t + 0.08, dur: 0.3, vol: 0.016, attack: 0.012 });
-      tone({ f: 110, at: t + 0.08, dur: 0.16, vol: 0.05 });
-    },
-    uncheck: function () { var t = now(); pip(1760, t, 0.045, 0.03); pip(1318.5, t + 0.07, 0.07, 0.03); },
-    // record purged: air release
-    del: function () { var t = now(); noise({ ft: 'lowpass', ff: 3000, ff2: 200, q: 0.8, dur: 0.28, vol: 0.038, at: t }); pip(440, t, 0.18, 0.028, 220); },
-    // negative
-    error: function () { var t = now(); [0, 0.13].forEach(function (o) { tone({ f: 196, type: 'square', lp: 900, at: t + o, dur: 0.09, vol: 0.045 }); }); },
-    on: function () { var t = now(); noise({ ff: 1200, q: 3, dur: 0.012, vol: 0.035, at: t }); pip(660, t + 0.01, 0.09, 0.028, 1320); },
-    off: function () { var t = now(); noise({ ff: 1200, q: 3, dur: 0.012, vol: 0.035, at: t }); pip(1320, t + 0.01, 0.12, 0.026, 440); },
-    // incoming hail
-    alert: function () {
-      var t = now();
-      noise({ ff: 2500, q: 2, dur: 0.05, vol: 0.012, at: t });
-      [0, 0.42].forEach(function (o) { pip(1760, t + o, 0.06, 0.042); pip(1318.5, t + o + 0.09, 0.06, 0.042); pip(1760, t + o + 0.18, 0.09, 0.042); });
-    },
-    // status upgraded: rising hum resolving to a held chord
-    levelup: function () {
-      var t = now();
-      hum(55, 110, 300, 1400, t, 0.9, 0.028, 0.25);
-      [440, 660, 880].forEach(function (f) { tone({ f: f, at: t + 0.25, dur: 1.0, vol: 0.018, attack: 0.15 }); });
-      pip(1760, t + 0.9, 0.08, 0.026);
-    },
-    achieve: function () { var t = now(); [660, 990, 1320].forEach(function (f) { tone({ f: f, at: t, dur: 0.8, vol: 0.018, attack: 0.05 }); }); pip(1980, t + 0.05, 0.06, 0.02); },
-    // systems online
-    start: function () {
-      var t = now();
-      hum(45, 90, 150, 1200, t, 0.8, 0.042, 0.25);
-      noise({ ft: 'lowpass', ff: 200, ff2: 1500, dur: 0.7, vol: 0.014, attack: 0.3, at: t });
-      pip(1318.5, t + 0.7, 0.05, 0.026); pip(1760, t + 0.78, 0.07, 0.026);
-    },
-    // powering down
-    stop: function () { var t = now(); hum(90, 35, 1200, 120, t, 0.7, 0.038, 0.01); pip(1318.5, t, 0.1, 0.02, 660); },
-    tick: function (v) { pip(1200 + (v || 0.5) * 1400, now(), 0.016, 0.018); },
-    // quick timer finished: a steady, serious ship chime, three times
+    click: function () { var t = now(); tk(t, 0.028); bl(2637, t, 0.012, 0.011); },
+    tab: function () { var t = now(); tk(t, 0.03); bl(1760, t, 0.018, 0.015); },
+    open: function () { seq([1318.5, 1975.5], now(), 0.035, 0.024, 0.016); },
+    close: function () { seq([1975.5, 1318.5], now(), 0.035, 0.024, 0.015); },
+    add: function () { var t = now(); tk(t, 0.02); seq([1568, 2349.3], t, 0.04, 0.03, 0.018); },
+    complete: function () { var t = now(); thump(t, 0.05); seq([1046.5, 1568, 2093], t, 0.045, 0.03, 0.017); },
+    uncheck: function () { seq([1568, 1046.5], now(), 0.04, 0.03, 0.015); },
+    del: function () { var t = now(); noise({ ft: 'lowpass', ff: 4000, ff2: 300, q: 0.7, dur: 0.07, vol: 0.04, at: t }); bl(700, t, 0.06, 0.014, 260); },
+    error: function () { var t = now(); [0, 0.085].forEach(function (o) { tone({ f: 196, type: 'square', lp: 1300, at: t + o, dur: 0.055, vol: 0.032, attack: 0.001 }); }); },
+    on: function () { var t = now(); tk(t, 0.02); bl(1200, t, 0.035, 0.015, 2400); },
+    off: function () { var t = now(); tk(t, 0.02); bl(2400, t, 0.035, 0.015, 1200); },
+    // reminder: two bursts of three quick beeps, like a digital watch
+    alert: function () { var t = now(); [0, 0.45].forEach(function (o) { seq([2093, 2093, 2093], t + o, 0.08, 0.045, 0.02); }); },
+    levelup: function () { var t = now(); seq([1046.5, 1318.5, 1568, 2093], t, 0.045, 0.035, 0.015); bl(2637, t + 0.19, 0.09, 0.016); },
+    achieve: function () { var t = now(); tk(t, 0.02); seq([1568, 2093, 2637], t, 0.05, 0.04, 0.015); },
+    // music on / off
+    start: function () { var t = now(); tk(t, 0.025); bl(800, t, 0.06, 0.016, 2400); bl(2400, t + 0.07, 0.03, 0.012); },
+    stop: function () { var t = now(); tk(t, 0.025); bl(2400, t, 0.06, 0.015, 600); },
+    tick: function (v) { bl(1400 + (v || 0.5) * 1200, now(), 0.008, 0.011); },
+    // quick timer finished: alarm-clock beeps, four groups of four
     timer: function () {
       var t = now();
-      noise({ ff: 800, ff2: 3000, q: 1, dur: 0.5, vol: 0.012, attack: 0.2, at: t });
-      [0, 0.8, 1.6].forEach(function (o, i) {
-        fm({ f: 1046.5, ratio: 2, index: 140, dur: 0.5, vol: 0.045, at: t + o });
-        fm({ f: i === 2 ? 2093 : 1568, ratio: 2, index: 110, dur: i === 2 ? 1.1 : 0.7, vol: 0.04, at: t + o + 0.16 });
-        tone({ f: 130.8, at: t + o, dur: 0.35, vol: 0.05 });
+      [0, 0.55, 1.1, 1.65].forEach(function (o) {
+        seq([2093, 2093, 2093, 2093], t + o, 0.07, 0.04, 0.022);
+        [0, 1, 2, 3].forEach(function (i) { tone({ f: 1046.5, type: 'square', lp: 2400, at: t + o + i * 0.07, dur: 0.04, vol: 0.01, attack: 0.001 }); });
       });
     },
-    // cycle complete (focus timer)
-    bell: function () {
-      var t = now();
-      [0, 0.9, 1.8].forEach(function (o) {
-        fm({ f: 1318.5, ratio: 2, index: 150, dur: 0.5, vol: 0.038, at: t + o });
-        fm({ f: 1760, ratio: 2, index: 150, dur: 0.6, vol: 0.034, at: t + o + 0.15 });
-        tone({ f: 110, at: t + o, dur: 0.3, vol: 0.045 });
-      });
-    },
-    // theme change: system recalibration sweep
-    theme: function () {
-      var t = now();
-      tone({ f: 300, f2: 3000, at: t, dur: 0.35, vol: 0.016, attack: 0.05 });
-      noise({ ff: 400, ff2: 5000, q: 1.5, dur: 0.35, vol: 0.018, attack: 0.1, at: t });
-      pip(1760, t + 0.33, 0.06, 0.026);
-    },
+    // focus timer cycle complete: three rising beep pairs
+    bell: function () { var t = now(); [0, 0.5, 1.0].forEach(function (o) { seq([1568, 2093], t + o, 0.09, 0.06, 0.02); }); },
+    // theme change: a quick data scan
+    theme: function () { var t = now(); noise({ ff: 1200, ff2: 7000, q: 2, dur: 0.09, vol: 0.02, attack: 0.005, at: t }); bl(2637, t + 0.085, 0.02, 0.012); },
     key: function () {
       var t = c.currentTime;
       if (t - lastKey < 0.012) return; lastKey = t;
       var style = S.settings.keySound;
-      if (style === 'mech') { noise({ ff: rand(1500, 2300), q: 1.1, dur: 0.035, vol: 0.08 }); tone({ f: rand(140, 170), dur: 0.03, vol: 0.03 }); }
-      else if (style === 'beep') tone({ f: pick([1568, 1760, 2093]), dur: 0.02, vol: 0.014, type: 'square', lp: 2500 });
-      else { noise({ ft: 'highpass', ff: 4000, dur: 0.01, vol: 0.03 }); pip(pick([2093, 2349, 2637]), now(), 0.012, 0.011); }
+      if (style === 'mech') { noise({ ff: rand(1800, 2400), q: 1.1, dur: 0.03, vol: 0.07 }); tone({ f: rand(150, 170), dur: 0.02, vol: 0.025 }); }
+      else if (style === 'beep') tone({ f: pick([1568, 1760, 2093]), dur: 0.016, vol: 0.011, type: 'square', lp: 3200, attack: 0.001 });
+      else { tk(now(), 0.024, 6000); bl(pick([2637, 2794, 2960]), now(), 0.006, 0.006); }
     },
-    keyErr: function () { tone({ f: 180, type: 'square', lp: 800, dur: 0.05, vol: 0.042 }); }
+    keyErr: function () { tone({ f: 180, type: 'square', lp: 900, dur: 0.04, vol: 0.035, attack: 0.001 }); }
   };
   function run(name, arg) {
     c = AC.ctx;
@@ -2896,6 +3038,7 @@ var Music = (function () {
   return {
     play: play, stop: stop, toggle: toggle, setParam: setParam, load: load,
     isPlaying: function () { return playing; },
+    analyser: function () { return g ? g.analyser : null; },
     on: function (fn) { listeners.push(fn); }
   };
 }());
@@ -3034,9 +3177,8 @@ var ACH = [
   { id: 'log', name: 'Captain\u2019s log', d: 'Write a daily log entry', ic: I.book },
   { id: 'focus1', name: 'Deep focus', d: 'Finish a focus session', ic: I.audio },
   { id: 'focus10', name: 'Flow state', d: 'Finish 10 focus sessions', ic: I.audio },
-  { id: 'wpm30', name: 'Warmed up', d: 'Type code at 30 WPM (85%+ accuracy)', ic: I.keyboard },
-  { id: 'wpm50', name: 'Code runner', d: 'Type code at 50 WPM (85%+ accuracy)', ic: I.keyboard },
-  { id: 'wpm70', name: 'Terminal velocity', d: 'Type code at 70 WPM (85%+ accuracy)', ic: I.rocket }
+  { id: 'cal1', name: 'Look ahead', d: 'Add a task from the calendar', ic: I.cal },
+  { id: 'plan7', name: 'Long range', d: 'Have tasks planned on 7 different upcoming days', ic: I.cal }
 ];
 function unlock(id) {
   if (S.profile.ach[id]) return;
@@ -3241,8 +3383,9 @@ var Sched = (function () {
   function snapshot() { return JSON.stringify(S.tasks); }
   function restore(snap) { S.tasks = JSON.parse(snap).map(sanitizeTask).filter(Boolean); save(); render(); SFX.play('add'); }
 
-  function deleteTask(id) {
+  function deleteTask(id, k) {
     var t = find(id); if (!t) return;
+    k = k || sel;
     var snap = snapshot();
     var finish = function (msg) { save(); SFX.play('del'); render(); toast(msg, { action: { label: 'Undo', fn: function () { restore(snap); } }, timeout: 6000 }); };
     if (t.repeat === 'none') {
@@ -3255,9 +3398,9 @@ var Sched = (function () {
       buttons: [{ label: 'Cancel', value: 0 }, { label: 'Only this day', value: 1 }, { label: 'This and later days', value: 2 }, { label: 'Every day', value: 3, kind: 'btn-danger' }]
     }).then(function (v) {
       if (!v) return;
-      if (v === 1) { t.skip[sel] = true; finish('Removed from this day'); }
+      if (v === 1) { t.skip[k] = true; finish('Removed from this day'); }
       else if (v === 2) {
-        var u = addDays(sel, -1);
+        var u = addDays(k, -1);
         if (u < t.date) S.tasks = S.tasks.filter(function (x) { return x.id !== id; });
         else t.until = u;
         finish('Removed from this day onward');
@@ -3265,7 +3408,7 @@ var Sched = (function () {
     });
   }
 
-  function editTask(id) {
+  function editTask(id, k) {
     var t = find(id); if (!t) return;
     Modal.open({
       title: 'Edit task', width: 560,
@@ -3293,7 +3436,7 @@ var Sched = (function () {
         };
         $('#ed-save', w).addEventListener('click', saveIt);
         $('#ed-title', w).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveIt(); } });
-        $('#ed-del', w).addEventListener('click', function () { close(); deleteTask(t.id); });
+        $('#ed-del', w).addEventListener('click', function () { close(); deleteTask(t.id, k); });
       }
     });
   }
@@ -3351,7 +3494,7 @@ var Sched = (function () {
     });
     var ul = $('#tasklist');
     if (!all.length) {
-      ul.innerHTML = '<li class="empty">' + I.sched + '<strong>' + (sel === todayKey() ? 'Your day is empty' : 'Nothing planned for ' + longDate(sel)) + '</strong>Add your first task above. Give it a time and it will show on the day dial.</li>';
+      ul.innerHTML = '<li class="empty"><strong>' + (sel === todayKey() ? 'Your day is empty' : 'Nothing planned for ' + longDate(sel)) + '</strong>Add your first task above. Give it a time and it will show on the day dial.</li>';
       return;
     }
     if (!list.length) {
@@ -3393,6 +3536,16 @@ var Sched = (function () {
       var nd = nowMinutes() / 1440 * 360, n1 = polar(cx, cy, PR + 8, nd), n2 = polar(cx, cy, R + 3, nd);
       parts.push('<line x1="' + n1[0].toFixed(1) + '" y1="' + n1[1].toFixed(1) + '" x2="' + n2[0].toFixed(1) + '" y2="' + n2[1].toFixed(1) + '" stroke="var(--hi)" stroke-width="2.2" stroke-linecap="square"/>');
     }
+    // inner clock: 12-hour face; orange ring = hour, red ring = minute
+    var CR = 60, nd2 = new Date(), hh = nd2.getHours() % 12, mm = nd2.getMinutes();
+    parts.push('<circle cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.3)" stroke-width="1"/>');
+    for (var q = 0; q < 12; q++) {
+      var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30);
+      parts.push('<line x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
+    }
+    var hp = polar(cx, cy, CR, (hh + mm / 60) * 30), mp = polar(cx, cy, CR, mm * 6);
+    parts.push('<circle class="dial-hour" cx="' + hp[0].toFixed(1) + '" cy="' + hp[1].toFixed(1) + '" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
+    parts.push('<circle class="dial-min" cx="' + mp[0].toFixed(1) + '" cy="' + mp[1].toFixed(1) + '" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
     var colors = { done: 'var(--ok)', overdue: 'var(--danger)', soon: 'var(--amber)', upcoming: 'var(--accent)', anytime: 'var(--accent)' };
     all.forEach(function (t) {
@@ -3468,6 +3621,7 @@ var Sched = (function () {
     renderList(all);
     renderDial(all);
     renderSide(all);
+    if (typeof Cal !== 'undefined' && App.current() === 'calendar') Cal.render();
   }
 
   /* ---------- daily log ---------- */
@@ -3596,674 +3750,253 @@ var Sched = (function () {
     init: init, render: render, go: go, minuteTick: minuteTick, toggleDone: toggleDone,
     focusAdd: function () { var t = $('#add-title'); t.focus(); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); },
     prev: function () { go(addDays(sel, -1)); }, next: function () { go(addDays(sel, 1)); }, today: function () { go(todayKey()); },
-    selected: function () { return sel; }, tasksOn: tasksOn, occurs: occurs, status: status, fmtTime: fmtTime
+    selected: function () { return sel; }, tasksOn: tasksOn, occurs: occurs, status: status, fmtTime: fmtTime,
+    editTask: editTask, relLabel: relLabel, longDate: longDate, fmtDur: fmtDur
   };
 }());
 
 /* =====================================================================
-   CODE TYPING TRAINER
+   CALENDAR — month, week and agenda views of every task (repeats included),
+   with a day panel to tick off, open or add tasks, drag-to-move, and stats
    ===================================================================== */
-function cleanCode(s) {
-  return String(s).replace(/\r\n?/g, '\n').replace(/\t/g, '    ')
-    .replace(/[\u2018\u2019\u201B\u2032]/g, "'").replace(/[\u201C\u201D\u201F\u2033]/g, '"').replace(/\u00A0/g, ' ')
-    .split('\n').map(function (l) { return l.replace(/\s+$/, ''); }).join('\n')
-    .replace(/^\n+/, '').replace(/\n+$/, '').replace(/\n{3,}/g, '\n\n');
-}
-var SNIPPETS = {
-  beginner: [
-String.raw`name = "Nova"
-age = 17
-print(f"Hello, {name}!")
-print(age + 1)`,
-String.raw`planets = ["Mercury", "Venus", "Earth"]
-planets.append("Mars")
-print(len(planets))`,
-String.raw`fuel = 80
-if fuel > 50:
-    print("Ready for launch")
-else:
-    print("Refuel needed")`,
-String.raw`for i in range(5):
-    print("Countdown:", 5 - i)
-print("Liftoff!")`,
-String.raw`speed = 12.5
-time = 4
-distance = speed * time
-print(round(distance, 2))`,
-String.raw`crew = {"pilot": "Ava", "engineer": "Kai"}
-print(crew["pilot"])
-crew["medic"] = "Rin"`,
-String.raw`def greet(name):
-    return "Welcome aboard, " + name
-
-print(greet("Commander"))`,
-String.raw`count = 0
-while count < 3:
-    count += 1
-print("Scans done:", count)`,
-String.raw`word = "galaxy"
-print(word.upper())
-print(word[::-1])
-print(word.count("a"))`,
-String.raw`temps = [21, 19, 24, 18]
-print(max(temps), min(temps))
-print(sum(temps) / len(temps))`,
-String.raw`is_online = True
-signal = 0.87
-if is_online and signal > 0.5:
-    print("Link stable")`,
-String.raw`x, y = 3, 7
-x, y = y, x
-print(x, y)`
-  ],
-  intermediate: [
-String.raw`def average(values):
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-readings = [4.2, 5.1, 3.9, 4.8]
-print(f"Avg: {average(readings):.2f}")`,
-String.raw`squares = [n * n for n in range(1, 11)]
-evens = [n for n in squares if n % 2 == 0]
-print(evens)`,
-String.raw`inventory = {"cells": 4, "wires": 12, "chips": 0}
-for item, qty in inventory.items():
-    status = "ok" if qty > 0 else "empty"
-    print(f"{item:<8}{qty:>4}  {status}")`,
-String.raw`def is_prime(n):
-    if n < 2:
-        return False
-    for d in range(2, int(n ** 0.5) + 1):
-        if n % d == 0:
-            return False
-    return True
-
-print([p for p in range(30) if is_prime(p)])`,
-String.raw`try:
-    value = int(input("Coordinates: "))
-except ValueError:
-    print("Invalid input, using 0")
-    value = 0
-finally:
-    print("Scan complete")`,
-String.raw`from collections import Counter
-
-log = "error warn info error info error"
-counts = Counter(log.split())
-print(counts.most_common(2))`,
-String.raw`def fib(limit):
-    a, b = 0, 1
-    while a < limit:
-        yield a
-        a, b = b, a + b
-
-print(list(fib(100)))`,
-String.raw`with open("mission.txt", "w") as f:
-    f.write("Day 1: systems online\n")
-
-with open("mission.txt") as f:
-    for line in f:
-        print(line.strip())`,
-String.raw`students = [("Lin", 88), ("Omar", 95), ("Zoe", 79)]
-ranked = sorted(students, key=lambda s: s[1], reverse=True)
-for place, (name, score) in enumerate(ranked, start=1):
-    print(place, name, score)`,
-String.raw`def clamp(value, low, high):
-    return max(low, min(value, high))
-
-print(clamp(150, 0, 100))
-print(clamp(-5, 0, 100))`,
-String.raw`matrix = [[1, 2, 3], [4, 5, 6]]
-transposed = list(zip(*matrix))
-print(transposed)`,
-String.raw`words = ["orbit", "comet", "pulsar", "nova"]
-lengths = {w: len(w) for w in words}
-longest = max(lengths, key=lengths.get)
-print(longest, lengths[longest])`
-  ],
-  advanced: [
-String.raw`class Ship:
-    def __init__(self, name, fuel=100):
-        self.name = name
-        self.fuel = fuel
-
-    def travel(self, distance):
-        cost = distance * 2
-        if cost > self.fuel:
-            raise ValueError("Not enough fuel")
-        self.fuel -= cost
-        return self.fuel
-
-    def __repr__(self):
-        return f"Ship({self.name!r}, fuel={self.fuel})"`,
-String.raw`import time
-from functools import wraps
-
-def timed(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - start
-        print(f"{func.__name__} took {elapsed:.4f}s")
-        return result
-    return wrapper`,
-String.raw`from dataclasses import dataclass, field
-
-@dataclass
-class Task:
-    title: str
-    priority: int = 1
-    tags: list[str] = field(default_factory=list)
-
-    def is_urgent(self) -> bool:
-        return self.priority >= 3`,
-String.raw`def binary_search(items, target):
-    lo, hi = 0, len(items) - 1
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        if items[mid] == target:
-            return mid
-        if items[mid] < target:
-            lo = mid + 1
-        else:
-            hi = mid - 1
-    return -1`,
-String.raw`import asyncio
-
-async def ping(host, delay):
-    await asyncio.sleep(delay)
-    return f"{host}: {delay * 1000:.0f} ms"
-
-async def main():
-    results = await asyncio.gather(
-        ping("alpha", 0.2), ping("beta", 0.1)
-    )
-    print(results)
-
-asyncio.run(main())`,
-String.raw`from contextlib import contextmanager
-
-@contextmanager
-def airlock(name):
-    print(f"Opening {name}")
-    try:
-        yield name
-    finally:
-        print(f"Sealing {name}")
-
-with airlock("bay-3") as bay:
-    print("Crew passing through", bay)`,
-String.raw`def memo(fn):
-    cache = {}
-    def inner(n):
-        if n not in cache:
-            cache[n] = fn(n)
-        return cache[n]
-    return inner
-
-@memo
-def steps(n):
-    return 1 if n <= 1 else steps(n - 1) + steps(n - 2)`,
-String.raw`import json
-from pathlib import Path
-
-def load_config(path: str) -> dict:
-    file = Path(path)
-    if not file.exists():
-        return {"mode": "safe", "retries": 3}
-    with file.open() as f:
-        return json.load(f)`,
-String.raw`class Stack:
-    def __init__(self):
-        self._items = []
-
-    def push(self, item):
-        self._items.append(item)
-
-    def pop(self):
-        if not self._items:
-            raise IndexError("pop from empty stack")
-        return self._items.pop()
-
-    def __len__(self):
-        return len(self._items)`,
-String.raw`from itertools import groupby
-
-logs = ["a1", "a2", "b1", "c1", "c2", "c3"]
-for key, group in groupby(logs, key=lambda s: s[0]):
-    print(key, list(group))`
-  ]
-};
-Object.keys(SNIPPETS).forEach(function (k) { SNIPPETS[k] = SNIPPETS[k].map(cleanCode); });
-
-var Typing = (function () {
-  var T = null, inp, caret, codeEl, scrollEl, lastPick = {}, imeWarned = false, composing = false;
-  var LEVELS = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', custom: 'My code' };
-
-  function pickSnippet(level) {
-    var arr = SNIPPETS[level], i;
-    if (arr.length === 1) return arr[0];
-    do { i = Math.floor(Math.random() * arr.length); } while (i === lastPick[level]);
-    lastPick[level] = i;
-    return arr[i];
+var Cal = (function () {
+  var sel = todayKey(), drag = null;
+  var VIEWS = ['month', 'week', 'agenda'];
+  var DN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  function view() { return VIEWS.indexOf(S.ui.calView) >= 0 ? S.ui.calView : 'month'; }
+  function weekStart(k) { var d = parseKey(k), wd = (d.getDay() + 6) % 7; return addDays(k, -wd); }
+  function isoWeek(k) {
+    var d = parseKey(k); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    var w1 = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d - w1) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
   }
-  function buildText() {
-    var ty = S.typing, level = ty.level;
-    if (level === 'custom') {
-      var c = cleanCode(ty.custom || '');
-      if (c.length >= 5) {
-        if (ty.mode === 'time') { var out = c; while (out.length < 1800) out += '\n\n' + c; return out; }
-        return c;
+  function monthOf(k) { return k.slice(0, 7); }
+  function shortDate(k) { var d = parseKey(k); return DN[(d.getDay() + 6) % 7] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3); }
+  function addMonths(k, n) {
+    var d = parseKey(k), day = d.getDate(), t = new Date(d.getFullYear(), d.getMonth() + n, 1);
+    var last = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    t.setDate(Math.min(day, last)); return dateKey(t);
+  }
+  function timeLabel(t) { return t.time ? Sched.fmtTime(t.time) : 'Any'; }
+  function dayInfo(k) {
+    var list = Sched.tasksOn(k), done = list.filter(function (t) { return t.done[k]; }).length;
+    return { list: list, done: done };
+  }
+  function clsFor(t, k) { var st = Sched.status(t, k); return st === 'done' ? 'done' : st === 'overdue' ? 'late' : st === 'soon' ? 'soon' : ''; }
+
+  /* ---------- views ---------- */
+  function monthHTML() {
+    var m = monthOf(sel), first = m + '-01', start = weekStart(first), tk = todayKey(), html = '<div class="cal-grid month" role="grid" aria-label="Month">';
+    html += '<div class="cal-dh cal-wkh">Wk</div>' + DN.map(function (d, i) { return '<div class="cal-dh' + (i > 4 ? ' wknd' : '') + '">' + d + '</div>'; }).join('');
+    for (var w = 0; w < 6; w++) {
+      var ws = addDays(start, w * 7);
+      html += '<div class="cal-wk">' + pad2(isoWeek(ws)) + '</div>';
+      for (var i = 0; i < 7; i++) {
+        var k = addDays(ws, i), info = dayInfo(k), n = info.list.length, d = parseKey(k);
+        var cls = 'cal-cell' + (monthOf(k) !== m ? ' other' : '') + (k === tk ? ' today' : '') + (k === sel ? ' sel' : '') + (i > 4 ? ' wknd' : '') + (k < tk ? ' past' : '');
+        html += '<div class="' + cls + '" role="gridcell" data-k="' + k + '" aria-selected="' + (k === sel) + '" aria-label="' + esc(shortDate(k) + ', ' + n + (n === 1 ? ' task' : ' tasks')) + '">' +
+          '<div class="cc-head"><b class="cc-num">' + d.getDate() + '</b>' + (n ? '<span class="cc-meta">' + info.done + '/' + n + '</span>' : '') + '</div>' +
+          '<ul class="cc-list">' + info.list.slice(0, 3).map(function (t) {
+            return '<li class="cc-task ' + clsFor(t, k) + '" data-id="' + t.id + '"' + (t.repeat === 'none' ? ' draggable="true"' : '') + ' title="' + esc(timeLabel(t) + ' · ' + t.title) + '">' + (t.time ? '<span class="cc-t">' + esc(Sched.fmtTime(t.time)) + '</span> ' : '') + esc(t.title) + '</li>';
+          }).join('') + '</ul>' +
+          (n > 3 ? '<div class="cc-more">+' + (n - 3) + ' more</div>' : '') +
+          '<div class="cc-dots" aria-hidden="true">' + new Array(Math.min(n, 4) + 1).join('<i></i>') + '</div>' +
+          (n ? '<div class="cc-bar" aria-hidden="true"><i style="width:' + Math.round(info.done / n * 100) + '%"></i></div>' : '') +
+        '</div>';
       }
-      level = 'beginner';
     }
-    if (ty.mode === 'snippet') return pickSnippet(level);
-    var parts = [], len = 0, need = Math.max(1500, ty.time * 30);
-    while (len < need) { var s = pickSnippet(level); parts.push(s); len += s.length + 2; }
-    return parts.join('\n\n');
+    return html + '</div>';
   }
-
-  function fresh(text) {
-    if (T && T.timer) clearInterval(T.timer);
-    composing = false; // a half-finished IME word must never block the new test
-    T = { target: text, typed: '', started: false, done: false, t0: 0, keys: 0, good: 0, errs: 0, samples: [], secKeys: 0, secErr: 0, timer: null, spans: [], lineOf: [], lines: [], charH: 0 };
-    // show the typing area first, so the code and the cursor are measured at their real size
-    $('#type-results').hidden = true;
-    $('#type-test').hidden = false;
-    activeLine = -1;
-    renderCode();
-    inp.value = '';
-    scrollEl.scrollTop = 0;
-    updateLive();
-    placeCaret(true);
-  }
-  function newText() { fresh(buildText()); }
-  function restart() { fresh(T.target); }
-
-  function renderCode() {
-    var lines = T.target.split('\n'), html = '', idx = 0;
-    T.lineOf = [];
-    lines.forEach(function (line, li) {
-      html += '<div class="cl"><div class="cl-text">';
-      for (var i = 0; i < line.length; i++) { html += '<span>' + esc(line[i]) + '</span>'; T.lineOf[idx++] = li; }
-      if (li < lines.length - 1) { html += '<span class="nl">\u21b5</span>'; T.lineOf[idx++] = li; }
-      html += '</div></div>';
-    });
-    T.lineOf[idx] = lines.length - 1;
-    codeEl.innerHTML = html;
-    T.spans = $$('.cl-text span', codeEl);
-    T.lines = $$('.cl', codeEl);
-    var probe = T.spans[0];
-    T.charH = probe ? probe.getBoundingClientRect().height : 20;
-  }
-
-  function paint(from, to) {
-    for (var i = from; i < to && i < T.spans.length; i++) {
-      var sp = T.spans[i], isNl = T.target[i] === '\n', cls = isNl ? 'nl' : '';
-      if (i < T.typed.length) cls += T.typed[i] === T.target[i] ? ' ok' : ' bad';
-      sp.className = cls;
-    }
-  }
-
-  var activeLine = -1;
-  function placeCaret(instant) {
-    if (!T.spans.length) return;
-    var i = Math.min(T.typed.length, T.spans.length), cr = codeEl.getBoundingClientRect(), x, y, r;
-    if (i < T.spans.length) { r = T.spans[i].getBoundingClientRect(); x = r.left - cr.left; }
-    else { r = T.spans[T.spans.length - 1].getBoundingClientRect(); x = r.right - cr.left; }
-    if (!T.charH && r.height) T.charH = r.height;
-    var h = T.charH || r.height || 20;
-    y = r.top - cr.top + (r.height - h) / 2;
-    if (instant) { caret.style.transition = 'none'; }
-    caret.style.height = Math.round(h) + 'px';
-    caret.style.transform = 'translate(' + (x + codeEl.offsetLeft).toFixed(1) + 'px,' + (y + codeEl.offsetTop).toFixed(1) + 'px)';
-    if (instant) { void caret.offsetWidth; caret.style.transition = ''; }
-    // active line + keep caret in view
-    var li = T.lineOf[i] != null ? T.lineOf[i] : 0;
-    if (li !== activeLine) {
-      if (T.lines[activeLine]) T.lines[activeLine].classList.remove('active');
-      if (T.lines[li]) T.lines[li].classList.add('active');
-      activeLine = li;
-    }
-    var top = y + codeEl.offsetTop, lh = h * 1.7, vh = scrollEl.clientHeight;
-    if (top - scrollEl.scrollTop > vh - lh * 3 || top < scrollEl.scrollTop + lh) {
-      scrollEl.scrollTop = Math.max(0, top - lh * 2);
-    }
-    caret.classList.toggle('blink', !T.started || T.done);
-  }
-
-  function correctCount() {
-    var n = 0, a = T.typed, b = T.target;
-    for (var i = 0; i < a.length; i++) if (a.charCodeAt(i) === b.charCodeAt(i)) n++;
-    return n;
-  }
-  function elapsed() { return T.started ? (performance.now() - T.t0) / 1000 : 0; }
-
-  function updateLive() {
-    var el = elapsed(), ty = S.typing;
-    var main = ty.mode === 'time' ? Math.max(0, Math.ceil(ty.time - el)) : (T.started ? Math.floor(el) + 's' : (T.target.split('\n').length + ' lines'));
-    $('#live-main').textContent = main;
-    var wpm = el > 0.5 ? Math.round(correctCount() / 5 / (el / 60)) : 0;
-    $('#live-wpm').textContent = wpm;
-    $('#live-acc').textContent = (T.keys ? Math.round(T.good / T.keys * 100) : 100) + '%';
-    var prog = ty.mode === 'time' ? el / ty.time : T.typed.length / T.target.length;
-    $('#type-progress').style.width = clamp(prog * 100, 0, 100).toFixed(1) + '%';
-  }
-
-  function start() {
-    T.started = true;
-    T.t0 = performance.now();
-    T.timer = setInterval(loop, 100);
-  }
-  function sample() {
-    var sec = T.samples.length + 1;
-    T.samples.push({ wpm: correctCount() / 5 / (sec / 60), raw: T.secKeys * 12, err: T.secErr });
-    T.secKeys = 0; T.secErr = 0;
-  }
-  function loop() {
-    if (!T || T.done) return;
-    var el = elapsed();
-    while (el >= T.samples.length + 1 && T.samples.length < 3600) sample();
-    if (S.typing.mode === 'time' && el >= S.typing.time) { finish(); return; }
-    updateLive();
-  }
-
-  function normalize(v) {
-    return v.replace(/\r/g, '').replace(/[\u2018\u2019\u201B]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u00A0/g, ' ');
-  }
-  function commit(v, userTyped) {
-    if (!T || T.done) { inp.value = T ? T.typed : ''; return; }
-    v = normalize(v);
-    if (v.length > T.target.length) v = v.slice(0, T.target.length);
-    var prev = T.typed, p = 0, max = Math.min(prev.length, v.length);
-    while (p < max && prev.charCodeAt(p) === v.charCodeAt(p)) p++;
-    var added = v.slice(p);
-    // Habit guard: extra spaces typed at the start of a line that is already fully indented are ignored.
-    if (S.typing.autoIndent && added.length && p === prev.length && /^ +$/.test(added) && /(^|\n) *$/.test(prev) && T.target[prev.length] !== ' ') {
-      if (inp.value !== prev) inp.value = prev;
-      try { inp.setSelectionRange(prev.length, prev.length); } catch (e) { /* noop */ }
-      return;
-    }
-    if (added.length && !T.started) start();
-    var err = false, nonAscii = false;
-    for (var i = 0; i < added.length && userTyped !== false; i++) {
-      T.keys++; T.secKeys++;
-      if (added[i] === T.target[p + i]) T.good++;
-      else { err = true; T.errs++; T.secErr++; if (added.charCodeAt(i) > 126) nonAscii = true; }
-    }
-    // auto-indent after a correct newline
-    if (S.typing.autoIndent && added === '\n' && v.length === prev.length + 1 && T.target[v.length - 1] === '\n') {
-      var j = v.length; while (T.target[j] === ' ') { v += ' '; j++; }
-    }
-    T.typed = v;
-    if (inp.value !== v) inp.value = v;
-    try { inp.setSelectionRange(v.length, v.length); } catch (e) { /* noop */ }
-    paint(p, Math.max(prev.length, v.length) + 1);
-    if (added.length) SFX.play(err ? 'keyErr' : 'key');
-    if (nonAscii && !imeWarned) {
-      imeWarned = true;
-      toast('A non-English keyboard (like Telex or VNI) seems to be on. Switch your keyboard to English to type code.', { kind: 'warn', timeout: 8000 });
-    }
-    placeCaret();
-    updateLive();
-    if (T.typed.length >= T.target.length) finish();
-  }
-  function insertText(str) { commit(T.typed + str); }
-
-  function finish() {
-    if (T.done) return;
-    T.done = true;
-    clearInterval(T.timer);
-    var ty = S.typing, el = elapsed();
-    if (ty.mode === 'time') el = Math.min(el, ty.time);
-    var rem = el - T.samples.length;
-    if (rem > 0.3 || !T.samples.length) {
-      T.samples.push({ wpm: correctCount() / 5 / (Math.max(el, 0.5) / 60), raw: rem > 0 ? T.secKeys / 5 / (rem / 60) : 0, err: T.secErr });
-    }
-    var cc = correctCount(), mins = Math.max(el, 0.001) / 60;
-    var res = {
-      wpm: Math.round(cc / 5 / mins), raw: Math.round(T.typed.length / 5 / mins),
-      acc: T.keys ? Math.round(T.good / T.keys * 1000) / 10 : 0,
-      correct: cc, wrong: T.typed.length - cc, keys: T.keys, time: Math.round(el * 10) / 10,
-      mode: ty.mode, secs: ty.mode === 'time' ? ty.time : Math.round(el), level: ty.level, at: Date.now()
-    };
-    var raws = T.samples.map(function (s) { return s.raw; });
-    var mean = raws.reduce(function (a, b) { return a + b; }, 0) / (raws.length || 1);
-    var sd = Math.sqrt(raws.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / (raws.length || 1));
-    res.cons = mean > 0 ? Math.round(clamp(100 * (1 - sd / mean), 0, 100)) : 0;
-    res.valid = el >= 3 && T.typed.length >= 10;
-    res.xp = 0; res.pb = false;
-    if (res.valid) {
-      res.xp = Math.round(clamp(res.wpm * (res.acc / 100) / 2, 1, 60));
-      var key = (ty.mode === 'time' ? 'time' + ty.time : 'snippet') + '-' + ty.level;
-      var prevBest = ty.best[key] || 0;
-      if (res.wpm > prevBest) { res.pb = prevBest > 0; ty.best[key] = res.wpm; }
-      ty.history.unshift({ wpm: res.wpm, acc: res.acc, raw: res.raw, mode: ty.mode, secs: res.secs, level: ty.level, at: res.at });
-      ty.history = ty.history.slice(0, 20);
-      S.profile.stats.typingRuns++;
-      addXP(res.xp);
-      if (res.acc >= 85) { if (res.wpm >= 30) unlock('wpm30'); if (res.wpm >= 50) unlock('wpm50'); if (res.wpm >= 70) unlock('wpm70'); }
-      save();
-    }
-    SFX.play(res.valid ? 'complete' : 'close');
-    inp.blur();
-    showResults(res);
-    renderHistory();
-  }
-
-  function showResults(r) {
-    var box = $('#type-results');
-    box.innerHTML =
-      '<div class="results">' +
-        '<div class="res-big">' +
-          '<div><span>WPM</span><b>' + r.wpm + '</b>' + (r.pb ? '<span class="pb">New personal best</span>' : '') + '</div>' +
-          '<div><span>Accuracy</span><b>' + r.acc + '%</b></div>' +
-        '</div>' +
-        '<div class="res-chart"><canvas id="res-canvas" aria-label="Speed over time chart"></canvas></div>' +
-        '<div class="res-grid">' +
-          stat(r.raw, 'Raw WPM') + stat(r.correct + ' / ' + r.wrong, 'Correct / wrong chars') + stat(r.cons + '%', 'Consistency') + stat(r.time + 's', 'Time') + stat(r.valid ? '+' + r.xp : '\u2013', r.valid ? 'XP earned' : 'Too short to count') +
-        '</div>' +
-        '<div class="res-actions">' +
-          '<button class="btn" type="button" id="res-again">' + I.reset + 'Same code again</button>' +
-          '<button class="btn btn-primary" type="button" id="res-next" data-sfx="none">' + I.next + 'Next code</button>' +
-        '</div>' +
+  function weekHTML() {
+    var ws = weekStart(sel), tk = todayKey(), html = '<div class="cal-grid week" role="grid" aria-label="Week">';
+    for (var i = 0; i < 7; i++) {
+      var k = addDays(ws, i), info = dayInfo(k), d = parseKey(k);
+      html += '<div class="cw-col' + (k === tk ? ' today' : '') + (k === sel ? ' sel' : '') + (i > 4 ? ' wknd' : '') + '" data-k="' + k + '">' +
+        '<div class="cw-head"><span>' + DN[i] + '</span><b>' + d.getDate() + '</b><small>' + (info.list.length ? info.done + '/' + info.list.length : '') + '</small></div>' +
+        '<ul class="cw-list">' + info.list.map(function (t) {
+          return '<li class="cw-task ' + clsFor(t, k) + '" data-id="' + t.id + '"' + (t.repeat === 'none' ? ' draggable="true"' : '') + '><span class="cc-t">' + esc(timeLabel(t)) + '</span><span class="cw-title">' + esc(t.title) + '</span></li>';
+        }).join('') + '</ul>' +
+        '<button type="button" class="cw-add" data-add="' + k + '" aria-label="Add a task on ' + esc(shortDate(k)) + '">+ add</button>' +
       '</div>';
-    $('#type-test').hidden = true;
-    box.hidden = false;
-    $('#res-again').addEventListener('click', function () { restart(); focusInput(); });
-    $('#res-next').addEventListener('click', function () { SFX.play('tab'); newText(); focusInput(); });
-    requestAnimationFrame(function () { drawChart($('#res-canvas'), T.samples); });
-    if (finePointer) $('#res-next').focus();
-    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    return html + '</div>';
   }
-  function stat(v, l) { return '<div class="stat"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>'; }
-
-  function drawChart(cv, samples) {
-    if (!cv) return;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = cv.clientWidth || 300, h = cv.clientHeight || 200;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
-    var css = getComputedStyle(document.body), accent = css.getPropertyValue('--accent').trim() || '#f0f0f0';
-    var padL = 34, padR = 10, padT = 12, padB = 22, n = samples.length;
-    var maxV = 10; samples.forEach(function (s) { maxV = Math.max(maxV, s.wpm, Math.min(s.raw, 250)); });
-    maxV = Math.ceil(maxV / 10) * 10;
-    var X = function (i) { return padL + (n <= 1 ? (w - padL - padR) / 2 : i / (n - 1) * (w - padL - padR)); };
-    var Y = function (v) { return padT + (1 - Math.min(v, maxV) / maxV) * (h - padT - padB); };
-    c.font = '11px ' + (css.getPropertyValue('--font-ui') || 'sans-serif');
-    c.fillStyle = css.getPropertyValue('--dim').trim() || '#767676'; c.strokeStyle = 'rgba(' + (css.getPropertyValue('--tint-rgb').trim() || '220,220,220') + ',.12)'; c.lineWidth = 1;
-    for (var gi = 0; gi <= 4; gi++) {
-      var gv = maxV * gi / 4, gy = Y(gv);
-      c.beginPath(); c.moveTo(padL, gy); c.lineTo(w - padR, gy); c.stroke();
-      c.textAlign = 'right'; c.fillText(String(Math.round(gv)), padL - 6, gy + 4);
+  function agendaHTML() {
+    var tk = todayKey(), from = sel < tk ? sel : tk, out = '', days = 0;
+    for (var i = 0; i < 31; i++) {
+      var k = addDays(from, i), info = dayInfo(k);
+      if (!info.list.length) continue;
+      days++;
+      out += '<div class="ag-day' + (k === sel ? ' sel' : '') + '" data-k="' + k + '"><div class="ag-head"><b>' + esc(shortDate(k)) + '</b><span>' + esc(Sched.relLabel(k)) + '</span><small>' + info.done + '/' + info.list.length + ' done</small></div>' +
+        info.list.map(function (t) {
+          var cat = catOf(t.category);
+          return '<div class="ag-row ' + clsFor(t, k) + '" data-id="' + t.id + '" data-k="' + k + '">' +
+            '<button type="button" class="cbox" data-toggle="' + t.id + '" data-k="' + k + '" aria-pressed="' + !!t.done[k] + '" aria-label="Mark done">' + (t.done[k] ? '[x]' : '[ ]') + '</button>' +
+            '<span class="cc-t">' + esc(timeLabel(t)) + '</span><span class="ag-title">' + esc(t.title) + '</span><span class="chip"><span class="dot"></span>' + esc(cat.name) + '</span></div>';
+        }).join('') + '</div>';
     }
-    c.textAlign = 'center';
-    var stepX = Math.max(1, Math.ceil(n / 8));
-    for (var xi = 0; xi < n; xi += stepX) c.fillText(String(xi + 1), X(xi), h - 6);
-    function line(key, color, width, fill) {
-      if (!n) return;
-      c.beginPath();
-      samples.forEach(function (s, i) { var v = Math.min(s[key], maxV); if (i) c.lineTo(X(i), Y(v)); else c.moveTo(X(i), Y(v)); });
-      c.strokeStyle = color; c.lineWidth = width; c.lineJoin = 'round'; c.stroke();
-      if (fill) {
-        c.lineTo(X(n - 1), Y(0)); c.lineTo(X(0), Y(0)); c.closePath();
-        var gr = c.createLinearGradient(0, padT, 0, h - padB); gr.addColorStop(0, fill); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        c.fillStyle = gr; c.fill();
-      }
-    }
-    var tint = css.getPropertyValue('--tint-rgb').trim() || '220,220,220', hi = css.getPropertyValue('--hi').trim() || '#fff';
-    line('raw', 'rgba(' + tint + ',.4)', 1.5);
-    line('wpm', accent, 2.5, 'rgba(' + (css.getPropertyValue('--accent-rgb').trim() || '240,240,240') + ',.14)');
-    c.strokeStyle = hi; c.lineWidth = 2;
-    samples.forEach(function (s, i) {
-      if (!s.err) return;
-      var x = X(i), y = padT + 6;
-      c.beginPath(); c.moveTo(x - 4, y - 4); c.lineTo(x + 4, y + 4); c.moveTo(x + 4, y - 4); c.lineTo(x - 4, y + 4); c.stroke();
-    });
-    c.textAlign = 'left'; c.fillStyle = accent; c.fillText('wpm', padL + 4, padT + 22);
-    c.fillStyle = 'rgba(' + tint + ',.75)'; c.fillText('raw', padL + 36, padT + 22);
-    c.fillStyle = hi; c.fillText('\u00d7 errors', padL + 64, padT + 22);
+    return '<div class="cal-agenda">' + (out || '<p class="cal-empty">Nothing planned in the next 30 days. Pick a day and add something.</p>') + '</div>';
   }
 
-  function renderHistory() {
-    var h = S.typing.history, box = $('#type-history');
-    if (!h.length) { box.innerHTML = '<p class="muted" style="font-size:.92rem">Your results will show up here after your first run.</p>'; $('#type-best').textContent = ''; return; }
-    box.innerHTML = '<table class="hist"><thead><tr><th>WPM</th><th>Accuracy</th><th>Raw</th><th>Mode</th><th>Level</th><th>When</th></tr></thead><tbody>' +
-      h.slice(0, 10).map(function (r) {
-        var d = new Date(r.at);
-        return '<tr><td>' + r.wpm + '</td><td>' + r.acc + '%</td><td>' + r.raw + '</td><td>' + (r.mode === 'time' ? r.secs + 's timed' : 'Snippet \u00b7 ' + r.secs + 's') + '</td><td>' + esc(LEVELS[r.level] || r.level) + '</td><td>' +
-          (dateKey(d) === todayKey() ? pad2(d.getHours()) + ':' + pad2(d.getMinutes()) : d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0, 3)) + '</td></tr>';
-      }).join('') + '</tbody></table>';
-    var best = 0; Object.keys(S.typing.best).forEach(function (k) { best = Math.max(best, S.typing.best[k]); });
-    $('#type-best').textContent = best ? 'Best: ' + best + ' WPM' : '';
+  /* ---------- side panels ---------- */
+  function renderDay() {
+    var info = dayInfo(sel);
+    $('#cal-day-title').textContent = shortDate(sel);
+    $('#cal-day-rel').textContent = Sched.relLabel(sel) + (info.list.length ? ' · ' + info.done + '/' + info.list.length + ' done' : '');
+    $('#cal-day-list').innerHTML = info.list.length ? info.list.map(function (t) {
+      return '<div class="cd-row ' + clsFor(t, sel) + '" data-id="' + t.id + '">' +
+        '<button type="button" class="cbox" data-toggle="' + t.id + '" data-k="' + sel + '" aria-pressed="' + !!t.done[sel] + '" aria-label="Mark done">' + (t.done[sel] ? '[x]' : '[ ]') + '</button>' +
+        '<span class="cc-t">' + esc(timeLabel(t)) + '</span>' +
+        '<button type="button" class="cd-title" data-edit="' + t.id + '">' + esc(t.title) + (t.repeat !== 'none' ? ' <small>↻</small>' : '') + '</button></div>';
+    }).join('') : '<p class="cal-empty">Nothing on this day yet.</p>';
+  }
+  function untilLabel(t, days) {
+    if (days > 0) return 'in ' + days + 'd';
+    var m = minutesOf(t.time); if (m === null) return 'today';
+    var left = Math.round(m - nowMinutes());
+    return left < 1 ? 'now' : left < 60 ? 'in ' + left + 'm' : 'in ' + Math.floor(left / 60) + 'h';
+  }
+  function renderUpcoming() {
+    var tk = todayKey(), rows = [];
+    for (var i = 0; i < 14 && rows.length < 9; i++) {
+      var k = addDays(tk, i);
+      Sched.tasksOn(k).forEach(function (t) {
+        if (rows.length >= 9 || t.done[k]) return;
+        if (k === tk && Sched.status(t, k) === 'overdue') return;
+        rows.push('<button type="button" class="up-row" data-go="' + k + '"><span class="up-d">' + esc(i === 0 ? 'Today' : i === 1 ? 'Tmrw' : shortDate(k).slice(0, 6)) + '</span><span class="cc-t">' + esc(timeLabel(t)) + '</span><span class="up-title">' + esc(t.title) + '</span><span class="up-in">' + esc(untilLabel(t, i)) + '</span></button>');
+      });
+    }
+    $('#cal-up').innerHTML = rows.length ? rows.join('') : '<p class="cal-empty">Nothing coming up in the next two weeks.</p>';
+  }
+  function renderStats() {
+    var m = monthOf(sel), d0 = parseKey(m + '-01'), days = new Date(d0.getFullYear(), d0.getMonth() + 1, 0).getDate();
+    var total = 0, done = 0, busy = null, busyN = 0, free = 0, counts = [];
+    for (var i = 1; i <= days; i++) {
+      var k = m + '-' + pad2(i), info = dayInfo(k), n = info.list.length;
+      counts.push(n); total += n; done += info.done;
+      if (n > busyN) { busyN = n; busy = k; }
+      if (!n) free++;
+    }
+    var max = Math.max(1, busyN), lead = (d0.getDay() + 6) % 7;
+    $('#cal-stats-title').textContent = MONTHS[d0.getMonth()] + ' ' + d0.getFullYear();
+    var stat = function (v, l) { return '<div class="stat"><b>' + v + '</b><span>' + l + '</span></div>'; };
+    $('#cal-stats').innerHTML = '<div class="dial-stats cal-stat-row">' + stat(total, 'Tasks') + stat(total ? Math.round(done / total * 100) + '%' : '–', 'Done') + stat(free, 'Free days') + '</div>' +
+      '<div class="cal-heat" aria-label="How busy each day of the month is">' + new Array(lead + 1).join('<i class="pad"></i>') + counts.map(function (n, i) {
+        var k = m + '-' + pad2(i + 1);
+        return '<button type="button" class="hc' + (k === sel ? ' sel' : '') + (k === todayKey() ? ' today' : '') + '" data-go="' + k + '" style="--h:' + (n ? (0.2 + 0.8 * n / max).toFixed(2) : 0) + '" title="' + esc(shortDate(k) + ': ' + n + (n === 1 ? ' task' : ' tasks')) + '">' + (i + 1) + '</button>';
+      }).join('') + '</div>' +
+      '<p class="cal-note">' + (busy ? 'Busiest: <b>' + esc(shortDate(busy)) + '</b> with ' + busyN + ' tasks.' : 'No tasks this month yet.') + ' Drag a task onto another day to move it.</p>';
+  }
+  function renderBar() {
+    var v = view(), d = parseKey(sel);
+    $$('#cal-view [data-cv]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cv === v)); });
+    var label;
+    if (v === 'week') { var ws = weekStart(sel), we = addDays(ws, 6); label = 'Week ' + isoWeek(ws) + ' · ' + shortDate(ws).slice(4) + ' – ' + shortDate(we).slice(4); }
+    else if (v === 'agenda') label = 'Next 30 days';
+    else label = MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+    $('#cal-label').textContent = label;
+    $('#cal-month').value = monthOf(sel);
+    $('#cal-today').disabled = sel === todayKey();
+  }
+  function render() {
+    if (!$('#cal-main')) return;
+    var v = view();
+    renderBar();
+    $('#cal-main').innerHTML = v === 'week' ? weekHTML() : v === 'agenda' ? agendaHTML() : monthHTML();
+    $('#cal-main').setAttribute('data-view', v);
+    renderDay(); renderUpcoming(); renderStats();
   }
 
-  /* ---------- config bar ---------- */
-  function renderConfig() {
-    var ty = S.typing;
-    function seg(id, items, cur, label) {
-      return '<div class="seg" id="' + id + '" role="group" aria-label="' + label + '">' + items.map(function (it) {
-        return '<button type="button" data-v="' + it[0] + '" aria-pressed="' + (String(it[0]) === String(cur)) + '">' + it[1] + '</button>';
-      }).join('') + '</div>';
-    }
-    $('#type-config').innerHTML =
-      '<div class="grp">' + seg('ty-mode', [['time', 'Timed'], ['snippet', 'One snippet']], ty.mode, 'Mode') + '</div>' +
-      (ty.mode === 'time' ? '<div class="grp">' + seg('ty-time', [[15, '15s'], [30, '30s'], [60, '60s'], [120, '120s']], ty.time, 'Duration') + '</div>' : '') +
-      '<span class="sep"></span>' +
-      '<div class="grp">' + seg('ty-level', [['beginner', 'Beginner'], ['intermediate', 'Intermediate'], ['advanced', 'Advanced'], ['custom', 'My code']], ty.level, 'Level') + '</div>' +
-      (ty.level === 'custom' ? '<button class="btn btn-sm" type="button" id="ty-custom">' + I.edit + 'Edit my code</button>' : '') +
-      '<span class="sep"></span>' +
-      '<label class="check-row" style="font-size:.88rem"><button type="button" class="switch" role="switch" id="ty-indent" aria-checked="' + ty.autoIndent + '" aria-label="Auto-indent" data-sfx="none"></button>Auto-indent</label>' +
-      '<div class="grp"><button class="btn btn-sm" type="button" id="ty-fs-down" aria-label="Smaller code text">A\u2212</button><button class="btn btn-sm" type="button" id="ty-fs-up" aria-label="Larger code text">A+</button></div>';
-    $('#code-box').style.setProperty('--fs', ty.fontSize + 'px');
+  /* ---------- actions ---------- */
+  function select(k, quiet) { if (!validKey(k)) return; sel = k; if (!quiet) SFX.play('click'); render(); }
+  function step(n) {
+    var v = view();
+    if (v === 'month') select(addMonths(sel, n));
+    else if (v === 'week') select(addDays(sel, 7 * n));
+    else select(addDays(sel, 30 * n));
   }
-  function onConfigClick(e) {
-    var ty = S.typing, b = e.target.closest('button'); if (!b) return;
-    var grp = b.closest('.seg');
-    if (grp && b.dataset.v != null) {
-      if (grp.id === 'ty-mode') ty.mode = b.dataset.v;
-      else if (grp.id === 'ty-time') ty.time = parseInt(b.dataset.v, 10);
-      else if (grp.id === 'ty-level') {
-        ty.level = b.dataset.v;
-        if (ty.level === 'custom' && cleanCode(ty.custom).length < 5) { save(); renderConfig(); editCustom(); return; }
-      }
-      save(); renderConfig(); newText(); focusInput(); return;
-    }
-    if (b.id === 'ty-indent') { ty.autoIndent = !ty.autoIndent; b.setAttribute('aria-checked', String(ty.autoIndent)); SFX.play(ty.autoIndent ? 'on' : 'off'); save(); focusInput(); return; }
-    if (b.id === 'ty-fs-down' || b.id === 'ty-fs-up') {
-      ty.fontSize = clamp(ty.fontSize + (b.id === 'ty-fs-up' ? 2 : -2), 12, 28); save();
-      $('#code-box').style.setProperty('--fs', ty.fontSize + 'px');
-      T.charH = T.spans[0] ? T.spans[0].getBoundingClientRect().height : T.charH;
-      placeCaret(true); return;
-    }
-    if (b.id === 'ty-custom') editCustom();
+  function setView(v) { if (VIEWS.indexOf(v) < 0 || v === view()) return; S.ui.calView = v; save(); SFX.play('tab'); render(); }
+  function plannedDays() { var tk = todayKey(), n = 0; for (var i = 1; i <= 30; i++) if (Sched.tasksOn(addDays(tk, i)).length) n++; return n; }
+  function addTask(e) {
+    e.preventDefault();
+    var ti = $('#cal-add-title'), title = ti.value.trim();
+    if (!title) { SFX.play('error'); ti.focus(); toast('Type a task first, then press Add.', { kind: 'warn' }); return; }
+    var t = sanitizeTask({ id: uid(), title: title, date: sel, time: $('#cal-add-time').value, duration: 0, priority: 'normal', category: $('#cal-add-cat').value, repeat: $('#cal-add-rep').value, notes: '', created: Date.now() });
+    S.tasks.push(t);
+    S.profile.stats.calAdds = (S.profile.stats.calAdds || 0) + 1;
+    save(); SFX.play('add');
+    ti.value = ''; $('#cal-add-time').value = ''; $('#cal-add-rep').value = 'none';
+    unlock('cal1'); if (plannedDays() >= 7) unlock('plan7');
+    Sched.render(); render();
+    toast('Added to ' + shortDate(sel) + (t.time ? ' at ' + Sched.fmtTime(t.time) : ''), { kind: 'ok', timeout: 2200 });
+    if (finePointer) ti.focus();
   }
-  function editCustom() {
-    Modal.open({
-      title: 'Practice with your own code', width: 680,
-      body: '<p class="ctl-hint">Paste any code (Python or anything else). Tabs become 4 spaces and trailing spaces are removed. Up to 3000 characters.</p>' +
-        '<textarea class="field" id="cu-text" rows="12" maxlength="3000" spellcheck="false" autocapitalize="off" autocorrect="off" style="font-family:var(--font-mono),monospace;font-size:14px;white-space:pre;overflow-wrap:normal;overflow-x:auto" placeholder="def hello():\n    print(&quot;hi&quot;)"></textarea>',
-      foot: '<button class="btn" type="button" data-close data-sfx="none">Cancel</button><button class="btn btn-primary" type="button" id="cu-save" data-sfx="none">Use this code</button>',
-      onOpen: function (w, close) {
-        var ta = $('#cu-text', w); ta.value = S.typing.custom || '';
-        ta.addEventListener('keydown', function (e) {
-          if (e.key === 'Tab') { e.preventDefault(); var s = ta.selectionStart, en = ta.selectionEnd; ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(en); ta.selectionStart = ta.selectionEnd = s + 4; }
-        });
-        $('#cu-save', w).addEventListener('click', function () {
-          var c = cleanCode(ta.value).slice(0, 3000);
-          if (c.length < 5) { SFX.play('error'); toast('Paste at least a line of code first.', { kind: 'warn' }); return; }
-          S.typing.custom = c; S.typing.level = 'custom'; save(); SFX.play('add'); close(); renderConfig(); newText(); focusInput();
-        });
-      },
-      onClose: function () {
-        if (S.typing.level === 'custom' && cleanCode(S.typing.custom).length < 5) { S.typing.level = 'beginner'; save(); renderConfig(); newText(); }
-      }
-    });
+  function moveTask(id, k) {
+    var t = S.tasks.filter(function (x) { return x.id === id; })[0];
+    if (!t || t.repeat !== 'none' || t.date === k) return;
+    var from = t.date, wasDone = t.done[from];
+    t.date = k; if (wasDone) { t.done = {}; t.done[k] = wasDone; }
+    save(); SFX.play('add'); sel = k; Sched.render(); render();
+    toast('Moved to ' + shortDate(k), { action: { label: 'Undo', fn: function () { t.date = from; if (wasDone) { t.done = {}; t.done[from] = wasDone; } save(); Sched.render(); render(); } }, timeout: 5000 });
   }
+  function focusAdd() { var ti = $('#cal-add-title'); ti.focus(); if (ti.scrollIntoView) ti.scrollIntoView({ block: 'nearest' }); }
 
-  function focusInput() {
-    if (!inp || $('#view-typing').hidden || !T || T.done) return;
-    try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
+  function onMainClick(e) {
+    var tg = e.target.closest('[data-toggle]');
+    if (tg) { Sched.toggleDone(tg.dataset.toggle, tg.dataset.k); return; }
+    var add = e.target.closest('[data-add]');
+    if (add) { select(add.dataset.add, true); SFX.play('open'); focusAdd(); return; }
+    var task = e.target.closest('[data-id]'), cell = e.target.closest('[data-k]');
+    if (task && cell) { sel = cell.dataset.k; render(); Sched.editTask(task.dataset.id, cell.dataset.k); return; }
+    if (cell) select(cell.dataset.k);
+  }
+  function key(e) {
+    var k = e.key;
+    if (k === 'ArrowLeft') select(addDays(sel, -1));
+    else if (k === 'ArrowRight') select(addDays(sel, 1));
+    else if (k === 'ArrowUp') select(addDays(sel, -7));
+    else if (k === 'ArrowDown') select(addDays(sel, 7));
+    else if (k === 'PageUp') step(-1);
+    else if (k === 'PageDown') step(1);
+    else if (k === 't' || k === 'T') select(todayKey());
+    else if (k === 'n' || k === 'N') { SFX.play('open'); focusAdd(); }
+    else return false;
+    return true;
   }
 
   function init() {
-    inp = $('#type-input'); caret = $('#caret'); codeEl = $('#code'); scrollEl = $('#code-scroll');
-    $('#type-restart').innerHTML = I.reset + 'Restart';
-    $('#type-next').innerHTML = I.next + 'New code';
-    $('#focus-hint span').innerHTML = I.keyboard + (finePointer ? 'Click here or press any key to start typing' : 'Tap here to start typing');
-    if (!finePointer) $('#kbd-hint').textContent = 'Tip: an external keyboard works best for code practice.';
-    else if (isMac) $('#kbd-hint').innerHTML = '<kbd>Tab</kbd> indent &nbsp; <kbd>Esc</kbd> restart &nbsp; <kbd>\u2318</kbd>+<kbd>Enter</kbd> new code';
-    renderConfig();
-    $('#type-config').addEventListener('click', onConfigClick);
-    $('#type-restart').addEventListener('click', function () { restart(); focusInput(); });
-    $('#type-next').addEventListener('click', function () { newText(); focusInput(); });
-
-    inp.addEventListener('focus', function () { composing = false; $('#focus-hint').hidden = true; try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* noop */ } });
-    inp.addEventListener('blur', function () { composing = false; $('#focus-hint').hidden = false; });
-    inp.addEventListener('compositionstart', function () { composing = true; });
-    inp.addEventListener('compositionend', function () { composing = false; commit(inp.value); });
-    inp.addEventListener('input', function (e) { if (e.isComposing) return; composing = false; commit(inp.value); });
-    inp.addEventListener('paste', function (e) { e.preventDefault(); toast('Pasting is turned off here. Type it out!', { kind: 'warn', timeout: 2500 }); });
-    inp.addEventListener('drop', function (e) { e.preventDefault(); });
-    inp.addEventListener('keydown', function (e) {
-      var k = e.key;
-      if (k === 'Escape') { e.preventDefault(); e.stopPropagation(); restart(); SFX.play('tab'); return; }
-      if (k === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); newText(); SFX.play('tab'); return; }
-      if (T.done) { e.preventDefault(); return; }
-      if (k === 'Tab') {
-        e.preventDefault();
-        var pos = T.typed.length, s = '';
-        while (T.target[pos + s.length] === ' ' && s.length < 4) s += ' ';
-        insertText(s || ' ');
-        return;
-      }
-      if (/^(Arrow|Home|End|Page)/.test(k)) { e.preventDefault(); return; }
-      if (k === 'Backspace' && !e.ctrlKey && !e.metaKey && !e.altKey && S.typing.autoIndent) {
-        var m = /\n( +)$/.exec(T.typed);
-        if (m && m[1].length > 1) { e.preventDefault(); commit(T.typed.slice(0, T.typed.length - m[1].length)); SFX.play('key'); }
-      }
+    $('#cal-prev').innerHTML = I.left; $('#cal-next').innerHTML = I.right;
+    $('#cal-add-cat').innerHTML = CATEGORIES.map(function (c) { return '<option value="' + c.id + '"' + (c.id === 'personal' ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
+    $('#cal-prev').addEventListener('click', function () { step(-1); });
+    $('#cal-next').addEventListener('click', function () { step(1); });
+    $('#cal-today').addEventListener('click', function () { select(todayKey()); });
+    $('#cal-month').addEventListener('change', function () { var v = this.value; if (/^\d{4}-\d{2}$/.test(v)) select(v + '-' + pad2(Math.min(parseKey(sel).getDate(), 28))); });
+    $('#cal-label-wrap').addEventListener('click', function (e) { var m = $('#cal-month'); if (e.target !== m && m.showPicker) { e.preventDefault(); try { m.showPicker(); } catch (er) { /* not allowed here */ } } });
+    $('#cal-view').addEventListener('click', function (e) { var b = e.target.closest('[data-cv]'); if (b) setView(b.dataset.cv); });
+    $('#cal-main').addEventListener('click', onMainClick);
+    $('#cal-main').addEventListener('dblclick', function (e) { var c = e.target.closest('.cal-cell'); if (c && !e.target.closest('[data-id]')) { SFX.play('open'); focusAdd(); } });
+    $('#cal-day-list').addEventListener('click', function (e) {
+      var tg = e.target.closest('[data-toggle]'); if (tg) { Sched.toggleDone(tg.dataset.toggle, tg.dataset.k); return; }
+      var ed = e.target.closest('[data-edit]'); if (ed) Sched.editTask(ed.dataset.edit, sel);
     });
-    // results screen: Enter = next code, Esc = same code again, Ctrl/Cmd+Enter = new code
-    document.addEventListener('keydown', function (e) {
-      if (!T || !T.done || $('#view-typing').hidden || $('#type-results').hidden || Modal.isOpen()) return;
-      var onButton = e.target && e.target.tagName === 'BUTTON';
-      if (e.key === 'Escape') { e.preventDefault(); restart(); SFX.play('tab'); focusInput(); }
-      else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || !onButton)) { e.preventDefault(); SFX.play('tab'); newText(); focusInput(); }
-    });
-    inp.addEventListener('select', function () { try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* noop */ } });
-    inp.addEventListener('mouseup', function () { try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* noop */ } });
-    window.addEventListener('resize', debounce(function () { if (T && !$('#view-typing').hidden) { T.charH = T.spans[0] ? T.spans[0].getBoundingClientRect().height : T.charH; placeCaret(true); } }, 120));
-    newText();
-    renderHistory();
+    document.querySelector('.cal-side').addEventListener('click', function (e) { var g = e.target.closest('[data-go]'); if (g) select(g.dataset.go); });
+    $('#cal-add').addEventListener('submit', addTask);
+    $('#cal-open-sched').addEventListener('click', function () { Sched.go(sel); App.show('schedule'); });
+    // drag a one-off task onto another day to move it
+    var main = $('#cal-main');
+    main.addEventListener('dragstart', function (e) { var t = e.target.closest('[draggable="true"][data-id]'); if (!t) return; drag = t.dataset.id; try { e.dataTransfer.setData('text/plain', drag); e.dataTransfer.effectAllowed = 'move'; } catch (er) { /* old browsers */ } });
+    main.addEventListener('dragover', function (e) { if (!drag) return; var c = e.target.closest('[data-k]'); if (!c) return; e.preventDefault(); $$('.drop', main).forEach(function (x) { if (x !== c) x.classList.remove('drop'); }); c.classList.add('drop'); });
+    main.addEventListener('dragleave', function (e) { var c = e.target.closest('[data-k]'); if (c && !c.contains(e.relatedTarget)) c.classList.remove('drop'); });
+    main.addEventListener('drop', function (e) { var c = e.target.closest('[data-k]'); if (!drag || !c) return; e.preventDefault(); var id = drag; drag = null; moveTask(id, c.dataset.k); });
+    main.addEventListener('dragend', function () { drag = null; $$('.drop', main).forEach(function (x) { x.classList.remove('drop'); }); });
+    render();
   }
-
-  return {
-    init: init, focus: focusInput,
-    onShow: function () { if (T) { T.charH = T.spans[0] ? T.spans[0].getBoundingClientRect().height : T.charH; placeCaret(true); } if (finePointer) focusInput(); },
-    onHide: function () { if (T && T.started && !T.done) restart(); },
-    _state: function () { return T; }
-  };
+  function bootInfo() {
+    var tk = todayKey(), n = 0;
+    for (var i = 0; i < 30; i++) n += Sched.tasksOn(addDays(tk, i)).length;
+    return [view() + ' view, ' + n + ' tasks in the next 30 days', 'iso week ' + isoWeek(tk) + ', drag-to-move armed'];
+  }
+  return { init: init, render: render, key: key, bootInfo: bootInfo, select: select, selected: function () { return sel; } };
 }());
 
 /* =====================================================================
@@ -4273,15 +4006,16 @@ var App = (function () {
   var TABS = [
     { id: 'schedule', label: 'Schedule', ic: I.sched },
     { id: 'audio', label: 'Focus audio', ic: I.audio },
-    { id: 'typing', label: 'Code typing', ic: I.code }
+    { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '1.6.0';
+  var VERSION = '1.8.0';
   var WHATS_NEW = [
-    'Terminal only: the whole app now runs in the console look. Bridge view and the starfield are gone; your own wallpaper still works.',
-    'Black & white: three themes \u2013 Mono (white on black), White (white on white) and Dark (dark on dark).',
-    'Full block layout: every box joins its neighbours, sharing one line, so the screen reads as one solid block.',
-    'Focus audio redesigned: a plain text deck with no animation \u2013 status, program list, and a [####....] focus timer.'
+    'New Calendar (key 3): month, week and agenda views, ISO week numbers, a day panel to tick off and add tasks, upcoming list, month stats and heat map. Drag a task to another day to move it.',
+    'Red mode: the RED button in the bottom bar (or key R) turns the whole screen red to cut blue light at night.',
+    'The volume slider has a 0\u2013100% ruler. Tap a number to jump straight to it.',
+    'Code typing has been removed.',
+    'The empty schedule no longer shows an icon.'
   ];
 
   /* ---------- themes ---------- */
@@ -4312,6 +4046,14 @@ var App = (function () {
     if (!quiet) { SFX.play('theme'); toast('Theme: ' + t.name, { timeout: 1600 }); }
   }
 
+  /* red mode: a red filter over the whole screen that removes blue and green light */
+  function toggleRed() {
+    S.settings.redMode = !S.settings.redMode; save();
+    applySettings();
+    SFX.play(S.settings.redMode ? 'on' : 'off');
+    toast(S.settings.redMode ? 'Red mode on \u2013 blue light off. Press R to switch back.' : 'Red mode off', { timeout: 2200 });
+  }
+
   /* ---------- tabs ---------- */
   function buildTabs() {
     $$('.tab[data-tab]').forEach(function (b) {
@@ -4326,7 +4068,6 @@ var App = (function () {
     if (!TABS.some(function (t) { return t.id === id; })) id = 'schedule';
     if (id === current) return;
     var prev = current;
-    if (prev === 'typing') Typing.onHide();
     current = id;
     TABS.forEach(function (t) { $('#view-' + t.id).hidden = t.id !== id; });
     $$('.tab[data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === id)); });
@@ -4335,7 +4076,7 @@ var App = (function () {
     if (!opt.silent) SFX.play('tab');
     if (prev !== null) window.scrollTo(0, 0);
     if (id === 'schedule') Sched.render();
-    if (id === 'typing') Typing.onShow();
+    if (id === 'calendar') Cal.render();
     AudioUI.onTab(id === 'audio');
     Mini.update();
     dockStatus();
@@ -4372,9 +4113,11 @@ var App = (function () {
   function applySettings() {
     var st = S.settings;
     document.documentElement.classList.toggle('rails', st.sideRails !== false);
+    document.documentElement.classList.toggle('red', !!st.redMode);
+    var rb = $('#dock-red'); if (rb) { rb.setAttribute('aria-pressed', String(!!st.redMode)); rb.title = (st.redMode ? 'Red mode is on' : 'Red mode: cut blue light') + ' (R)'; }
     var th = themeOf(st.theme);
     document.documentElement.setAttribute('data-theme', th.id);
-    var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', th.bg);
+    var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', st.redMode ? '#000000' : th.bg);
     $$('.theme-btn[data-theme-id]').forEach(function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-theme-id') === th.id)); });
     Scene.setMode(st.scene);
     Rails.layout();
@@ -4408,15 +4151,17 @@ var App = (function () {
 
   var SHORTCUTS = [
     ['1 / 2 / 3', 'Switch section'],
-    ['N', 'New task (Schedule)'],
+    ['N', 'New task (Schedule, Calendar)'],
     ['T', 'Jump to today'],
-    ['\u2190 / \u2192', 'Previous / next day'],
+    ['\u2190 / \u2192', 'Previous / next day (Schedule, Calendar)'],
     ['Space', 'Play / pause music (Focus audio)'],
     ['M', 'Mute / unmute sound effects'],
     ['Y', 'Next theme'],
     ['F', 'Full screen on / off'],
-    ['Esc', 'Restart typing test, close dialogs'],
-    [(isMac ? '\u2318' : 'Ctrl') + ' + Enter', 'New code snippet'],
+    ['R', 'Red mode on / off (night light)'],
+    ['\u2191 / \u2193', 'Previous / next week (Calendar)'],
+    ['PgUp / PgDn', 'Previous / next month (Calendar)'],
+    ['Esc', 'Close dialogs'],
     ['?', 'Show this list']
   ];
   function shortcutsHTML() {
@@ -4446,7 +4191,7 @@ var App = (function () {
         setRow('Sound effects', 'Clicks, beeps and alerts', sw('set-sfx', st.sfx, 'Sound effects')) +
         '<div class="row"><label class="label" for="set-vol">Volume</label><input class="range" type="range" id="set-vol" min="0" max="100" value="' + Math.round(st.sfxVol * 100) + '"><span class="val" id="set-vol-v">' + Math.round(st.sfxVol * 100) + '%</span></div>' +
         setRow('Key sound', 'Used when you type', seg('set-key', [['terminal', 'Terminal'], ['beep', 'Data beep'], ['mech', 'Mechanical']], st.keySound, 'Key sound')) +
-        setRow('Typing sounds in text boxes', 'Off keeps them only in Code typing', sw('set-formkeys', st.formKeys, 'Typing sounds in text boxes')) +
+        setRow('Typing sounds in text boxes', 'A soft click on every key you type', sw('set-formkeys', st.formKeys, 'Typing sounds in text boxes')) +
         setRow('Sound check', '<span id="set-audio-s">' + esc(audioStatus()) + '</span>', '<span style="display:flex;gap:6px"><button class="btn btn-sm" type="button" id="set-test" data-sfx="none">' + I.play + 'Test</button><button class="btn btn-sm" type="button" id="set-restart" data-sfx="none">' + I.reset + 'Restart audio</button></span>') +
         (IS_IOS ? '<p class="muted" style="font-size:.82rem">On iPhone, the silent switch mutes button sounds (music still plays). Flip it to hear them.</p>' : '') +
       '</div>' +
@@ -4462,6 +4207,7 @@ var App = (function () {
           '</div>' +
         '</div>' +
         '<input type="file" id="wp-file" accept="image/*" hidden>' +
+        setRow('Red mode', 'Turns the whole screen red to cut blue light at night (key R)', sw('set-red', !!st.redMode, 'Red mode')) +
         setRow('24-hour clock', 'Off shows AM / PM', sw('set-24', st.clock24, '24-hour clock')) +
         setRow('Side panels', 'Mission and Systems displays beside the screen (wide screens)', sw('set-rails', st.sideRails !== false, 'Side panels')) +
         setRow('Reduce motion', 'Fewer animations', sw('set-motion', st.reduceMotion, 'Reduce motion')) +
@@ -4530,6 +4276,7 @@ var App = (function () {
           'set-sfx': function (on) { st.sfx = on; if (on) SFX.play('on'); },
           'set-formkeys': function (on) { st.formKeys = on; },
           'set-24': function (on) { st.clock24 = on; Sched.render(); },
+          'set-red': function (on) { st.redMode = on; SFX.play(on ? 'on' : 'off'); },
           'set-motion': function (on) { st.reduceMotion = on; },
           'set-rails': function (on) { st.sideRails = on; },
           'set-rem': function (on) { st.reminders = on; }
@@ -4597,7 +4344,7 @@ var App = (function () {
   }
   function resetAll() {
     SFX.play('error');
-    Modal.confirm({ title: 'Reset everything?', text: 'All tasks, notes, logs, XP, achievements, presets and typing history on this device will be deleted. Export a backup first if you might want them back.', ok: 'Delete everything', danger: true }).then(function (ok) {
+    Modal.confirm({ title: 'Reset everything?', text: 'All tasks, notes, logs, XP, achievements and presets on this device will be deleted. Export a backup first if you might want them back.', ok: 'Delete everything', danger: true }).then(function (ok) {
       if (!ok) return;
       Music.stop();
       saveBlocked = true;
@@ -4620,14 +4367,14 @@ var App = (function () {
       '</div></div>' +
       '<div class="stat-grid">' +
         stat(st.completed, 'Tasks completed') + stat(computeStreak(), 'Current streak') + stat(st.bestStreak, 'Best streak') +
-        stat(st.focus, 'Focus sessions') + stat(st.typingRuns, 'Typing runs') + stat(Object.keys(S.logs).filter(function (k) { return S.logs[k] && S.logs[k].trim(); }).length, 'Log entries') +
+        stat(st.focus, 'Focus sessions') + stat(st.calAdds || 0, 'Added from calendar') + stat(Object.keys(S.logs).filter(function (k) { return S.logs[k] && S.logs[k].trim(); }).length, 'Log entries') +
       '</div>' +
       '<div class="panel-head" style="margin:4px 0 0"><h2 class="panel-title">Achievements</h2><small class="muted">' + got + ' / ' + ACH.length + '</small></div>' +
       '<div class="ach-grid">' + ACH.map(function (a) {
         var t = S.profile.ach[a.id];
         return '<div class="ach' + (t ? ' got' : '') + '" title="' + (t ? 'Unlocked ' + new Date(t).toLocaleDateString() : 'Locked') + '">' + a.ic + '<div><b>' + esc(a.name) + '</b><span>' + esc(a.d) + '</span></div></div>';
       }).join('') + '</div>' +
-      '<p class="muted" style="font-size:.84rem">Earn XP by finishing tasks (more for high priority), completing focus sessions and typing runs. Each achievement gives +50 XP.</p>';
+      '<p class="muted" style="font-size:.84rem">Earn XP by finishing tasks (more for high priority), completing focus sessions and planning ahead. Each achievement gives +50 XP.</p>';
     Modal.open({ title: 'Profile', width: 600, body: body });
   }
 
@@ -4638,7 +4385,7 @@ var App = (function () {
       '<ul class="welcome-list">' +
         '<li>' + I.sched + '<span><b>Schedule</b> \u2013 add tasks for any day, give them a time, and tick them off. The dial shows your whole day at a glance.</span></li>' +
         '<li>' + I.audio + '<span><b>Focus audio</b> \u2013 sci-fi music generated live, with a focus timer. Shape the sound with the mixer.</span></li>' +
-        '<li>' + I.code + '<span><b>Code typing</b> \u2013 practice typing real Python and track your speed.</span></li>' +
+        '<li>' + I.cal + '<span><b>Calendar</b> \u2013 see what is coming up this month and add tasks to any day.</span></li>' +
       '</ul>' +
       '<div><label class="label" for="wel-call">What should we call you?</label><input class="field" id="wel-call" type="text" maxlength="24" placeholder="Your callsign (optional)" value="' + esc(S.profile.callsign) + '"></div>';
     var finish = function () { S.profile.welcomed = true; save(); greeting(); };
@@ -4686,7 +4433,6 @@ var App = (function () {
         if (now - lastTick > 55) { lastTick = now; var min = +el.min || 0, max = +el.max || 100; SFX.play('tick', (el.value - min) / ((max - min) || 1)); }
         return;
       }
-      if (el.id === 'type-input') return;
       if (isTextField(el)) { if (S.settings.formKeys) SFX.play('key'); return; }
       if (el.type === 'time' || el.type === 'date') SFX.play('tick', 0.6);
     });
@@ -4695,7 +4441,7 @@ var App = (function () {
     });
     // Deletions in text boxes do not always fire an "input" sound on every platform; Backspace always clicks.
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && isTextField(e.target) && e.target.tagName === 'INPUT' && e.target.id !== 'type-input' && S.settings.formKeys) SFX.play('tick', 0.9);
+      if (e.key === 'Enter' && isTextField(e.target) && e.target.tagName === 'INPUT' && S.settings.formKeys) SFX.play('tick', 0.9);
     });
   }
 
@@ -4711,7 +4457,7 @@ var App = (function () {
       if (Modal.isOpen()) return;
       if (isEditable(e.target)) {
         // Esc leaves a text box so the single-key shortcuts work again
-        if (e.key === 'Escape' && e.target.id !== 'type-input' && e.target.blur) e.target.blur();
+        if (e.key === 'Escape' && e.target.blur) e.target.blur();
         return;
       }
       var k = e.key;
@@ -4720,6 +4466,8 @@ var App = (function () {
       if (k === 'm' || k === 'M') { e.preventDefault(); toggleSfx(); return; }
       if (k === 'f' || k === 'F') { e.preventDefault(); toggleFullscreen(); return; }
       if (k === 'y' || k === 'Y') { e.preventDefault(); var i = THEMES.map(function (t) { return t.id; }).indexOf(S.settings.theme); setTheme(THEMES[(i + 1) % THEMES.length].id); return; }
+      if (k === 'r' || k === 'R') { e.preventDefault(); toggleRed(); return; }
+      if (current === 'calendar') { if (Cal.key(e)) e.preventDefault(); return; }
       if (current === 'schedule') {
         if (k === 'n' || k === 'N') { e.preventDefault(); SFX.play('open'); Sched.focusAdd(); }
         else if (k === 't' || k === 'T') { e.preventDefault(); Sched.today(); SFX.play('click'); }
@@ -4727,11 +4475,6 @@ var App = (function () {
         else if (k === 'ArrowRight') { e.preventDefault(); Sched.next(); SFX.play('click'); }
       } else if (current === 'audio') {
         if ((k === ' ' || k === 'Spacebar') && !(e.target && e.target.tagName === 'BUTTON')) { e.preventDefault(); AudioUI.togglePlay(); }
-      } else if (current === 'typing') {
-        if (k.length === 1 || k === 'Enter' || k === 'Tab') {
-          if (k === 'Tab' || k === 'Enter') e.preventDefault();
-          Typing.focus();
-        }
       }
     });
   }
@@ -4819,6 +4562,7 @@ var App = (function () {
     var body = themeCardsHTML() +
       '<div class="set-sec" style="margin-top:6px"><h3>QUICK ACCESS</h3><div class="quick-links">' +
         '<button class="btn btn-sm" type="button" data-q="pin">' + I.download + 'Install app</button>' +
+        '<button class="btn btn-sm" type="button" data-q="red" data-sfx="none">' + I.red + (S.settings.redMode ? 'Red mode: on' : 'Red mode: off') + '</button>' +
         '<button class="btn btn-sm" type="button" data-q="timer">' + I.clock + 'Quick timer</button>' +
         '<button class="btn btn-sm" type="button" data-q="deck">' + I.audio + 'Focus deck</button>' +
         '<button class="btn btn-sm" type="button" data-q="copy">' + I.link + 'Copy link</button>' +
@@ -4832,6 +4576,7 @@ var App = (function () {
         var b = e.target.closest('[data-q]'); if (!b) return;
         var q = b.dataset.q;
         if (q === 'copy') { copyLink(); return; }
+        if (q === 'red') { toggleRed(); b.innerHTML = I.red + (S.settings.redMode ? 'Red mode: on' : 'Red mode: off'); return; }
         close();
         setTimeout(function () { ({ pin: pinApp, profile: openProfile, settings: openSettings, fs: toggleFullscreen, timer: QTimer.openModal, deck: FocusDeck.openModal })[q](); }, 30);
       });
@@ -4841,8 +4586,9 @@ var App = (function () {
   /* ---------- system bar ---------- */
   function buildDock() {
     $('#dock-ver').textContent = 'v' + VERSION;
-    $('#tui-keys').innerHTML = [['1', 'Sched', ''], ['2', 'Audio', ''], ['3', 'Code', ''], ['N', 'New', ' tk-x'], ['?', 'Keys', ' tk-x']].map(function (k) {
-      return '<button type="button" class="tk' + k[2] + '" data-k="' + k[0] + '" title="' + k[1] + ' (' + k[0] + ')"><kbd>' + k[0] + '</kbd><span>' + k[1] + '</span></button>';
+    // key strip: each key is a rectangle with what it does written next to it (long words on wide screens, short ones when space is tight)
+    $('#tui-keys').innerHTML = [['1', 'Schedule', 'Sched', 'Open the schedule'], ['2', 'Focus audio', 'Audio', 'Open focus audio'], ['3', 'Calendar', 'Cal', 'Open the calendar'], ['N', 'New task', 'New', 'Add a new task'], ['?', 'Shortcuts', 'Keys', 'Show all keyboard shortcuts']].map(function (k) {
+      return '<button type="button" class="tk" data-k="' + k[0] + '" title="' + k[3] + ' (key ' + k[0] + ')"><kbd>' + k[0] + '</kbd><span class="tk-l">' + k[1] + '</span><span class="tk-s">' + k[2] + '</span></button>';
     }).join('');
     $('#tui-keys').addEventListener('click', function (e) {
       var b = e.target.closest('[data-k]'); if (!b) return; b.blur();
@@ -4857,6 +4603,8 @@ var App = (function () {
     $('#dock-themes').addEventListener('click', function (e) { var b = e.target.closest('[data-theme-id]'); if (b) setTheme(b.getAttribute('data-theme-id')); });
     // bar buttons hand focus back to the page so Space / shortcuts keep working afterwards
     $('#dock-play').addEventListener('click', function () { this.blur(); AudioUI.togglePlay(); dockStatus(); });
+    $('#dock-red').querySelector('.dr-ic').innerHTML = I.red;
+    $('#dock-red').addEventListener('click', function () { this.blur(); toggleRed(); });
     $('#dock-themes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) b.blur(); });
     var nt = $('#nav-theme');
     nt.innerHTML = I.theme + '<span>Theme</span>';
@@ -4905,6 +4653,8 @@ var App = (function () {
     if (['terminal', 'beep', 'mech'].indexOf(S.settings.keySound) < 0) S.settings.keySound = 'terminal';
     if (!THEMES.some(function (t) { return t.id === S.settings.theme; })) S.settings.theme = 'mono';
     if (S.settings.scene !== 'custom') S.settings.scene = 'none';
+    ['wpm30', 'wpm50', 'wpm70'].forEach(function (k) { delete S.profile.ach[k]; }); // code typing was removed in 1.8.0
+    if (['month', 'week', 'agenda'].indexOf(S.ui.calView) < 0) S.ui.calView = 'month';
     buildTabs();
     buildDock();
     $('#settings-btn').innerHTML = I.gear;
@@ -4930,7 +4680,7 @@ var App = (function () {
     $$('input[type="range"]').forEach(rangeFill);
 
   }
-  return { ready: ready, themeName: function () { return themeOf(S.settings.theme).name; }, version: VERSION, dockStatus: dockStatus, init: init, show: show, toggleFullscreen: toggleFullscreen, setTheme: setTheme, themes: THEMES, openThemes: openThemes, pinApp: pinApp, current: function () { return current; }, applySettings: applySettings, rangeFill: rangeFill, openSettings: openSettings, openProfile: openProfile };
+  return { ready: ready, toggleRed: toggleRed, themeName: function () { return themeOf(S.settings.theme).name; }, version: VERSION, dockStatus: dockStatus, init: init, show: show, toggleFullscreen: toggleFullscreen, setTheme: setTheme, themes: THEMES, openThemes: openThemes, pinApp: pinApp, current: function () { return current; }, applySettings: applySettings, rangeFill: rangeFill, openSettings: openSettings, openProfile: openProfile };
 }());
 
 /* =====================================================================
@@ -5063,7 +4813,8 @@ var AudioUI = (function () {
     $('#np-tempo').textContent = A.bpm + ' BPM';
     $('#np-layers').textContent = layerCount() + ' of ' + LAYERS.length + ' on';
     $('#np-beat').textContent = A.binOn ? A.binBeat + ' Hz \u00b7 headphones' : 'Off';
-    var mv = $('#master-vol'); mv.value = Math.round(A.master * 100); App.rangeFill(mv);
+    var mv = $('#master-vol'), vv = Math.round(A.master * 100); mv.value = vv; App.rangeFill(mv);
+    $$('#view-audio .vt').forEach(function (t) { var p = +t.dataset.vol; t.classList.toggle('on', p <= vv); t.classList.toggle('cur', Math.abs(p - vv) < 5); });
     $('#master-val').textContent = pct(A.master);
   }
   function renderPlay() {
@@ -5134,7 +4885,77 @@ var AudioUI = (function () {
     });
   }
 
-  function onTab(v) { if (v) renderNow(); }
+  /* ---------- live spectrum: LED-style level bars with peak caps and a reflection ---------- */
+  var spec = { raf: 0, on: false, lv: [], pk: [], hold: [], last: 0, data: null, w: 0, h: 0, dpr: 1 };
+  var SPEC_STOPS = { dark: [[0, '#9ff3ee'], [0.2, '#a6e86b'], [0.55, '#c8e23a'], [0.75, '#f2e33a'], [0.88, '#ffae2a'], [1, '#ff4a3a']],
+    light: [[0, '#14a79f'], [0.2, '#3fa52a'], [0.55, '#86a800'], [0.75, '#cf9b00'], [0.88, '#e86f00'], [1, '#d9261b']] };
+  function hexRGB(h) { var n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+  function specColor(f, stops) {
+    for (var i = 1; i < stops.length; i++) if (f <= stops[i][0]) {
+      var a = stops[i - 1], b = stops[i], k = (f - a[0]) / (b[0] - a[0]), ca = hexRGB(a[1]), cb = hexRGB(b[1]);
+      return 'rgb(' + Math.round(ca[0] + (cb[0] - ca[0]) * k) + ',' + Math.round(ca[1] + (cb[1] - ca[1]) * k) + ',' + Math.round(ca[2] + (cb[2] - ca[2]) * k) + ')';
+    }
+    return stops[stops.length - 1][1];
+  }
+  function specSize() {
+    var cv = $('#spec'); if (!cv) return false;
+    var w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return false;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (w !== spec.w || h !== spec.h || dpr !== spec.dpr) { spec.w = w; spec.h = h; spec.dpr = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    return true;
+  }
+  function specDraw(now) {
+    spec.raf = 0;
+    if (!spec.on || document.hidden || !specSize()) return;
+    var cv = $('#spec'), x = cv.getContext('2d'), w = spec.w, h = spec.h;
+    x.setTransform(spec.dpr, 0, 0, spec.dpr, 0, 0); x.clearRect(0, 0, w, h);
+    var cols = clamp(Math.floor(w / 22), 12, 32), gap = 3, cw = (w - gap * (cols - 1)) / cols;
+    var segH = 6, topH = Math.floor(h * 0.7), rows = Math.floor(topH / segH), base = rows * segH, refRows = Math.floor((h - base - 3) / segH);
+    var dt = spec.last ? Math.min(0.1, (now - spec.last) / 1000) : 0.016; spec.last = now;
+    var an = Music.isPlaying() ? Music.analyser() : null, live = false;
+    if (an) { if (!spec.data || spec.data.length !== an.frequencyBinCount) spec.data = new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(spec.data); }
+    var sr = (AC.ctx && AC.ctx.sampleRate) || 44100, binHz = sr / 2 / (spec.data ? spec.data.length : 512);
+    var light = document.documentElement.getAttribute('data-theme') === 'white', stops = light ? SPEC_STOPS.light : SPEC_STOPS.dark;
+    var tint = (getComputedStyle(document.documentElement).getPropertyValue('--tint-rgb') || '220,220,220').trim();
+    for (var i = 0; i < cols; i++) {
+      var m = 0;
+      if (an) {
+        var f0 = 40 * Math.pow(9000 / 40, i / cols), f1 = 40 * Math.pow(9000 / 40, (i + 1) / cols);
+        var b0 = Math.max(1, Math.floor(f0 / binHz)), b1 = Math.max(b0 + 1, Math.ceil(f1 / binHz)), sum = 0, mx = 0;
+        for (var b = b0; b < b1 && b < spec.data.length; b++) { sum += spec.data[b]; if (spec.data[b] > mx) mx = spec.data[b]; }
+        m = clamp(Math.pow(((sum / (b1 - b0)) * 0.6 + mx * 0.4) / 255, 2.1) * (0.85 + i / cols * 1.1), 0, 1);
+      }
+      var lv = spec.lv[i] || 0;
+      lv = m > lv ? m : Math.max(m, lv - dt * 1.6); spec.lv[i] = lv;
+      if (lv > (spec.pk[i] || 0)) { spec.pk[i] = lv; spec.hold[i] = 0.7; }
+      else if ((spec.hold[i] -= dt) <= 0) spec.pk[i] = Math.max(0, (spec.pk[i] || 0) - dt * 0.55);
+      if (lv > 0.004 || spec.pk[i] > 0.004) live = true;
+      var n = Math.round(lv * rows), px = i * (cw + gap), pr = Math.min(rows - 1, Math.round(spec.pk[i] * rows));
+      for (var r = 0; r < rows; r++) {
+        var y = base - (r + 1) * segH;
+        x.fillStyle = r < n ? specColor(r / (rows - 1), stops) : 'rgba(' + tint + ',.07)';
+        x.fillRect(px, y, cw, segH - 1);
+      }
+      if (spec.pk[i] > 0.02 && pr >= n) { x.fillStyle = specColor(Math.max(pr / (rows - 1), 0.82), stops); x.fillRect(px, base - (pr + 1) * segH, cw, segH - 1); }
+      // reflection under the line
+      x.fillStyle = 'rgba(' + tint + ',.035)';
+      for (var z = 0; z < refRows; z++) x.fillRect(px, base + 3 + z * segH, cw, segH - 1);
+      var rn = Math.min(refRows, Math.round(n * 0.55));
+      for (var q = 0; q < rn; q++) {
+        x.globalAlpha = 0.55 * (1 - q / refRows);
+        x.fillStyle = specColor(q / (rows - 1), stops);
+        x.fillRect(px, base + 3 + q * segH, cw, segH - 1);
+      }
+      x.globalAlpha = 1;
+    }
+    if (live || Music.isPlaying()) specKick(); else spec.last = 0;
+  }
+  function specKick() { if (spec.on && !spec.raf && !document.hidden) spec.raf = requestAnimationFrame(specDraw); }
+  function onTab(v) {
+    spec.on = v;
+    if (v) { renderNow(); specKick(); }
+    else if (spec.raf) { cancelAnimationFrame(spec.raf); spec.raf = 0; spec.last = 0; }
+  }
 
   /* ---------- init ---------- */
   function init() {
@@ -5155,6 +4976,7 @@ var AudioUI = (function () {
     });
     $('#aud-save').addEventListener('click', savePreset);
     $('#master-vol').addEventListener('input', function () { applyParam('master', this.value / 100); });
+    $('#view-audio .vol-scale').addEventListener('click', function (e) { var b = e.target.closest('[data-vol]'); if (!b) return; applyParam('master', +b.dataset.vol / 100); SFX.play('tick', +b.dataset.vol / 100); });
 
     $('#prog-grid').addEventListener('click', function (e) {
       var b = e.target.closest('[data-prog]'); if (!b) return;
@@ -5219,7 +5041,9 @@ var AudioUI = (function () {
       }
     });
 
-    Music.on(function () { renderPlay(); Mini.update(); App.dockStatus(); });
+    Music.on(function () { renderPlay(); Mini.update(); App.dockStatus(); specKick(); });
+    new (window.ResizeObserver || function () { this.observe = function () {}; })(function () { specKick(); }).observe($('#spectrum'));
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) specKick(); });
   }
   function pickProgram(id) { loadParams(programParams(id)); SFX.play('open'); if (!Music.isPlaying()) Music.play(); }
   function setVolume(v) { applyParam('master', clamp(v, 0, 1)); }
@@ -5613,9 +5437,7 @@ var Mini = (function () {
   function update() {
     var el = $('#mini'); if (!el || !App.current()) return;
     var playing = Music.isPlaying(), timer = Focus.active(), qt = QTimer.active();
-    var narrow = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
-    // on phones the typing area needs the whole screen, so the mini player steps aside there
-    var show = (playing || timer || qt) && App.current() !== 'audio' && !(narrow && App.current() === 'typing');
+    var show = (playing || timer || qt) && App.current() !== 'audio';
     el.hidden = !show;
     if (!show) return;
     var name = S.ui.presetName || (PROGRAMS[S.audio.program] || PROGRAMS.drift).name;
@@ -5913,45 +5735,36 @@ var Notes = (function () {
 /* Start-up runs behind the loading screen like a boot log: one line per system,
    printed while it loads, then [ OK ] with what it found and how long it took. */
 function boot() {
-  var el = $('#boot'), log = $('#boot-log'), barEl = $('#boot-bar'), stepEl = $('#boot-step'), pctEl = $('#boot-pct');
+  var el = $('#boot'), log = $('#boot-log');
   var fast = S.settings.reduceMotion, t0 = performance.now(), minTime = fast ? 300 : 1400, i = 0, delay = fast ? 0 : 70;
   function kb(n) { return (n / 1024).toFixed(1) + ' KB'; }
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  // each step: [module, start-up function, lines it prints when done]
   var steps = [
-    ['storage.mount', null, function () { var raw = Store.get(STORE_KEY) || ''; return (Store.ok ? 'localStorage' : 'memory only (storage blocked)') + ' · ' + kb(raw.length) + ' · ' + plural(S.tasks.length, 'task') + ', ' + plural(Object.keys(S.logs).length, 'log entry').replace('entrys', 'entries'); }],
-    ['render.screen', Scene.init, function () { return Scene.mode() === 'custom' ? 'custom wallpaper layer' : 'plain terminal · ' + App.themeName(); }],
-    ['render.wallpaper', Wallpaper.init, function () { return S.settings.scene === 'custom' ? 'reading image from IndexedDB' : 'standby'; }],
-    ['sched.index', Sched.init, function () { var tk = todayKey(); return plural(Sched.tasksOn(tk).length, 'task') + ' on ' + tk + ' · reminders ' + (S.settings.reminders ? 'armed' : 'off'); }],
-    ['typing.compile', Typing.init, function () { var n = 0; Object.keys(SNIPPETS).forEach(function (k) { n += SNIPPETS[k].length; }); return n + ' python snippets · ' + plural(S.typing.history.length, 'run') + ' in history'; }],
-    ['audio.engine', AudioUI.init, function () { return Object.keys(PROGRAMS).length + ' synth programs · loaded "' + (PROGRAMS[S.audio.program] || PROGRAMS.drift).name + '"'; }],
-    ['timer.focus', Focus.init, function () { return Focus.active() ? 'session restored · ' + Focus.fmt(Focus.remaining()) + ' left' : 'idle · ' + Focus.length() + ' min preset'; }],
-    ['timer.quick', QTimer.init, function () { return QTimer.active() ? 'restored · ' + QTimer.fmt(QTimer.remaining()) + ' left' : 'idle'; }],
-    ['ui.deck', FocusDeck.init, function () { return 'music + focus link'; }],
-    ['ui.notes', Notes.init, function () { return S.notes.text.length + ' chars restored'; }],
-    ['ui.player', Mini.init, function () { return 'mini player bound'; }],
-    ['ui.shell', App.init, function () { return 'theme=' + S.settings.theme + ' · build ' + App.version; }]
+    ['storage', null, function () { var raw = Store.get(STORE_KEY) || ''; return ['mounting ' + (Store.ok ? 'localStorage' : 'memory (storage blocked)') + ' key=' + STORE_KEY + ' size=' + kb(raw.length), 'loaded ' + plural(S.tasks.length, 'task') + ', ' + plural(Object.keys(S.logs).length, 'log entry').replace('entrys', 'entries') + ', user=' + (S.profile.callsign || 'operator')]; }],
+    ['screen', Scene.init, function () { return ['tty mode, theme=' + App.themeName().toLowerCase() + ', background=' + (Scene.mode() === 'custom' ? 'wallpaper' : 'plain')]; }],
+    ['wallpaper', Wallpaper.init, function () { return [S.settings.scene === 'custom' ? 'reading image from IndexedDB' : 'not set, skipping']; }],
+    ['sched', Sched.init, function () { var tk = todayKey(); return ['indexing ' + tk + ': ' + plural(Sched.tasksOn(tk).length, 'task'), 'reminders ' + (S.settings.reminders ? 'armed' : 'off') + ', clock=' + (S.settings.clock24 ? '24h' : '12h')]; }],
+    ['calendar', Cal.init, function () { return Cal.bootInfo(); }],
+    ['audio', AudioUI.init, function () { return ['synth engine: ' + Object.keys(PROGRAMS).length + ' programs, 7 layers, fft=1024', 'program "' + (PROGRAMS[S.audio.program] || PROGRAMS.drift).name + '" loaded']; }],
+    ['timer', Focus.init, function () { return ['focus: ' + (Focus.active() ? 'session restored, ' + Focus.fmt(Focus.remaining()) + ' left' : 'idle, ' + Focus.length() + ' min preset')]; }],
+    ['timer', QTimer.init, function () { return ['quick: ' + (QTimer.active() ? 'restored, ' + QTimer.fmt(QTimer.remaining()) + ' left' : 'idle')]; }],
+    ['deck', FocusDeck.init, function () { return ['music + focus link bound']; }],
+    ['notes', Notes.init, function () { return [S.notes.text.length + ' chars restored']; }],
+    ['player', Mini.init, function () { return ['mini player bound']; }],
+    ['shell', App.init, function () { return ['build ' + App.version + ', ' + document.querySelectorAll('button').length + ' controls, keys 1 2 3 N ?']; }]
   ];
-  function pad(t, n) { t = String(t); while (t.length < n) t += ' '; return t; }
+  function stamp() { var t = ((performance.now() - t0) / 1000).toFixed(4); while (t.length < 9) t = ' ' + t; return '<span class="ts">[' + t + ']</span> '; }
   function line(html) { var d = document.createElement('div'); d.innerHTML = html; if (log) { log.appendChild(d); log.scrollTop = log.scrollHeight; } return d; }
-  function running(name, what) { return line('<span class="run">[ .. ]</span> ' + esc(pad(name, 17)) + '<span class="dim">' + esc(what) + '</span>'); }
-  function result(row, ok, name, detail, ms) {
-    row.innerHTML = (ok ? '<span class="ok">[ OK ]</span> ' : '<span class="fail">[FAIL]</span> ') + esc(pad(name, 17)) + '<span class="dim">' + esc(detail) + '</span>' + (ms != null ? ' <span class="acc">' + ms + 'ms</span>' : '');
-  }
-  function progress(p, text) {
-    var n = 28, f = Math.round(p / 100 * n);
-    if (barEl) barEl.textContent = '[' + new Array(f + 1).join('#') + new Array(n - f + 1).join('.') + ']';
-    if (pctEl) pctEl.textContent = Math.round(p) + '%';
-    if (stepEl && text) stepEl.textContent = text;
-  }
+  function print(mod, text, err) { line(stamp() + (err ? '<span class="err">' + esc(mod + ': ' + text) + '</span>' : esc(mod + ': ') + '<span class="hi">' + esc(text) + '</span>')); }
   function next() {
     if (i < steps.length) {
-      var s = steps[i++], row = running(s[0], 'loading…');
-      progress((i - 1) / steps.length * 86, s[0]);
+      var s = steps[i++];
       setTimeout(function () {
-        var ts = performance.now(), ok = true, detail = '';
-        try { if (s[1]) s[1](); } catch (e) { ok = false; detail = String(e && e.message || e); if (window.console) console.error('[Task Matrix] ' + s[0] + ' failed to start:', e); }
-        if (ok) { try { detail = s[2](); } catch (e2) { detail = 'ready'; } }
-        result(row, ok, s[0], detail, Math.max(1, Math.round(performance.now() - ts)));
+        var ok = true, out = [];
+        try { if (s[1]) s[1](); } catch (e) { ok = false; out = ['failed: ' + String(e && e.message || e)]; if (window.console) console.error('[Task Matrix] ' + s[0] + ' failed to start:', e); }
+        if (ok) { try { out = s[2](); } catch (e2) { out = ['ready']; } }
+        out.forEach(function (t) { print(s[0], t, !ok); });
         next();
       }, delay);
       return;
@@ -5959,19 +5772,17 @@ function boot() {
     // offline helper (only on the real website; a local file cannot use it)
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       try { navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ }); } catch (e) { /* noop */ }
-      result(line(''), true, 'net.cache', 'offline cache registered');
+      print('net', 'offline cache registered');
     }
-    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Typing: Typing, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX };
-    // wait for the fonts (with a time limit), then open up
-    progress(90, 'fonts.load');
-    var fontRow = running('fonts.load', 'JetBrains Mono…'), finished = false;
-    var fontsDone = false; function fonts() { if (!fontsDone) { fontsDone = true; result(fontRow, true, 'fonts.load', 'JetBrains Mono ready', Math.round(performance.now() - t0)); finish(); } }
+    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX };
+    // wait for the font (with a time limit), then open up
+    var finished = false, fontsDone = false;
+    function fonts() { if (!fontsDone) { fontsDone = true; print('fonts', 'JetBrains Mono ready'); finish(); } }
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fonts, fonts); else fonts(); } catch (e) { fonts(); }
     setTimeout(fonts, 1500);
     function finish() {
       if (finished) return; finished = true;
-      progress(100, 'online');
-      line('<span class="cmd">$</span> <span class="acc">systems online</span><span class="dim"> — welcome aboard, ' + esc(S.profile.callsign || 'operator') + '</span><span class="boot-cursor"></span>');
+      line('<span class="cmd">$</span> <span class="hi">systems online</span> <span class="dim">welcome back, ' + esc(S.profile.callsign || 'operator') + '</span><span class="boot-cursor"></span>');
       setTimeout(function () {
         if (el) { el.classList.add('done'); setTimeout(function () { el.remove(); }, 600); }
         App.ready();
