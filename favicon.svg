@@ -1,1 +1,8 @@
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Task Matrix logo: a terminal window with a check mark -->
+  <rect width="64" height="64" fill="#000000"/>
+  <!-- window frame + title bar (the three dots are cut out) -->
+  <path fill="#e8e8e8" fill-rule="evenodd" d="M6 6h52v52H6zM9 17v38h46V17zM11 10v3h3v-3zM16 10v3h3v-3zM21 10v3h3v-3z"/>
+  <!-- check mark -->
+  <path fill="#ffffff" d="M12 37 26 50.9 31.9 45 18 31zM29 48 52 25 46 19 23 42z"/>
+</svg>
