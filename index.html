@@ -1584,11 +1584,18 @@ html.tui .dial-sub { font-size: 0.74rem; margin-top: 4px; }
 @media (max-width: 560px) { .spectrum { height: 130px; } }
 /* loading screen: no box, just the program's output scrolling up the screen */
 html.tui .boot { transition: opacity 0.15s linear, visibility 0.15s; display: block; place-items: normal; padding: calc(var(--safe-t) + 18px) calc(var(--safe-r) + 22px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 22px); }
-.boot-log { height: 100%; overflow: hidden; font: 400 13px/1.55 "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--text-2); }
-.boot-log > div { white-space: pre-wrap; word-break: break-all; }
-.boot-log .dim { color: var(--dim); } .boot-log .cmd, .boot-log .hi { color: var(--hi); } .boot-log .ts { color: var(--dim); }
+.boot-log { height: 100%; overflow: hidden; font: 400 15px/1.5 "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--text); }
+.boot-log > div { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
+.boot-log .i1 { padding-left: 4ch; } .boot-log .i2 { padding-left: 8ch; } .boot-log .i3 { padding-left: 12ch; }
+.boot-log .sc { display: grid; grid-template-columns: 4ch 13ch minmax(0, 1fr); }
+.boot-log .sc > :first-child { grid-column: 2; }
+.boot-log .dim { color: var(--dim); } .boot-log .hi { color: var(--hi); } .boot-log .val { color: var(--text-2); }
 .boot-log .err { background: var(--hi); color: var(--bg); }
-@media (max-width: 560px) { .boot-log { font-size: 11px; } }
+.boot-log .press { margin-top: 0.75em; color: var(--hi); }
+.boot.ready { cursor: pointer; }
+.boot.armed { animation: none; }
+@media (max-width: 700px) { .boot-log { font-size: 12px; } .boot-log .sc { grid-template-columns: 2ch 11ch minmax(0, 1fr); } }
+@media (max-height: 560px) { .boot-log { font-size: 12px; line-height: 1.4; } }
 
 /* =====================================================================
    1.8.0 — red mode, calendar, volume scale
@@ -1938,13 +1945,56 @@ html.tui .badge { color: var(--orange); border-color: var(--orange); }
   html.tui .sched-side .dial-panel .stat:not(.side-extra) { display: flex; flex-direction: column; justify-content: center; }
   html.tui .sched-side .dial-panel .stat span { font-size: 0.58rem; }
 }
+
+/* =====================================================================
+   1.9.1 — red mode: brighter lines, outlines and dial so every shape and
+   control is easy to find in the dark
+   ===================================================================== */
+html.red, html.red[data-theme] {
+  --tint-rgb: 255, 255, 255; --text: #ffffff; --text-2: #e8e8e8; --dim: #bdbdbd; --hi: #ffffff;
+  --line: rgba(255, 255, 255, 0.42); --line-2: rgba(255, 255, 255, 0.65); --frame: rgba(255, 255, 255, 0.88);
+}
+html.red .muted, html.red .label, html.red .stat span, html.red .wd-name, html.red .cc-meta, html.red .up-in, html.red .cal-note { color: var(--text-2); }
+html.red .btn, html.red .icon-btn, html.red .seg, html.red .field, html.red .switch, html.red .wday, html.red .stat, html.red .chip,
+html.red .preset-chip, html.red .kv, html.red .spectrum, html.red .cal-day-list, html.red .cal-up, html.red .hc { border-color: rgba(255, 255, 255, 0.9); }
+html.red .seg button { border-color: rgba(255, 255, 255, 0.6); }
+html.red .task-actions .icon-btn, html.red .check, html.red .cbox, html.red .more-toggle, html.red .date-nav .icon-btn, html.red .cal-nav .icon-btn { color: #ffffff; }
+html.red .check:hover .hex { stroke-width: 3; }
+html.red .switch::after { background: #ffffff; }
+html.red .switch[aria-checked="false"]::after { background: rgba(255, 255, 255, 0.55); }
+html.red input[type="range"].range::-webkit-slider-runnable-track { background: linear-gradient(90deg, #fff 0 var(--p), rgba(255, 255, 255, 0.35) var(--p) 100%); }
+html.red .wd-bar, html.red .xpbar, html.red .rail-meter, html.red .cc-bar { background: rgba(255, 255, 255, 0.3); }
+html.red .cc-task, html.red .cw-task { border-left-color: #ffffff; color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+html.red :focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+/* the day overview dial */
+html.red #dial .d-ring { stroke: rgba(255, 255, 255, 0.85) !important; stroke-width: 1.6; }
+html.red #dial .d-tick { stroke: rgba(255, 255, 255, 0.75) !important; stroke-width: 1.4; }
+html.red #dial .d-tick.maj { stroke: #ffffff !important; stroke-width: 2.6; }
+html.red #dial .d-label { fill: #ffffff !important; font-weight: 700; font-size: 10px; }
+html.red #dial .d-track { stroke: rgba(255, 255, 255, 0.32) !important; }
+html.red #dial .d-arc { stroke: #ffffff; }
+html.red #dial .d-hand { stroke: #ffffff; stroke-width: 3.2; }
+html.red #dial .d-face { stroke: rgba(255, 255, 255, 0.85) !important; stroke-width: 1.6; }
+html.red #dial .d-ctick { stroke: rgba(255, 255, 255, 0.75) !important; stroke-width: 1.4; }
+html.red #dial .d-ctick.big { stroke: #ffffff !important; stroke-width: 2.4; }
+html.red #dial .dial-marker { stroke-width: 3; }
+html.red #dial .dial-marker:not([fill^="var(--ok"]) { stroke: #ffffff; }
+/* orange and red look the same through a red filter, so in red mode the hour is a solid dot and the minute a ring */
+html.red #dial .dial-hour { fill: #ffffff !important; stroke: #ffffff; stroke-width: 2; }
+html.red #dial .dial-min { fill: #000000 !important; stroke: #ffffff; stroke-width: 2.6; }
+html.red .dial-sub { color: #ffffff; }
+/* through the red filter, orange and red fills turn into bright blocks with dark text */
+html.red, html.red[data-theme] { --orange: #ffffff; --orange-hi: #ffffff; --red: #ffffff; --red-hi: #ffffff; }
+html.red .chip.st-overdue, html.red .btn-primary.is-stop, html.red .dock-red[aria-pressed="true"], html.red .dock-timer.ring, html.red .dock-timer.ring b,
+html.red .task-actions .icon-btn.del:hover, html.red .preset-chip button.x:hover, html.red .btn-danger:hover { color: #000000; }
+html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
 </style>
 </head>
 <body>
 <div id="redmode" aria-hidden="true"></div>
 <!-- ================= LOADING SCREEN ================= -->
 <div class="boot" id="boot" role="status" aria-live="polite" aria-label="Loading Task Matrix">
-  <div class="boot-log" id="boot-log"><div class="dim">Task Matrix BIOS 1.9.0  tty0  node 01</div><div><span class="cmd">$</span> ./taskmatrix --boot</div></div>
+  <div class="boot-log" id="boot-log" aria-live="polite"></div>
 </div>
 <div class="app" id="app">
   <div class="tui-status" id="tui-status" aria-hidden="true"><span id="ts-left">TASK MATRIX</span><span id="ts-right"></span></div>
@@ -3690,27 +3740,27 @@ var Sched = (function () {
     var pct = total ? Math.round(done / total * 100) : 0;
     var cx = 120, cy = 120, R = 100, parts = [];
     // outer hour ring
-    parts.push('<circle cx="120" cy="120" r="' + R + '" fill="none" style="stroke:rgba(var(--tint-rgb),.22)" stroke-width="1"/>');
+    parts.push('<circle class="d-ring" cx="120" cy="120" r="' + R + '" fill="none" style="stroke:rgba(var(--tint-rgb),.22)" stroke-width="1"/>');
     for (var h = 0; h < 24; h++) {
       var major = h % 6 === 0, a1 = polar(cx, cy, R - (major ? 9 : 5), h * 15), a2 = polar(cx, cy, R, h * 15);
-      parts.push('<line x1="' + a1[0].toFixed(1) + '" y1="' + a1[1].toFixed(1) + '" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (major ? '.6' : '.25') + ')" stroke-width="' + (major ? 1.6 : 1) + '"/>');
-      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono, monospace">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
+      parts.push('<line class="d-tick' + (major ? ' maj' : '') + '" x1="' + a1[0].toFixed(1) + '" y1="' + a1[1].toFixed(1) + '" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (major ? '.6' : '.25') + ')" stroke-width="' + (major ? 1.6 : 1) + '"/>');
+      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text class="d-label" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono, monospace">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
     }
     // progress ring
     var PR = 78, C = 2 * Math.PI * PR;
-    parts.push('<circle cx="120" cy="120" r="' + PR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.12)" stroke-width="8"/>');
-    parts.push('<circle cx="120" cy="120" r="' + PR + '" fill="none" stroke="' + (pct === 100 ? 'var(--ok)' : 'var(--accent)') + '" stroke-width="8" stroke-linecap="butt" stroke-dasharray="' + (C * pct / 100).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 120 120)"/>');
+    parts.push('<circle class="d-track" cx="120" cy="120" r="' + PR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.12)" stroke-width="8"/>');
+    parts.push('<circle class="d-arc" cx="120" cy="120" r="' + PR + '" fill="none" stroke="' + (pct === 100 ? 'var(--ok)' : 'var(--accent)') + '" stroke-width="8" stroke-linecap="butt" stroke-dasharray="' + (C * pct / 100).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 120 120)"/>');
     // now hand
     if (sel === todayKey()) {
       var nd = nowMinutes() / 1440 * 360, n1 = polar(cx, cy, PR + 8, nd), n2 = polar(cx, cy, R + 3, nd);
-      parts.push('<line x1="' + n1[0].toFixed(1) + '" y1="' + n1[1].toFixed(1) + '" x2="' + n2[0].toFixed(1) + '" y2="' + n2[1].toFixed(1) + '" stroke="var(--hi)" stroke-width="2.2" stroke-linecap="square"/>');
+      parts.push('<line class="d-hand" x1="' + n1[0].toFixed(1) + '" y1="' + n1[1].toFixed(1) + '" x2="' + n2[0].toFixed(1) + '" y2="' + n2[1].toFixed(1) + '" stroke="var(--hi)" stroke-width="2.2" stroke-linecap="square"/>');
     }
     // inner clock: 12-hour face; orange ring = hour, red ring = minute
     var CR = 60, nd2 = new Date(), hh = nd2.getHours() % 12, mm = nd2.getMinutes();
-    parts.push('<circle cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.3)" stroke-width="1"/>');
+    parts.push('<circle class="d-face" cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.3)" stroke-width="1"/>');
     for (var q = 0; q < 12; q++) {
       var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30);
-      parts.push('<line x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
+      parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
     }
     var hp = polar(cx, cy, CR, (hh + mm / 60) * 30), mp = polar(cx, cy, CR, mm * 6);
     parts.push('<circle class="dial-hour" cx="' + hp[0].toFixed(1) + '" cy="' + hp[1].toFixed(1) + '" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
@@ -4178,12 +4228,10 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '1.9.0';
+  var VERSION = '1.9.1';
   var WHATS_NEW = [
-    'Everything lines up: boxes inside a panel now run to its edges and share its line, and the menu bar and bottom bar are full-height segments.',
-    'Checked on phones, tablets and computers, upright and sideways. On short landscape screens the top bars scroll away to give you more room.',
-    'Orange means go: Add, Play, Start focus, Save, today on the calendar, tasks due soon.',
-    'Red means stop, delete or late: Stop music, Delete, overdue tasks, a ringing timer, and the Red mode button.'
+    'Red mode is easier to see in the dark: brighter lines and outlines on every button, box and field.',
+    'The day overview dial is fully highlighted in red mode. The hour shows as a solid dot and the minute as a ring, so you can tell them apart.'
   ];
 
   /* ---------- themes ---------- */
@@ -5905,35 +5953,63 @@ var Notes = (function () {
    printed while it loads, then [ OK ] with what it found and how long it took. */
 function boot() {
   var el = $('#boot'), log = $('#boot-log');
-  var fast = S.settings.reduceMotion, t0 = performance.now(), minTime = fast ? 300 : 1400, i = 0, delay = fast ? 0 : 70;
+  if (el) el.classList.add('armed'); // the script is running, so the safety fade is not needed
+  var fast = S.settings.reduceMotion, i = 0, delay = fast ? 0 : 70, lineGap = fast ? 0 : 22;
   function kb(n) { return (n / 1024).toFixed(1) + ' KB'; }
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
-  // each step: [module, start-up function, lines it prints when done]
-  var steps = [
-    ['storage', null, function () { var raw = Store.get(STORE_KEY) || ''; return ['mounting ' + (Store.ok ? 'localStorage' : 'memory (storage blocked)') + ' key=' + STORE_KEY + ' size=' + kb(raw.length), 'loaded ' + plural(S.tasks.length, 'task') + ', ' + plural(Object.keys(S.logs).length, 'log entry').replace('entrys', 'entries') + ', user=' + (S.profile.callsign || 'operator')]; }],
-    ['screen', Scene.init, function () { return ['tty mode, theme=' + App.themeName().toLowerCase() + ', background=' + (Scene.mode() === 'custom' ? 'wallpaper' : 'plain')]; }],
-    ['wallpaper', Wallpaper.init, function () { return [S.settings.scene === 'custom' ? 'reading image from IndexedDB' : 'not set, skipping']; }],
-    ['sched', Sched.init, function () { var tk = todayKey(); return ['indexing ' + tk + ': ' + plural(Sched.tasksOn(tk).length, 'task'), 'reminders ' + (S.settings.reminders ? 'armed' : 'off') + ', clock=' + (S.settings.clock24 ? '24h' : '12h')]; }],
-    ['calendar', Cal.init, function () { return Cal.bootInfo(); }],
-    ['audio', AudioUI.init, function () { return ['synth engine: ' + Object.keys(PROGRAMS).length + ' programs, 7 layers, fft=1024', 'program "' + (PROGRAMS[S.audio.program] || PROGRAMS.drift).name + '" loaded']; }],
-    ['timer', Focus.init, function () { return ['focus: ' + (Focus.active() ? 'session restored, ' + Focus.fmt(Focus.remaining()) + ' left' : 'idle, ' + Focus.length() + ' min preset')]; }],
-    ['timer', QTimer.init, function () { return ['quick: ' + (QTimer.active() ? 'restored, ' + QTimer.fmt(QTimer.remaining()) + ' left' : 'idle')]; }],
-    ['deck', FocusDeck.init, function () { return ['music + focus link bound']; }],
-    ['notes', Notes.init, function () { return [S.notes.text.length + ' chars restored']; }],
-    ['player', Mini.init, function () { return ['mini player bound']; }],
-    ['shell', App.init, function () { return ['build ' + App.version + ', ' + document.querySelectorAll('button').length + ' controls, keys 1 2 3 N ?']; }]
+  var who = (S.profile.callsign || 'operator').replace(/\s+/g, '').toLowerCase() || 'operator';
+  var lv = levelInfo(S.profile.xp).level;
+  // the readout, laid out like a command-line program's help page
+  var head = [
+    ['', 'PS C:\\Users\\' + who + '> taskmatrix boot'],
+    ['', 'task-matrix.exe-boot'],
+    ['', 'Plan your day, focus, and level up \u2013 everything stays on this device. Run `taskmatrix --help` for more usage info'],
+    ['', ''],
+    ['', 'USAGE:'],
+    ['i1', 'task-matrix.exe boot [OPTIONS] [SUBCOMMAND]'],
+    ['', ''],
+    ['', 'OPTIONS:'],
+    ['i2', '--theme <THEME>'], ['i3', 'Colour theme of the console [current: ' + (S.settings.theme || 'mono') + ']'], ['', ''],
+    ['i2', '--red-mode'], ['i3', 'Red night light that removes blue light [' + (S.settings.redMode ? 'on' : 'off') + ']'], ['', ''],
+    ['i2', '--sound <VOLUME>'], ['i3', 'Sound effects [' + (S.settings.sfx ? 'on, ' + Math.round(S.settings.sfxVol * 100) + '%' : 'off') + ']'], ['', ''],
+    ['i2', '--clock <FORMAT>'], ['i3', 'Clock format [' + (S.settings.clock24 ? '24h' : '12h') + ']'],
+    ['', ''],
+    ['', 'GLOBAL OPTIONS:'],
+    ['i2', '--data-dir <STORAGE>'], ['i3', 'Where your tasks are kept [' + (Store.ok ? 'localStorage' : 'memory only') + ': ' + STORE_KEY + ', ' + kb((Store.get(STORE_KEY) || '').length) + ']'], ['', ''],
+    ['i2', '--user <CALLSIGN>'], ['i3', 'Operator profile [' + (S.profile.callsign || 'operator') + ', level ' + lv + ', ' + S.profile.xp + ' XP]'],
+    ['', ''],
+    ['', 'SUBCOMMANDS:']
   ];
-  function stamp() { var t = ((performance.now() - t0) / 1000).toFixed(4); while (t.length < 9) t = ' ' + t; return '<span class="ts">[' + t + ']</span> '; }
-  function line(html) { var d = document.createElement('div'); d.innerHTML = html; if (log) { log.appendChild(d); log.scrollTop = log.scrollHeight; } return d; }
-  function print(mod, text, err) { line(stamp() + (err ? '<span class="err">' + esc(mod + ': ' + text) + '</span>' : esc(mod + ': ') + '<span class="hi">' + esc(text) + '</span>')); }
+  // each step: [name, start-up function, what it reports]
+  var steps = [
+    ['storage', null, function () { return plural(S.tasks.length, 'task') + ', ' + plural(Object.keys(S.logs).length, 'log entry').replace('entrys', 'entries') + ' loaded'; }],
+    ['screen', Scene.init, function () { return 'Plain terminal, ' + App.themeName().toLowerCase() + ' theme' + (Scene.mode() === 'custom' ? ', wallpaper on' : ''); }],
+    ['wallpaper', Wallpaper.init, function () { return S.settings.scene === 'custom' ? 'Reading your picture from this device' : 'Not set, skipping'; }],
+    ['schedule', Sched.init, function () { var tk = todayKey(); return plural(Sched.tasksOn(tk).length, 'task') + ' today, reminders ' + (S.settings.reminders ? 'armed' : 'off'); }],
+    ['calendar', Cal.init, function () { return Cal.bootInfo().join(', '); }],
+    ['audio', AudioUI.init, function () { return Object.keys(PROGRAMS).length + ' synth programs, "' + (PROGRAMS[S.audio.program] || PROGRAMS.drift).name + '" loaded'; }],
+    ['focus', Focus.init, function () { return Focus.active() ? 'Session restored, ' + Focus.fmt(Focus.remaining()) + ' left' : 'Idle, ' + Focus.length() + ' min preset'; }],
+    ['timer', QTimer.init, function () { return QTimer.active() ? 'Quick timer restored, ' + QTimer.fmt(QTimer.remaining()) + ' left' : 'Quick timer idle'; }],
+    ['deck', FocusDeck.init, function () { return 'Music and focus linked'; }],
+    ['notes', Notes.init, function () { return plural(S.notes.text.length, 'character') + ' restored'; }],
+    ['player', Mini.init, function () { return 'Mini player ready'; }],
+    ['shell', App.init, function () { return 'Build ' + App.version + ', keys 1 2 3 N ? ready'; }]
+  ];
+  function line(cls, html) { var d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = html; if (log) { log.appendChild(d); log.scrollTop = log.scrollHeight; } return d; }
+  function sub(name, text, err) { text = String(text); line('sc', '<span>' + esc(name) + '</span><span class="' + (err ? 'err' : 'val') + '">' + esc(text.charAt(0).toUpperCase() + text.slice(1)) + '</span>'); }
+  var h = 0;
+  function printHead() {
+    if (h < head.length) { var l = head[h++]; line(l[0], esc(l[1])); setTimeout(printHead, lineGap); return; }
+    next();
+  }
   function next() {
     if (i < steps.length) {
-      var s = steps[i++];
+      var st = steps[i++];
       setTimeout(function () {
-        var ok = true, out = [];
-        try { if (s[1]) s[1](); } catch (e) { ok = false; out = ['failed: ' + String(e && e.message || e)]; if (window.console) console.error('[Task Matrix] ' + s[0] + ' failed to start:', e); }
-        if (ok) { try { out = s[2](); } catch (e2) { out = ['ready']; } }
-        out.forEach(function (t) { print(s[0], t, !ok); });
+        var ok = true, out = '';
+        try { if (st[1]) st[1](); } catch (e) { ok = false; out = 'Failed: ' + String(e && e.message || e); if (window.console) console.error('[Task Matrix] ' + st[0] + ' failed to start:', e); }
+        if (ok) { try { out = st[2](); } catch (e2) { out = 'Ready'; } }
+        sub(st[0], out, !ok);
         next();
       }, delay);
       return;
@@ -5941,24 +6017,35 @@ function boot() {
     // offline helper (only on the real website; a local file cannot use it)
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       try { navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ }); } catch (e) { /* noop */ }
-      print('net', 'offline cache registered');
+      sub('net', 'Offline copy registered');
     }
     if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX };
-    // wait for the font (with a time limit), then open up
-    var finished = false, fontsDone = false;
-    function fonts() { if (!fontsDone) { fontsDone = true; print('fonts', 'JetBrains Mono ready'); finish(); } }
+    // wait for the font (with a time limit), then wait for the player
+    var fontsDone = false;
+    function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'JetBrains Mono ready'); waitForPlayer(); }
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fonts, fonts); else fonts(); } catch (e) { fonts(); }
     setTimeout(fonts, 1500);
-    function finish() {
-      if (finished) return; finished = true;
-      line('<span class="cmd">$</span> <span class="hi">systems online</span> <span class="dim">welcome back, ' + esc(S.profile.callsign || 'operator') + '</span><span class="boot-cursor"></span>');
-      setTimeout(function () {
-        if (el) { el.classList.add('done'); setTimeout(function () { el.remove(); }, 600); }
-        App.ready();
-      }, Math.max(fast ? 0 : 450, minTime - (performance.now() - t0)));
-    }
   }
-  next();
+  // the app opens only when the player presses a key, clicks or taps
+  function waitForPlayer() {
+    line('press', esc(finePointer ? 'Press any key or click to continue...' : 'Tap anywhere to continue...') + '<span class="boot-cursor"></span>');
+    if (el) el.classList.add('ready');
+    var opened = false, swallowUntil = 0;
+    function open(e) {
+      if (opened) return;
+      if (e && e.type === 'keydown' && /^(Shift|Control|Alt|Meta|CapsLock|Fn|OS)$/.test(e.key)) return;
+      if (e) { e.preventDefault(); e.stopImmediatePropagation(); }
+      opened = true; if (e && e.type === 'pointerdown') swallowUntil = performance.now() + 600;
+      ['keydown', 'pointerdown'].forEach(function (ev) { window.removeEventListener(ev, open, true); });
+      if (el) { el.classList.add('done'); setTimeout(function () { el.remove(); }, 400); }
+      SFX.play('start');
+      App.ready();
+    }
+    // the click that follows the tap must not land on a button under the loading screen
+    window.addEventListener('click', function swallow(e) { if (!opened) return; window.removeEventListener('click', swallow, true); if (performance.now() < swallowUntil) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    ['keydown', 'pointerdown'].forEach(function (ev) { window.addEventListener(ev, open, true); });
+  }
+  printHead();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
