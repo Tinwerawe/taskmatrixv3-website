@@ -2186,6 +2186,10 @@ html.saver-on, html.saver-on body { overflow: hidden; }
   .sched-side .dial-panel .dial-stats .stat { padding-left: 7px; padding-right: 4px; }
   .sched-side .dial-panel .dial-stats .stat > span { letter-spacing: 0.04em; overflow-wrap: anywhere; }
 }
+
+/* ---- 2.0.0: shortcut keys show the Shift arrow ---- */
+.tk kbd { gap: 3px; }
+.tk kbd .tk-sh { font-style: normal; font-weight: 700; font-size: 1.15em; line-height: 1; }
 </style>
 </head>
 <body>
@@ -4647,7 +4651,7 @@ var Cal = (function () {
     if (task && cell) { sel = cell.dataset.k; render(); Sched.editTask(task.dataset.id, cell.dataset.k); return; }
     if (cell) select(cell.dataset.k);
   }
-  function key(e) {
+  function key(e, letter) {
     var k = e.key;
     if (k === 'ArrowLeft') select(addDays(sel, -1));
     else if (k === 'ArrowRight') select(addDays(sel, 1));
@@ -4655,8 +4659,8 @@ var Cal = (function () {
     else if (k === 'ArrowDown') select(addDays(sel, 7));
     else if (k === 'PageUp') step(-1);
     else if (k === 'PageDown') step(1);
-    else if (k === 't' || k === 'T') select(todayKey());
-    else if (k === 'n' || k === 'N') { SFX.play('open'); focusAdd(); }
+    else if (letter === 'T') select(todayKey());
+    else if (letter === 'N') { SFX.play('open'); focusAdd(); }
     else return false;
     return true;
   }
@@ -4756,7 +4760,7 @@ var App = (function () {
     S.settings.redMode = !S.settings.redMode; save();
     applySettings();
     SFX.play(S.settings.redMode ? 'on' : 'off');
-    toast(S.settings.redMode ? 'Blue light filter on \u2013 warmer screen for the evening. Press R to switch back.' : 'Blue light filter off', { timeout: 2400 });
+    toast(S.settings.redMode ? 'Blue light filter on \u2013 warmer screen for the evening. Press Shift + R to switch back.' : 'Blue light filter off', { timeout: 2400 });
   }
 
   /* ---------- tabs ---------- */
@@ -4800,7 +4804,7 @@ var App = (function () {
     var seg = function (txt, cls) { return '<span class="ts-seg' + (cls ? ' ' + cls : '') + '">' + txt + '</span>'; };
     var l = seg('Task Matrix ' + VERSION, 'inv') + seg('Node 01', 'ts-x') + seg('User <b>' + esc((S.profile.callsign || 'operator').toUpperCase()) + '</b>');
     var r = (S.settings.redMode ? seg('Low blue', 'ts-blf') : '') + (S.settings.sfx ? '' : seg('Muted', 'ts-x')) +
-      seg((navigator.onLine === false ? 'Offline' : 'Online'), 'ts-x') + seg('Tasks <b>' + done + '/' + list.length + '</b>') + seg('LV <b>' + levelInfo(S.profile.xp).level + '</b>', 'ts-x') + seg('<b>?</b> Keys', 'ts-x');
+      seg((navigator.onLine === false ? 'Offline' : 'Online'), 'ts-x') + seg('Tasks <b>' + done + '/' + list.length + '</b>') + seg('LV <b>' + levelInfo(S.profile.xp).level + '</b>', 'ts-x') + seg('<b>Shift + ?</b> Keys', 'ts-x');
     if (l + r === tsLast) return; tsLast = l + r;
     $('#ts-left').innerHTML = l; $('#ts-right').innerHTML = r;
   }
@@ -4821,7 +4825,7 @@ var App = (function () {
     var st = S.settings;
     document.documentElement.classList.toggle('rails', st.sideRails !== false);
     document.documentElement.classList.toggle('red', !!st.redMode);
-    var rb = $('#dock-red'); if (rb) { rb.setAttribute('aria-pressed', String(!!st.redMode)); rb.title = (st.redMode ? 'Blue light filter is on' : 'Blue light filter: warmer screen, less blue light') + ' (R)'; }
+    var rb = $('#dock-red'); if (rb) { rb.setAttribute('aria-pressed', String(!!st.redMode)); rb.title = (st.redMode ? 'Blue light filter is on' : 'Blue light filter: warmer screen, less blue light') + ' (Shift + R)'; }
     var w = clamp(typeof st.blfWarm === 'number' ? st.blfWarm : 0.75, 0.2, 1), ov = $('#redmode');
     if (ov) ov.style.backgroundColor = 'rgb(255,' + Math.round(255 * (1 - 0.62 * w)) + ',' + Math.round(255 * (1 - 0.92 * w)) + ')';
     var th = themeOf(st.theme);
@@ -4837,7 +4841,7 @@ var App = (function () {
     b.innerHTML = st.sfx ? I.sfxOn : I.sfxOff;
     b.setAttribute('aria-label', st.sfx ? 'Mute sound effects' : 'Turn sound effects on');
     b.setAttribute('aria-pressed', String(!st.sfx));
-    b.title = st.sfx ? 'Sound effects on (M)' : 'Sound effects off (M)';
+    b.title = st.sfx ? 'Sound effects on (Shift + M)' : 'Sound effects off (Shift + M)';
     tickClock();
   }
   function toggleSfx() {
@@ -4859,19 +4863,19 @@ var App = (function () {
   function flipSwitch(b) { var on = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', String(on)); SFX.play(on ? 'on' : 'off'); return on; }
 
   var SHORTCUTS = [
-    ['1 / 2 / 3', 'Switch section'],
-    ['N', 'New task (Schedule, Calendar)'],
-    ['T', 'Jump to today'],
-    ['\u2190 / \u2192', 'Previous / next day (Schedule, Calendar)'],
-    ['Space', 'Play / pause music (Focus audio)'],
-    ['M', 'Mute / unmute sound effects'],
-    ['Y', 'Next theme'],
-    ['F', 'Full screen on / off'],
-    ['R', 'Blue light filter on / off'],
-    ['\u2191 / \u2193', 'Previous / next week (Calendar)'],
-    ['PgUp / PgDn', 'Previous / next month (Calendar)'],
+    ['Shift + 1 / 2 / 3', 'Switch section'],
+    ['Shift + N', 'New task (Schedule, Calendar)'],
+    ['Shift + T', 'Jump to today'],
+    ['Shift + \u2190 / \u2192', 'Previous / next day (Schedule, Calendar)'],
+    ['Shift + Space', 'Play / pause music (Focus audio)'],
+    ['Shift + M', 'Mute / unmute sound effects'],
+    ['Shift + Y', 'Next theme'],
+    ['Shift + F', 'Full screen on / off'],
+    ['Shift + R', 'Blue light filter on / off'],
+    ['Shift + \u2191 / \u2193', 'Previous / next week (Calendar)'],
+    ['Shift + PgUp / PgDn', 'Previous / next month (Calendar)'],
     ['Esc', 'Close dialogs'],
-    ['?', 'Show this list']
+    ['Shift + ?', 'Show this list']
   ];
   function shortcutsHTML() {
     return '<div class="shortcuts">' + SHORTCUTS.map(function (s) {
@@ -4879,7 +4883,7 @@ var App = (function () {
     }).join('') + '</div>';
   }
   function openShortcuts() {
-    Modal.open({ title: 'Keyboard shortcuts', width: 460, body: shortcutsHTML() + '<p class="muted" style="font-size:.85rem">Shortcuts are ignored while you are typing in a box.</p>' });
+    Modal.open({ title: 'Keyboard shortcuts', width: 460, body: shortcutsHTML() + '<p class="muted" style="font-size:.85rem">Every shortcut uses Shift, so a stray key press never does anything. Shortcuts are ignored while you are typing in a box.</p>' });
   }
 
   /* ---------- settings modal ---------- */
@@ -5173,23 +5177,38 @@ var App = (function () {
         if (e.key === 'Escape' && e.target.blur) e.target.blur();
         return;
       }
-      var k = e.key;
-      if (k === '1' || k === '2' || k === '3') { e.preventDefault(); show(TABS[+k - 1].id); return; }
-      if (k === '?') { e.preventDefault(); openShortcuts(); return; }
-      if (k === 'm' || k === 'M') { e.preventDefault(); toggleSfx(); return; }
-      if (k === 'f' || k === 'F') { e.preventDefault(); toggleFullscreen(); return; }
-      if (k === 'y' || k === 'Y') { e.preventDefault(); var i = THEMES.map(function (t) { return t.id; }).indexOf(S.settings.theme); setTheme(THEMES[(i + 1) % THEMES.length].id); return; }
-      if (k === 'r' || k === 'R') { e.preventDefault(); toggleRed(); return; }
-      if (current === 'calendar') { if (Cal.key(e)) e.preventDefault(); return; }
+      // every shortcut is Shift + key, so a stray key press never changes anything
+      var c = e.code || '', k = e.key;
+      var letter = /^Key[A-Z]$/.test(c) ? c.charAt(3) : (k && k.length === 1 ? k.toUpperCase() : '');
+      var digit = /^(Digit|Numpad)[1-3]$/.test(c) ? c.slice(-1) : '';
+      var isHelp = k === '?' || c === 'Slash';
+      if (!e.shiftKey) {
+        if (k === 'Shift') return;
+        if (digit || isHelp || (letter.length === 1 && 'NTMYFR'.indexOf(letter) >= 0) || (k === ' ' && current === 'audio' && !(e.target && e.target.tagName === 'BUTTON'))) shiftHint();
+        return;
+      }
+      if (digit) { e.preventDefault(); show(TABS[+digit - 1].id); return; }
+      if (isHelp) { e.preventDefault(); openShortcuts(); return; }
+      if (letter === 'M') { e.preventDefault(); toggleSfx(); return; }
+      if (letter === 'F') { e.preventDefault(); toggleFullscreen(); return; }
+      if (letter === 'Y') { e.preventDefault(); var i = THEMES.map(function (t) { return t.id; }).indexOf(S.settings.theme); setTheme(THEMES[(i + 1) % THEMES.length].id); return; }
+      if (letter === 'R') { e.preventDefault(); toggleRed(); return; }
+      if (current === 'calendar') { if (Cal.key(e, letter)) e.preventDefault(); return; }
       if (current === 'schedule') {
-        if (k === 'n' || k === 'N') { e.preventDefault(); SFX.play('open'); Sched.focusAdd(); }
-        else if (k === 't' || k === 'T') { e.preventDefault(); Sched.today(); SFX.play('click'); }
+        if (letter === 'N') { e.preventDefault(); SFX.play('open'); Sched.focusAdd(); }
+        else if (letter === 'T') { e.preventDefault(); Sched.today(); SFX.play('click'); }
         else if (k === 'ArrowLeft') { e.preventDefault(); Sched.prev(); SFX.play('click'); }
         else if (k === 'ArrowRight') { e.preventDefault(); Sched.next(); SFX.play('click'); }
       } else if (current === 'audio') {
         if ((k === ' ' || k === 'Spacebar') && !(e.target && e.target.tagName === 'BUTTON')) { e.preventDefault(); AudioUI.togglePlay(); }
       }
     });
+  }
+  // pressing a shortcut key without Shift shows how to use it (at most once every 20 seconds)
+  var hintAt = 0;
+  function shiftHint() {
+    var now = Date.now(); if (now - hintAt < 20000) return; hintAt = now;
+    toast('Shortcuts need Shift: hold Shift and press the key (Shift + ? lists them all).', { timeout: 3000 });
   }
 
   /* ---------- full screen ---------- */
@@ -5215,7 +5234,7 @@ var App = (function () {
     b.innerHTML = on ? I.fsExit : I.fsEnter;
     b.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
     b.setAttribute('aria-pressed', String(on));
-    b.title = (on ? 'Exit full screen' : 'Full screen') + ' (F)';
+    b.title = (on ? 'Exit full screen' : 'Full screen') + ' (Shift + F)';
   }
 
   /* ---------- pin to home screen / desktop ---------- */
@@ -5301,7 +5320,7 @@ var App = (function () {
     $('#dock-ver').textContent = 'v' + VERSION;
     // key strip: each key is a rectangle with what it does written next to it (long words on wide screens, short ones when space is tight)
     $('#tui-keys').innerHTML = [['1', 'Schedule', 'Sched', 'Open the schedule'], ['2', 'Focus audio', 'Audio', 'Open focus audio'], ['3', 'Calendar', 'Cal', 'Open the calendar'], ['N', 'New task', 'New', 'Add a new task'], ['?', 'Shortcuts', 'Keys', 'Show all keyboard shortcuts']].map(function (k) {
-      return '<button type="button" class="tk" data-k="' + k[0] + '" title="' + k[3] + ' (key ' + k[0] + ')"><kbd>' + k[0] + '</kbd><span class="tk-l">' + k[1] + '</span><span class="tk-s">' + k[2] + '</span></button>';
+      return '<button type="button" class="tk" data-k="' + k[0] + '" title="' + k[3] + ' (Shift + ' + k[0] + ')"><kbd><i class="tk-sh" aria-hidden="true">\u21e7</i>' + k[0] + '</kbd><span class="tk-l">' + k[1] + '</span><span class="tk-s">' + k[2] + '</span></button>';
     }).join('');
     $('#tui-keys').addEventListener('click', function (e) {
       var b = e.target.closest('[data-k]'); if (!b) return; b.blur();
@@ -6830,7 +6849,7 @@ function boot() {
     ['notes', Notes.init, function () { return S.notes.lock ? 'locked with passcode' : plural(S.notes.text.length, 'character') + ' restored'; }],
     ['player', Mini.init, function () { return 'Mini player ready'; }],
     ['saver', Saver.init, function () { return S.settings.idleSaver ? 'Screen saver after 6 min idle' : 'Screen saver off'; }],
-    ['shell', App.init, function () { return 'Build ' + App.version + ', keys 1 2 3 N ? ready'; }]
+    ['shell', App.init, function () { return 'Build ' + App.version + ', shortcuts Shift + 1 2 3 N ? ready'; }]
   ];
   function line(cls, html) { var d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = html; if (log) { log.appendChild(d); log.scrollTop = log.scrollHeight; } return d; }
   function sub(name, text, err) { text = String(text); line('sc', '<span>' + esc(name) + '</span><span class="' + (err ? 'err' : 'val') + '">' + esc(text.charAt(0).toUpperCase() + text.slice(1)) + '</span>'); }
