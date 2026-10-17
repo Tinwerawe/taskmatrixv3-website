@@ -1602,7 +1602,7 @@ html.tui .boot { transition: opacity 0.15s linear, visibility 0.15s; display: bl
    ===================================================================== */
 /* RED MODE: one layer over everything that multiplies the screen by pure red,
    so no blue or green light is left. Works with every theme, the wallpaper and the music meter. */
-#redmode { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: #ff0000; mix-blend-mode: multiply; display: none; }
+#redmode { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; background: rgb(255, 136, 79); mix-blend-mode: multiply; display: none; }
 html.red #redmode { display: block; }
 /* at night red mode always runs on black (so the White theme does not turn into a bright red screen) */
 html.red, html.red[data-theme] {
@@ -1978,16 +1978,214 @@ html.red #dial .d-face { stroke: rgba(255, 255, 255, 0.85) !important; stroke-wi
 html.red #dial .d-ctick { stroke: rgba(255, 255, 255, 0.75) !important; stroke-width: 1.4; }
 html.red #dial .d-ctick.big { stroke: #ffffff !important; stroke-width: 2.4; }
 html.red #dial .dial-marker { stroke-width: 3; }
-html.red #dial .dial-marker:not([fill^="var(--ok"]) { stroke: #ffffff; }
-/* orange and red look the same through a red filter, so in red mode the hour is a solid dot and the minute a ring */
-html.red #dial .dial-hour { fill: #ffffff !important; stroke: #ffffff; stroke-width: 2; }
-html.red #dial .dial-min { fill: #000000 !important; stroke: #ffffff; stroke-width: 2.6; }
 html.red .dial-sub { color: #ffffff; }
-/* through the red filter, orange and red fills turn into bright blocks with dark text */
-html.red, html.red[data-theme] { --orange: #ffffff; --orange-hi: #ffffff; --red: #ffffff; --red-hi: #ffffff; }
-html.red .chip.st-overdue, html.red .btn-primary.is-stop, html.red .dock-red[aria-pressed="true"], html.red .dock-timer.ring, html.red .dock-timer.ring b,
-html.red .task-actions .icon-btn.del:hover, html.red .preset-chip button.x:hover, html.red .btn-danger:hover { color: #000000; }
-html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
+
+/* =====================================================================
+   2.0.0 — task steps, custom repeats, a real clock, live meters, quick times
+   ===================================================================== */
+/* steps inside a task */
+html.tui .task { grid-template-columns: 44px 74px minmax(0, 1fr) auto; }
+html.tui .task-body { cursor: pointer; }
+html.tui .task-body:hover .task-title { text-decoration: underline; text-underline-offset: 3px; }
+.steps-chip { border-color: var(--orange) !important; color: var(--orange) !important; }
+.steps-chip.all { border-color: var(--line-2) !important; color: var(--text-2) !important; }
+.steps-line { height: 3px; margin-top: 8px; background: rgba(var(--tint-rgb), 0.12); max-width: 260px; }
+.steps-line i { display: block; height: 100%; background: var(--orange); }
+.steps-btn { position: relative; }
+.steps-btn b { position: absolute; top: 4px; right: 3px; min-width: 14px; height: 14px; padding: 0 3px; font: 700 0.58rem/14px var(--font-mono); background: var(--orange); color: #000; text-align: center; }
+.task.steps-open .steps-btn { background: var(--sel); color: var(--sel-ink); }
+.steps-box { grid-column: 1 / -1; margin: 8px -10px -10px -8px; border-top: 1px solid var(--line-2); background: rgba(var(--tint-rgb), 0.04); }
+.sb-head { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); font: 600 0.68rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+.sb-head b { color: var(--orange); letter-spacing: 0.12em; }
+.sb-bar { flex: 1; max-width: 220px; height: 4px; margin-left: auto; background: rgba(var(--tint-rgb), 0.14); }
+.sb-bar i { display: block; height: 100%; background: var(--orange); }
+.sb-list { list-style: none; margin: 0; padding: 0; }
+.sb-item { display: grid; grid-template-columns: 34px 26px minmax(0, 1fr) 40px; align-items: center; gap: 4px; padding: 0 0 0 14px; border-bottom: 1px solid var(--line); min-height: 38px; }
+.sb-item:hover { background: rgba(var(--tint-rgb), 0.06); }
+.sb-num { font: 600 0.62rem var(--font-mono); color: var(--dim); }
+.sb-text { font-size: 0.9rem; color: var(--text); overflow-wrap: anywhere; padding: 6px 0; }
+.sb-item.done .sb-text { text-decoration: line-through; color: var(--dim); }
+.sb-item.done .cbox { color: var(--orange); }
+.sb-del { align-self: stretch; border: 0; border-left: 1px solid var(--line); background: none; color: var(--dim); font-size: 1.1rem; cursor: pointer; }
+.sb-del:hover { background: var(--red); color: #fff; }
+.sb-add { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.sb-add .field { border-width: 0; min-height: 42px; background: transparent; padding-left: 14px; }
+.sb-add .field:focus, .sb-add .field:focus-visible { box-shadow: inset 0 0 0 2px var(--orange); outline: none; }
+.sb-add .btn { border-width: 0 0 0 1px; min-height: 42px; }
+@media (max-width: 560px) { .steps-box { margin: 8px -6px -10px -8px; } .sb-head .sb-bar { display: none; } }
+
+/* custom repeat */
+.rep-custom, .rep-end { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--line-2); background: rgba(var(--tint-rgb), 0.03); }
+.rep-custom[hidden], .rep-end[hidden] { display: none; }
+.rc-row { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+.rc-row[hidden] { display: none; }
+.rc-days { display: grid; grid-template-columns: repeat(7, minmax(34px, 1fr)); width: 100%; }
+.rc-days button { min-height: 38px; border: 1px solid var(--line-2); margin-left: -1px; background: transparent; color: var(--text-2); font: 700 0.8rem var(--font-mono); cursor: pointer; }
+.rc-days button:first-child { margin-left: 0; }
+.rc-days button[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: #000; position: relative; }
+.rc-lbl, .rc-unit { font: 600 0.72rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); padding: 0 10px; }
+.rc-lbl { padding-left: 0; }
+.rc-step { width: 38px; min-height: 38px; border: 1px solid var(--line-2); background: transparent; color: var(--text); font: 700 1rem var(--font-mono); cursor: pointer; }
+.rc-step:hover { background: var(--sel); color: var(--sel-ink); }
+.rc-n .field { width: 64px; min-height: 38px; text-align: center; margin: 0 -1px; -moz-appearance: textfield; }
+.rc-n .field::-webkit-inner-spin-button, .rc-n .field::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.rc-preview { margin: 0; font: 600 0.74rem var(--font-mono); color: var(--orange); }
+.rc-preview:empty { display: none; }
+.rep-end .field[type="date"] { width: auto; margin-left: -1px; min-height: 38px; }
+.rep-end .seg { flex: none; }
+
+/* day overview: numbers, seconds hand */
+#dial .d-num { fill: var(--text-2); font-weight: 600; }
+#dial .d-num.big { fill: var(--hi); font-weight: 700; }
+#dial .dial-sec { stroke: var(--hi); }
+#dial .dial-sec-tip { fill: var(--hi); }
+html.red #dial .d-num { fill: #ffffff; }
+html.red #dial .dial-sec { stroke: #ffffff; stroke-width: 1.8; }
+
+/* top bar clock: bigger time and date in the same box */
+@media (min-width: 901px) {
+  html.tui .clock-time { font-size: 1.2rem; font-weight: 700; color: var(--hi); letter-spacing: 0.05em; line-height: 1.05; }
+  html.tui .clock-date { font-size: 0.68rem; font-weight: 600; color: var(--text); letter-spacing: 0.08em; line-height: 1.1; }
+  html.tui .top-right .clock { padding: 0 14px; gap: 2px; }
+}
+
+/* quick time chips under the add box */
+.time-picks { display: flex; align-items: stretch; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -1px; border-bottom: 1px solid var(--line); }
+.time-picks::-webkit-scrollbar { display: none; }
+.time-picks > * { flex: none; }
+.tp-lbl { display: flex; align-items: center; gap: 6px; padding: 0 12px; font: 700 0.66rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange); border-right: 1px solid var(--line); }
+.tp-lbl svg { width: 14px; height: 14px; }
+.time-picks button { border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--text-2); padding: 7px 10px; font: 600 0.72rem var(--font-mono); cursor: pointer; white-space: nowrap; }
+.time-picks button small { color: var(--dim); font-size: 0.62rem; }
+.time-picks button:hover { background: rgba(var(--tint-rgb), 0.08); color: var(--text); }
+.time-picks button[aria-pressed="true"] { background: var(--orange); color: #000; }
+.time-picks button[aria-pressed="true"] small { color: #000; }
+.time-wrap { position: relative; }
+.tw-lbl { position: absolute; left: 10px; top: 3px; z-index: 1; font: 700 0.54rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); pointer-events: none; }
+html.tui .add-row .time-wrap .field { padding-top: 14px; }
+#add-form.has-time .tw-lbl { color: var(--dim); }
+html.tui .addbar { padding-bottom: 0; }
+html.tui .more-toggle { margin: 4px 12px 6px; }
+@media (max-width: 560px) { .time-picks button { padding: 7px 8px; } .time-picks button small { display: none; } }
+
+/* now playing: live meters */
+.np-state { display: inline-flex; align-items: center; gap: 8px; }
+.np-bars { height: 12px; }
+.np-bars.paused { display: none; }
+.mini-bars i { transition: height 0.06s linear; }
+.tab-bars { height: 12px; margin-left: 4px; display: inline-flex; }
+.tab-bars i { width: 2px; background: currentColor; }
+.tab-bars.paused { display: none; }
+.tab.playing:not([aria-selected="true"]) { color: var(--orange); }
+.bottom-nav .tab-bars { position: absolute; top: 6px; right: 10px; margin: 0; }
+#deck-panel.playing { box-shadow: inset 0 0 0 1px var(--orange); }
+#deck-panel.playing .spectrum { border-color: var(--orange); }
+
+/* =====================================================================
+   2.0.0 (part 2) — full-width status bar, side panels on every desktop size,
+   blue light filter, rulers on every sound control, locked notes, screen saver
+   ===================================================================== */
+/* status bar: a fixed strip across the whole top, like the system bar at the bottom */
+html.tui { --status-h: 30px; --pad-t: 0px; }
+html.tui .tui-status {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60; margin: 0;
+  height: calc(var(--status-h) + var(--safe-t)); padding: var(--safe-t) var(--safe-r) 0 var(--safe-l); line-height: normal;
+  display: flex; justify-content: space-between; align-items: stretch; gap: 0; overflow: hidden;
+  background: var(--bg); color: var(--text-2); border-bottom: 1px solid var(--frame);
+  font: 600 0.68rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  transform: translateZ(0); contain: layout paint;
+}
+html.tui .tui-status::before { display: none; }
+html.tui .ts-group { display: flex; align-items: stretch; min-width: 0; overflow: hidden; }
+html.tui .ts-seg { display: flex; align-items: center; gap: 6px; padding: 0 14px; border-right: 1px solid var(--line-2); }
+html.tui .ts-right .ts-seg { border-right: 0; border-left: 1px solid var(--line-2); }
+html.tui .ts-seg b { color: var(--hi); }
+html.tui .ts-seg.inv { background: var(--bar); color: var(--bar-ink); font-weight: 700; letter-spacing: 0.1em; }
+html.tui .ts-seg.ts-blf { color: var(--orange); }
+html[data-theme="white"].tui .tui-status { box-shadow: none; }
+html.tui .app { padding-top: calc(var(--safe-t) + var(--status-h) - 1px); }
+html.tui .topbar { top: calc(var(--safe-t) + var(--status-h) - 1px); }
+@media (max-width: 760px) { html.tui .ts-x { display: none; } html.tui .ts-seg { padding: 0 10px; } }
+@media (max-width: 900px) { html.tui .app { padding-top: calc(var(--safe-t) + var(--status-h) - 1px); } }
+@media (max-height: 560px) and (min-width: 600px) {
+  html.tui { --status-h: 24px; }
+  html.tui .tui-status { position: fixed; }
+  html.tui .app { padding-top: calc(var(--safe-t) + var(--status-h) - 1px); }
+  .side-rail { top: calc(var(--safe-t) + var(--status-h) - 1px); }
+}
+/* side panels on every desktop size: the page makes room for them */
+html.tui { --rail-w: clamp(46px, 4.6vw, 84px); }
+@media (min-width: 901px) {
+  html.tui.rails .app { padding-left: calc(var(--rail-w) + 12px); padding-right: calc(var(--rail-w) + 12px); max-width: calc(1224px + 2 * var(--rail-w) + 24px); }
+}
+.side-rail { top: calc(var(--safe-t) + var(--status-h) - 1px); }
+html.tui .rail-block { padding-left: 2px; padding-right: 2px; }
+@media (max-width: 1100px) { html.tui .rail-num { font-size: 0.82rem; } html.tui .rail-lbl { font-size: 0.48rem; letter-spacing: 0.04em; } }
+/* blue light filter: warm, with red and orange still red and orange */
+html.red .dock-red[aria-pressed="true"] { background: var(--red); color: #fff; }
+/* sound controls: rulers under every slider */
+.ctl-track .vt.odd b { display: none; }
+#ctl-body .ctl, #ctl-body .mix-row { align-items: start; }
+#ctl-body .ctl > .label, #ctl-body .ctl > .val, #ctl-body .mix-row > .val { padding-top: 6px; }
+#ctl-body .mix-row > .switch { margin-top: 2px; }
+#ctl-body .mix-row > .name { padding-top: 0; }
+#ctl-body .ctl-hint { margin-top: -4px !important; }
+@media (max-width: 560px) { .mix-row .vol-track { grid-column: 1 / 3; } }
+
+/* ---- 2.0.0: notes passcode ---- */
+.notes-lockbtn { margin-right: 6px; gap: 6px; }
+.notes-lockbtn svg, .notes-foot .btn svg { width: 13px; height: 13px; }
+.notes-lockview { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 18px 12px; border: 1px dashed var(--line-2); text-align: center; overflow: auto; }
+.notes-lockview[hidden] { display: none; }
+.nl-icon { width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid var(--orange); color: var(--orange); }
+.nl-icon svg { width: 22px; height: 22px; }
+.nl-title { margin: 4px 0 0; font-family: var(--font-mono), monospace; font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--hi); }
+.nl-sub { margin: 0; font-size: 0.8rem; color: var(--text-2); }
+.nl-form { display: flex; gap: 6px; width: 100%; max-width: 300px; margin-top: 6px; }
+.nl-form .field { flex: 1; min-width: 0; letter-spacing: 0.2em; font-family: var(--font-mono), monospace; }
+.nl-msg { margin: 0; min-height: 1.2em; font-family: var(--font-mono), monospace; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--red); }
+.nl-forgot { background: none; border: 0; padding: 4px 6px; color: var(--dim); font: inherit; font-size: 0.72rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.nl-forgot:hover, .nl-forgot:focus-visible { color: var(--text); }
+html.tui .notes-panel.shake { animation: shake 0.35s; }
+.notes-panel [hidden] { display: none !important; }
+.notes-panel.locked .notes-lockbtn { border-color: var(--orange); color: var(--orange); }
+.dock-notes.is-locked .dn-ic, #nav-notes.is-locked svg { color: var(--orange); }
+.notes-foot { flex-wrap: wrap; row-gap: 6px; }
+.notes-foot .notes-count { white-space: nowrap; min-width: 9ch; }
+.notes-panel.has-pass .notes-foot .notes-count { flex-basis: 100%; }
+
+/* ---- 2.0.0: screen saver (the boot log again, running the app's own source) ---- */
+.saver { position: fixed; inset: 0; z-index: 9998; background: var(--bg); display: flex; flex-direction: column; padding: calc(var(--safe-t) + 18px) calc(var(--safe-r) + 22px) calc(var(--safe-b) + 12px) calc(var(--safe-l) + 22px); opacity: 0; transition: opacity 0.2s linear; cursor: none; }
+.saver[hidden] { display: none; }
+.saver.on { opacity: 1; }
+.saver-log { flex: 1; min-height: 0; height: auto; }
+.saver-log .sc { grid-template-columns: 10ch 9ch minmax(0, 1fr); }
+.saver-log .sc > :first-child { grid-column: 1; }
+.saver-log > div { white-space: pre; overflow: hidden; text-overflow: clip; }
+.saver-log .sc { white-space: normal; }
+.saver-log .sv-code > span:last-child::after, .saver-log .sv-cmd > span:last-child::after { content: none; }
+.saver-log > div:last-child > span:last-child::after { content: ""; display: inline-block; width: 0.6em; height: 1.05em; margin-left: 2px; background: var(--hi); vertical-align: text-bottom; animation: bootBlink 1s steps(1) infinite; }
+.saver-log .sv-k { color: var(--hi); }
+.saver-log .sv-s { color: var(--orange); }
+.saver-log .sv-n { color: var(--text-2); }
+.saver-log .sv-c { color: var(--dim); }
+.saver-log .sv-cmd { color: var(--hi); }
+.saver-foot { flex: none; display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--line-2); padding-top: 8px; margin-top: 8px; font: 400 12px/1.4 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; }
+.saver-foot .sv-hint { flex: 1; text-align: center; }
+.saver-foot .sv-clock { color: var(--hi); font-size: 15px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+html.saver-on, html.saver-on body { overflow: hidden; }
+@media (max-width: 700px) { .saver-log .sc { grid-template-columns: 9ch 7ch minmax(0, 1fr); } .saver-foot .sv-hint { display: none; } .saver-foot { justify-content: space-between; } }
+
+/* ---- 2.0.0: day overview stats fit narrow phones ---- */
+@media (max-width: 900px) {
+  .sched-side .dial-panel .dial-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+  .sched-side .dial-panel .dial-stats .stat { min-width: 0; }
+}
+@media (max-width: 380px) {
+  html.tui .sched-side .dial-panel { grid-template-columns: 150px minmax(0, 1fr); }
+  .sched-side .dial-panel .dial-stats .stat { padding-left: 7px; padding-right: 4px; }
+  .sched-side .dial-panel .dial-stats .stat > span { letter-spacing: 0.04em; overflow-wrap: anywhere; }
+}
 </style>
 </head>
 <body>
@@ -1997,7 +2195,7 @@ html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
   <div class="boot-log" id="boot-log" aria-live="polite"></div>
 </div>
 <div class="app" id="app">
-  <div class="tui-status" id="tui-status" aria-hidden="true"><span id="ts-left">TASK MATRIX</span><span id="ts-right"></span></div>
+  <div class="tui-status" id="tui-status" aria-hidden="true"><span class="ts-group" id="ts-left"></span><span class="ts-group ts-right" id="ts-right"></span></div>
 
   <!-- ================= TOP BAR ================= -->
   <header class="topbar">
@@ -2055,11 +2253,12 @@ html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
             <div class="add-row">
               <input class="field" id="add-title" type="text" maxlength="140" placeholder="What do you need to do?" enterkeyhint="done">
               <div class="time-wrap">
-                <label class="sr-only" for="add-time">Time (optional)</label>
+                <label class="tw-lbl" for="add-time">Time</label>
                 <input class="field" id="add-time" type="time" title="Time (leave empty for anytime)">
               </div>
               <button class="btn btn-primary" type="submit" data-sfx="none" id="add-btn"></button>
             </div>
+            <div class="time-picks" id="time-picks" role="group" aria-label="Quick time"></div>
             <button type="button" class="more-toggle" id="more-toggle" aria-expanded="false" aria-controls="add-more"></button>
             <div id="add-more" hidden></div>
           </form>
@@ -2134,7 +2333,7 @@ html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
       <div class="audio-grid">
         <div class="audio-col">
         <div class="panel deck" id="deck-panel">
-          <div class="panel-head"><h2 class="panel-title">Now playing</h2><small class="np-state" id="np-state">STOPPED</small></div>
+          <div class="panel-head"><h2 class="panel-title">Now playing</h2><small class="np-state" id="np-state"><span class="mini-bars np-bars paused" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="np-state-t">STOPPED</span></small></div>
           <div class="spectrum" id="spectrum" title="Live spectrum of the music"><canvas id="spec" aria-hidden="true"></canvas></div>
           <dl class="kv">
             <dt>Program</dt><dd><span id="np-name">Deep Space Drift</span><span class="badge" id="np-mod" hidden>Edited</span></dd>
@@ -2236,7 +2435,7 @@ html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
                 <select class="field" id="cal-add-cat"></select>
                 <label class="sr-only" for="cal-add-rep">Repeat</label>
                 <select class="field" id="cal-add-rep">
-                  <option value="none">Once</option><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekly">Every week</option>
+                  <option value="none">Once</option><option value="daily">Every day</option><option value="weekdays">Weekdays</option><option value="weekly">Every week</option><option value="monthly">Every month</option>
                 </select>
               </div>
             </form>
@@ -2283,7 +2482,7 @@ html.red .dock-red[aria-pressed="true"] svg { color: #000000; }
     <div class="dock-themes" role="radiogroup" aria-label="Theme" id="dock-themes"></div>
   </div>
   <div class="dock-sys">
-  <button type="button" class="dock-red" id="dock-red" aria-pressed="false" aria-label="Red mode" data-sfx="none"><span class="dr-ic" aria-hidden="true"></span><b>Red</b></button>
+  <button type="button" class="dock-red" id="dock-red" aria-pressed="false" aria-label="Blue light filter" data-sfx="none"><span class="dr-ic" aria-hidden="true"></span><b>Low blue</b></button>
   <button type="button" class="dock-timer" id="dock-timer" data-sfx="none" aria-haspopup="dialog" aria-expanded="false" aria-label="Quick timer">
     <svg class="qt-ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="bg" cx="12" cy="12" r="9.5"/><circle class="fg" id="dock-timer-arc" cx="12" cy="12" r="9.5" stroke-dasharray="59.69" stroke-dashoffset="59.69"/><circle class="dot" cx="12" cy="12" r="2.2"/></svg>
     <b id="dock-timer-text">Timer</b>
@@ -2376,14 +2575,14 @@ function defaultState() {
   return {
     v: 3,
     profile: { callsign: '', xp: 0, ach: {}, stats: { completed: 0, focus: 0, bestStreak: 0, calAdds: 0 }, created: Date.now(), welcomed: false, version: '' },
-    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'mono', scene: 'none', wpDim: 0.35, sideRails: true, redMode: false, clock24: true, reminders: true, lead: 0, reduceMotion: false },
+    settings: { sfx: true, sfxVol: 0.6, keySound: 'terminal', formKeys: true, theme: 'mono', scene: 'none', wpDim: 0.35, sideRails: true, redMode: false, blfWarm: 0.75, idleSaver: true, clock24: true, reminders: true, lead: 0, reduceMotion: false },
     tasks: [],
     logs: {},
     notified: {},
     ui: { tab: 'schedule', filter: 'all', cat: 'all', moreOpen: false, ctlTab: 'mixer', presetName: '', calView: 'month' },
     audio: null,
     audioPresets: [],
-    notes: { text: '', at: 0 },
+    notes: { text: '', at: 0, lock: null },
     qtimer: { run: null, last: 10 },
     focus: { mode: 'focus', focusMins: 25, breakMins: 5, stopMusic: false, run: null, log: {} }
   };
@@ -2427,13 +2626,20 @@ function sanitizeTask(t) {
     duration: clamp(parseInt(t.duration, 10) || 0, 0, 1440),
     priority: ['low', 'normal', 'high'].indexOf(t.priority) >= 0 ? t.priority : 'normal',
     category: CAT_IDS.indexOf(t.category) >= 0 ? t.category : 'other',
-    repeat: ['none', 'daily', 'weekdays', 'weekly'].indexOf(t.repeat) >= 0 ? t.repeat : 'none',
+    repeat: ['none', 'daily', 'weekdays', 'weekly', 'monthly', 'custom'].indexOf(t.repeat) >= 0 ? t.repeat : 'none',
+    rKind: t.rKind === 'days' ? 'days' : 'week',
+    rN: clamp(parseInt(t.rN, 10) || 1, 1, 52),
+    rDays: Array.isArray(t.rDays) ? t.rDays.map(Number).filter(function (d, i, a) { return d >= 0 && d <= 6 && d === Math.floor(d) && a.indexOf(d) === i; }).sort() : [],
+    steps: Array.isArray(t.steps) ? t.steps.filter(function (x) { return isPlainObj(x) && typeof x.text === 'string' && x.text.trim(); }).slice(0, 40).map(function (x) {
+      return { id: typeof x.id === 'string' && x.id ? x.id : uid(), text: x.text.trim().slice(0, 120), done: isPlainObj(x.done) ? x.done : {} };
+    }) : [],
     notes: typeof t.notes === 'string' ? t.notes.slice(0, 1000) : '',
     done: isPlainObj(t.done) ? t.done : {},
     skip: isPlainObj(t.skip) ? t.skip : {},
     until: validKey(t.until) ? t.until : '',
     created: typeof t.created === 'number' ? t.created : Date.now()
   };
+  if (!o.rDays.length) o.rDays = [parseKey(o.date).getDay()];
   return o;
 }
 
@@ -2483,6 +2689,8 @@ var I = {
   audio: svg('<path d="M2 12h3l2-5 3 10 3-13 3 11 2-6 1.2 3H22"/>'),
   // terminal with prompt
   cal: svg('<path d="M3.5 5h17v15.5h-17z"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M7 13h2M11 13h2M15 13h2M7 16.5h2M11 16.5h2"/><path d="M14.5 15.5h3v3h-3z" fill="currentColor" stroke="none"/>'),
+  lock: svg('<path d="M5.5 11h13v9.5h-13z"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/><path d="M12 14.5v2.5"/>'),
+  steps: svg('<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5L7.5 11"/><path d="M4 17h3v3H4z"/>'),
   red: svg('<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>'),
   left: svg('<path d="M15 4.5L7.5 12l7.5 7.5"/>'),
   right: svg('<path d="M9 4.5l7.5 7.5L9 19.5"/>'),
@@ -2895,24 +3103,69 @@ var Music = (function () {
     return out;
   }
 
+  /* Reverb: a stereo room built in code. Early reflections give it a real space, then a dense
+     diffuse tail that gets darker as it fades (air absorbs high frequencies first). Left and right
+     are different, so the sound is wide and natural. Normalised to the same loudness as before. */
   function impulse(c, secs, decay) {
-    var rate = c.sampleRate, len = Math.floor(rate * secs), pre = Math.floor(rate * 0.02), buf = c.createBuffer(2, len, rate);
+    var rate = c.sampleRate, len = Math.floor(rate * secs), pre = Math.floor(rate * 0.022), buf = c.createBuffer(2, len, rate);
+    var rt60 = secs * 0.72, taps = [[0.009, 0.42], [0.0137, -0.34], [0.0191, 0.3], [0.0263, -0.26], [0.0331, 0.22], [0.0419, -0.18], [0.0523, 0.15], [0.0641, -0.12], [0.0787, 0.1]];
+    var ref = 0, energy = 0;
     for (var ch = 0; ch < 2; ch++) {
-      var d = buf.getChannelData(ch), lp = 0;
-      for (var i = 0; i < len; i++) {
-        if (i < pre) { d[i] = 0; continue; }
-        var t = (i - pre) / (len - pre), damp = 0.55 + 0.42 * t;
-        lp = lp * damp + (Math.random() * 2 - 1) * (1 - damp);
-        d[i] = lp * Math.pow(1 - t, decay) * (1.6 + 2.4 * t);
+      var d = buf.getChannelData(ch), lp = 0, lp2 = 0, seed = ch ? 1.37 : 1;
+      for (var i = pre; i < len; i++) {
+        var t = (i - pre) / rate, x = Math.random() * 2 - 1;
+        var dark = 0.08 + 0.86 * Math.min(1, t / rt60);           // the tail loses its top end over time
+        lp += (x - lp) * (1 - dark); lp2 += (lp - lp2) * (1 - dark * 0.6);
+        var env = Math.pow(10, -3 * t / rt60) * (1 - Math.exp(-t / 0.035));
+        d[i] = lp2 * env;
       }
+      // the previous reverb's tail, measured only so the new one keeps the same loudness
+      for (var r = pre, olp = 0; r < len; r++) {
+        var to = (r - pre) / (len - pre), damp = 0.55 + 0.42 * to;
+        olp = olp * damp + (Math.random() * 2 - 1) * (1 - damp);
+        var ov = olp * Math.pow(1 - to, decay) * (1.6 + 2.4 * to); ref += ov * ov;
+      }
+      taps.forEach(function (tp, n) {
+        var at = pre + Math.floor((tp[0] * seed + (ch ? 0.0007 : 0)) * rate), sign = (n + ch) % 2 ? -1 : 1;
+        if (at < len) { d[at] += tp[1] * sign * 0.9; if (at + 1 < len) d[at + 1] += tp[1] * sign * 0.35; }
+      });
+      for (var j = 0; j < len; j++) energy += d[j] * d[j];
     }
+    var k = Math.sqrt(ref / Math.max(energy, 1e-9));
+    for (var c2 = 0; c2 < 2; c2++) { var dd = buf.getChannelData(c2); for (var q = 0; q < len; q++) dd[q] *= k; }
+    return buf;
+  }
+
+  /* noise colours for the atmosphere: pink (natural, like wind or distant water) and brown (deep rumble) */
+  function colouredNoise(c, kind) {
+    var key = kind + c.sampleRate; AC.noiseCache = AC.noiseCache || {};
+    if (AC.noiseCache[key] && AC.noiseCache.ctx === c) return AC.noiseCache[key];
+    if (AC.noiseCache.ctx !== c) AC.noiseCache = { ctx: c };
+    var len = Math.floor(c.sampleRate * 9), buf = c.createBuffer(2, len, c.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = buf.getChannelData(ch), b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0, peak = 0;
+      for (var i = 0; i < len; i++) {
+        var w = Math.random() * 2 - 1, v;
+        if (kind === 'pink') { // Paul Kellet's pink filter
+          b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.969 * b2 + w * 0.153852;
+          b3 = 0.8665 * b3 + w * 0.3104856; b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
+          v = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926;
+        } else { br = (br + 0.02 * w) / 1.02; v = br; }
+        d[i] = v; if (Math.abs(v) > peak) peak = Math.abs(v);
+      }
+      // seamless loop: fade the last 0.5 s into the first
+      var fl = Math.floor(c.sampleRate * 0.5);
+      for (var f = 0; f < fl; f++) { var m = f / fl; d[len - fl + f] = d[len - fl + f] * (1 - m) + d[f] * m; }
+      for (var n = 0; n < len; n++) d[n] /= peak || 1;
+    }
+    AC.noiseCache[key] = buf;
     return buf;
   }
 
   function softClip(c, k) {
     var ws = c.createWaveShaper(), n = 2048, curve = new Float32Array(n), norm = Math.tanh(k);
     for (var i = 0; i < n; i++) { var x = i / (n - 1) * 2 - 1; curve[i] = Math.tanh(k * x) / norm; }
-    ws.curve = curve; ws.oversample = '2x';
+    ws.curve = curve; ws.oversample = '4x';
     return ws;
   }
 
@@ -2926,13 +3179,20 @@ var Music = (function () {
     g.master = c.createGain(); g.master.gain.value = 0;
     g.drive = softClip(c, 1.25);
     g.lowCut = c.createBiquadFilter(); g.lowCut.type = 'highpass'; g.lowCut.frequency.value = 32; g.lowCut.Q.value = 0.6;
-    g.air = c.createBiquadFilter(); g.air.type = 'highshelf'; g.air.frequency.value = 7500; g.air.gain.value = -3.5;
+    // mastering: warm low end, less boxiness, a little presence and air for clarity, then glue and a safety limiter
+    var eq = function (type, f, gain, q) { var b = c.createBiquadFilter(); b.type = type; b.frequency.value = f; b.gain.value = gain; if (q) b.Q.value = q; return b; };
+    g.warm = eq('lowshelf', 95, 1.5);
+    g.mud = eq('peaking', 320, -2, 0.8);
+    g.presence = eq('peaking', 3200, 1.2, 0.7);
+    g.air = eq('highshelf', 11000, 1.5);
     g.comp = c.createDynamicsCompressor();
-    g.comp.threshold.value = -18; g.comp.knee.value = 14; g.comp.ratio.value = 3; g.comp.attack.value = 0.02; g.comp.release.value = 0.3;
+    g.comp.threshold.value = -18; g.comp.knee.value = 14; g.comp.ratio.value = 2.6; g.comp.attack.value = 0.025; g.comp.release.value = 0.28;
+    g.limit = c.createDynamicsCompressor();
+    g.limit.threshold.value = -2; g.limit.knee.value = 0; g.limit.ratio.value = 20; g.limit.attack.value = 0.002; g.limit.release.value = 0.12;
     g.analyser = c.createAnalyser(); g.analyser.fftSize = 1024; g.analyser.smoothingTimeConstant = 0.8;
     g.trim = c.createGain(); g.trim.gain.value = Math.tanh(1.25) / 1.25;
-    g.master.connect(g.drive); g.drive.connect(g.trim); g.trim.connect(g.lowCut); g.lowCut.connect(g.air); g.air.connect(g.comp);
-    g.comp.connect(g.analyser); g.analyser.connect(c.destination);
+    g.master.connect(g.drive); g.drive.connect(g.trim); g.trim.connect(g.lowCut); g.lowCut.connect(g.warm); g.warm.connect(g.mud); g.mud.connect(g.presence); g.presence.connect(g.air); g.air.connect(g.comp);
+    g.comp.connect(g.limit); g.limit.connect(g.analyser); g.analyser.connect(c.destination);
 
     g.tone = c.createGain();
     g.filter = c.createBiquadFilter(); g.filter.type = 'lowpass';
@@ -2952,7 +3212,7 @@ var Music = (function () {
 
     g.revSend = c.createGain(); g.revSend.gain.value = 1;
     g.revPre = c.createBiquadFilter(); g.revPre.type = 'highpass'; g.revPre.frequency.value = 180;
-    g.conv = c.createConvolver(); g.conv.buffer = impulse(c, 4.2, 2.4);
+    g.conv = c.createConvolver(); g.conv.buffer = impulse(c, 4.6, 2.4);
     g.revOut = c.createGain();
     g.revSend.connect(g.revPre); g.revPre.connect(g.conv); g.conv.connect(g.revOut); g.revOut.connect(g.master);
     g.filter.connect(g.revSend); g.delayTone.connect(g.revSend);
@@ -3017,16 +3277,26 @@ var Music = (function () {
     var c = AC.ctx; if (!c || !g) return;
     var wantAtmos = playing && A.atmosOn, wantBin = playing && A.binOn;
     if (wantAtmos && !cont.atmos) {
-      var src = c.createBufferSource(); src.buffer = noiseBuffer(); src.loop = true;
-      var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.9;
-      var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
-      var l = c.createOscillator(); l.frequency.value = 0.035; var lg = c.createGain(); lg.gain.value = 450;
-      l.connect(lg); lg.connect(bp.frequency);
-      var vg = c.createGain(); vg.gain.value = 0.0001;
-      src.connect(bp); bp.connect(lp); lp.connect(vg); vg.connect(g.atmos);
-      src.start(); l.start();
-      vg.gain.setTargetAtTime(0.55, c.currentTime, 0.8);
-      cont.atmos = { src: src, lfo: l, vg: vg };
+      // a real-sounding space: slow wind gusts (pink noise, stereo), a deep rumble far away,
+      // and a faint airy shimmer on top. Everything breathes at its own slow, uneven pace.
+      var t0 = c.currentTime, nodes = [], oscs = [];
+      var src = function (kind) { var b = c.createBufferSource(); b.buffer = colouredNoise(c, kind); b.loop = true; b.start(t0, Math.random() * 8); nodes.push(b); return b; };
+      var filt = function (type, f, q) { var b = c.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; };
+      var lfo = function (hz, depth, target) { var o = c.createOscillator(), og = c.createGain(); o.frequency.value = hz; og.gain.value = depth; o.connect(og); og.connect(target); o.start(t0); oscs.push(o); return o; };
+      var vg = c.createGain(); vg.gain.value = 0.0001; vg.connect(g.atmos);
+      // wind
+      var wind = src('pink'), wLp = filt('lowpass', 700, 0.7), wBp = filt('bandpass', 420, 0.5), wG = c.createGain(); wG.gain.value = 0.8;
+      wind.connect(wLp); wLp.connect(wBp); wBp.connect(wG); wG.connect(vg);
+      lfo(0.043, 380, wLp.frequency); lfo(0.117, 160, wLp.frequency); lfo(0.031, 180, wBp.frequency);
+      lfo(0.071, 0.32, wG.gain); lfo(0.19, 0.08, wG.gain);
+      // rumble
+      var rum = src('brown'), rLp = filt('lowpass', 150, 0.6), rG = c.createGain(); rG.gain.value = 0.55;
+      rum.connect(rLp); rLp.connect(rG); rG.connect(vg); lfo(0.023, 0.15, rG.gain);
+      // shimmer
+      var air = src('pink'), aHp = filt('highpass', 5200, 0.5), aLp = filt('lowpass', 9500, 0.5), aG = c.createGain(); aG.gain.value = 0.05;
+      air.connect(aHp); aHp.connect(aLp); aLp.connect(aG); aG.connect(vg); lfo(0.053, 0.035, aG.gain);
+      vg.gain.setTargetAtTime(0.95, t0, 1.2);
+      cont.atmos = { srcs: nodes, oscs: oscs, vg: vg };
     } else if (!wantAtmos && cont.atmos) {
       stopCont(cont.atmos); cont.atmos = null;
     }
@@ -3048,6 +3318,7 @@ var Music = (function () {
     try {
       o.vg.gain.cancelScheduledValues(t); o.vg.gain.setTargetAtTime(0.0001, t, 0.25);
       ['src', 'lfo', 'l', 'r'].forEach(function (k) { if (o[k]) o[k].stop(t + 1.5); });
+      (o.srcs || []).concat(o.oscs || []).forEach(function (n) { n.stop(t + 1.5); });
     } catch (e) { /* noop */ }
   }
 
@@ -3119,7 +3390,7 @@ var Music = (function () {
     var end = env(gn, t, 0.06, 0.09, dur * 0.3, 1.6 + dur);
     var o = c.createOscillator(); o.type = 'sine'; o.frequency.value = mtof(m);
     var o2 = c.createOscillator(); o2.type = 'triangle'; o2.frequency.value = mtof(m + 12); var g2 = c.createGain(); g2.gain.value = 0.25;
-    var vib = c.createOscillator(); vib.frequency.value = 5.2; var vg = c.createGain(); vg.gain.value = 4;
+    var vib = c.createOscillator(); vib.frequency.value = 5.2; var vg = c.createGain(); vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(5, t + 0.45);
     vib.connect(vg); vg.connect(o.detune); vg.connect(o2.detune);
     o.connect(gn); o2.connect(g2); g2.connect(gn); gn.connect(g.lead);
     o.start(t); o2.start(t); vib.start(t); o.stop(end); o2.stop(end); vib.stop(end);
@@ -3145,10 +3416,11 @@ var Music = (function () {
   }
   function hat(t, vel, open) {
     var c = AC.ctx, n = c.createBufferSource(); n.buffer = noiseBuffer();
-    var hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7200;
+    var hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 6800;
+    var bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 9500; bp.Q.value = 0.8;
     var d = open ? 0.16 : 0.045;
-    var gn = c.createGain(); gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22 * vel, t + 0.002); gn.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    n.connect(hp); hp.connect(gn); gn.connect(g.drums); n.start(t, Math.random()); n.stop(t + d + 0.02);
+    var gn = c.createGain(); gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.26 * vel, t + 0.002); gn.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    n.connect(hp); hp.connect(bp); bp.connect(gn); gn.connect(g.drums); n.start(t, Math.random()); n.stop(t + d + 0.02);
   }
 
   /* ---------- sequencer ---------- */
@@ -3351,19 +3623,19 @@ var Modal = (function () {
         .map(function (b, i) { return '<button class="btn ' + (b.kind || '') + '" data-i="' + i + '" type="button">' + esc(b.label) + '</button>'; }).join('');
       var m = open({
         title: o.title, width: 460,
-        body: (o.text ? '<p style="color:var(--text-2)">' + esc(o.text) + '</p>' : '') + (o.input ? '<input class="field" id="cf-input" type="text" maxlength="' + (o.maxlength || 40) + '" value="' + esc(o.value || '') + '" placeholder="' + esc(o.placeholder || '') + '" autofocus>' : ''),
+        body: (o.text ? '<p style="color:var(--text-2)">' + esc(o.text) + '</p>' : '') + (o.input ? '<input class="field" id="cf-input" type="' + (o.inputType || 'text') + '" autocomplete="off" maxlength="' + (o.maxlength || 40) + '" value="' + esc(o.value || '') + '" placeholder="' + esc(o.placeholder || '') + '" autofocus>' : ''),
         foot: foot,
         onOpen: function (w, closeFn) {
           w.querySelector('.modal-foot').addEventListener('click', function (e) {
             var b = e.target.closest('[data-i]'); if (!b) return;
             var btn = (o.buttons || [{ value: false }, { value: true }])[+b.dataset.i];
             var val = btn.value;
-            if (o.input && val === true) val = w.querySelector('#cf-input').value.trim();
+            if (o.input && val === true) { val = w.querySelector('#cf-input').value; if (o.inputType !== 'password') val = val.trim(); }
             done = true; resolve(val); closeFn();
           });
           var inp = w.querySelector('#cf-input');
           if (inp) {
-            inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); done = true; resolve(inp.value.trim()); closeFn(); } });
+            inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); done = true; resolve(o.inputType === 'password' ? inp.value : inp.value.trim()); closeFn(); } });
             setTimeout(function () { inp.focus(); inp.select(); }, 40);
           }
         },
@@ -3456,7 +3728,32 @@ var Sched = (function () {
     if (t.repeat === 'daily') return true;
     if (t.repeat === 'weekdays') return wd >= 1 && wd <= 5;
     if (t.repeat === 'weekly') return wd === parseKey(t.date).getDay();
+    if (t.repeat === 'monthly') {
+      var d0 = parseKey(t.date), d1 = parseKey(k), last = new Date(d1.getFullYear(), d1.getMonth() + 1, 0).getDate();
+      return d1.getDate() === Math.min(d0.getDate(), last);
+    }
+    if (t.repeat === 'custom') {
+      if (t.rKind === 'days') return dayDiff(t.date, k) % t.rN === 0;
+      if (t.rDays.indexOf(wd) < 0) return false;
+      var w0 = parseKey(t.date), w1 = parseKey(k);
+      w0.setDate(w0.getDate() - (w0.getDay() + 6) % 7); w1.setDate(w1.getDate() - (w1.getDay() + 6) % 7);
+      return Math.round((w1 - w0) / 604800000) % t.rN === 0;
+    }
     return false;
+  }
+  var WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // a short label for how a task repeats: "Daily", "Mon Wed Fri", "Every 2 wks: Tue", "Every 3 days", "Monthly"
+  function repLabel(t) {
+    var l = { daily: 'Daily', weekdays: 'Weekdays', weekly: 'Weekly', monthly: 'Monthly' }[t.repeat];
+    if (t.repeat === 'custom') {
+      if (t.rKind === 'days') l = t.rN === 1 ? 'Daily' : 'Every ' + t.rN + ' days';
+      else {
+        var days = [1, 2, 3, 4, 5, 6, 0].filter(function (d) { return t.rDays.indexOf(d) >= 0; }).map(function (d) { return WD_SHORT[d]; }).join(' ');
+        l = (t.rN > 1 ? 'Every ' + t.rN + ' wks: ' : '') + days;
+      }
+    }
+    if (l && t.until) { var u = parseKey(t.until); l += ' until ' + u.getDate() + ' ' + MONTHS[u.getMonth()].slice(0, 3); }
+    return l || '';
   }
   function tasksOn(k) {
     return S.tasks.filter(function (t) { return occurs(t, k); }).sort(function (a, b) {
@@ -3513,7 +3810,16 @@ var Sched = (function () {
       '<div><label class="label" for="' + p + '-dur">Duration</label><select class="field" id="' + p + '-dur">' +
         DURS.map(function (d) { return '<option value="' + d + '">' + (d ? fmtDur(d) : 'Not set') + '</option>'; }).join('') + '</select></div>' +
       '<div class="full"><label class="label" for="' + p + '-rep">Repeat</label><select class="field" id="' + p + '-rep">' +
-        '<option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekdays">Every weekday (Mon\u2013Fri)</option><option value="weekly">Every week on this day</option></select></div>' +
+        '<option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekdays">Every weekday (Mon\u2013Fri)</option><option value="weekly">Every week on this day</option><option value="monthly">Every month on this date</option><option value="custom">Custom\u2026</option></select></div>' +
+      '<div class="full rep-custom" id="' + p + '-rc" hidden>' +
+        '<div class="rc-row"><div class="seg" id="' + p + '-rkind" role="group" aria-label="Repeat by"><button type="button" data-v="week" aria-pressed="true">Days of the week</button><button type="button" data-v="days" aria-pressed="false">Every few days</button></div></div>' +
+        '<div class="rc-row rc-week"><div class="rc-days" id="' + p + '-rdays" role="group" aria-label="Repeat on">' +
+          [[1, 'M', 'Monday'], [2, 'T', 'Tuesday'], [3, 'W', 'Wednesday'], [4, 'T', 'Thursday'], [5, 'F', 'Friday'], [6, 'S', 'Saturday'], [0, 'S', 'Sunday']].map(function (d) { return '<button type="button" data-d="' + d[0] + '" aria-pressed="false" aria-label="' + d[2] + '" title="' + d[2] + '">' + d[1] + '</button>'; }).join('') +
+        '</div></div>' +
+        '<div class="rc-row rc-n"><span class="rc-lbl">Every</span><button type="button" class="rc-step" data-step="-1" aria-label="Less">\u2212</button><input class="field" type="number" id="' + p + '-rn" min="1" max="52" value="1" aria-label="How often"><button type="button" class="rc-step" data-step="1" aria-label="More">+</button><span class="rc-unit" id="' + p + '-runit">week</span></div>' +
+        '<p class="rc-preview" id="' + p + '-rprev"></p>' +
+      '</div>' +
+      '<div class="full rep-end" id="' + p + '-re" hidden><span class="label">Ends</span><div class="rc-row"><div class="seg" id="' + p + '-rend" role="group" aria-label="Ends"><button type="button" data-v="never" aria-pressed="true">Never</button><button type="button" data-v="on" aria-pressed="false">On a date</button></div><input class="field" type="date" id="' + p + '-until" aria-label="Last day" hidden></div></div>' +
       '<div class="full"><label class="label" for="' + p + '-notes">Notes <span class="muted">(optional)</span></label><textarea class="field" id="' + p + '-notes" maxlength="1000" rows="2" placeholder="Details, links, anything you might forget"></textarea></div>' +
     '</div>';
   }
@@ -3527,9 +3833,14 @@ var Sched = (function () {
   function setSeg(root, v) { $$('button', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.v === v)); }); }
   function readFields(p, scope) {
     var q = function (s) { return $('#' + p + '-' + s, scope); };
+    var rk = q('rkind').querySelector('[aria-pressed="true"]'), rep = q('rep').value;
+    var ends = q('rend').querySelector('[aria-pressed="true"]');
     return {
       priority: segVal(q('prio')), category: q('cat').value, duration: parseInt(q('dur').value, 10) || 0,
-      repeat: q('rep').value, notes: q('notes').value.trim()
+      repeat: rep, notes: q('notes').value.trim(),
+      rKind: rk ? rk.dataset.v : 'week', rN: clamp(parseInt(q('rn').value, 10) || 1, 1, 52),
+      rDays: $$('[data-d][aria-pressed="true"]', q('rdays')).map(function (b) { return +b.dataset.d; }),
+      until: rep !== 'none' && ends && ends.dataset.v === 'on' && validKey(q('until').value) ? q('until').value : ''
     };
   }
   function fillFields(p, t, scope) {
@@ -3540,6 +3851,61 @@ var Sched = (function () {
     if (dsel.value !== String(t.duration || 0)) { var op = document.createElement('option'); op.value = String(t.duration); op.textContent = fmtDur(t.duration); dsel.appendChild(op); dsel.value = String(t.duration); }
     q('rep').value = t.repeat || 'none';
     q('notes').value = t.notes || '';
+    setSeg(q('rkind'), t.rKind || 'week');
+    q('rn').value = t.rN || 1;
+    var days = t.rDays && t.rDays.length ? t.rDays : [parseKey(t.date || todayKey()).getDay()];
+    $$('[data-d]', q('rdays')).forEach(function (b) { b.setAttribute('aria-pressed', String(days.indexOf(+b.dataset.d) >= 0)); });
+    setSeg(q('rend'), t.until ? 'on' : 'never');
+    q('until').value = t.until || '';
+    syncRepeat(p, scope);
+  }
+  // show the custom-repeat and end-date controls only when they apply, and preview the result in words
+  function syncRepeat(p, scope) {
+    var q = function (s) { return $('#' + p + '-' + s, scope); };
+    var rep = q('rep').value, kind = (q('rkind').querySelector('[aria-pressed="true"]') || {}).dataset;
+    kind = kind ? kind.v : 'week';
+    q('rc').hidden = rep !== 'custom';
+    q('re').hidden = rep === 'none';
+    $('.rc-week', q('rc')).hidden = kind !== 'week';
+    var n = clamp(parseInt(q('rn').value, 10) || 1, 1, 52);
+    q('runit').textContent = kind === 'days' ? (n === 1 ? 'day' : 'days') : (n === 1 ? 'week' : 'weeks');
+    var on = (q('rend').querySelector('[aria-pressed="true"]') || {}).dataset;
+    q('until').hidden = !(on && on.v === 'on');
+    var x = readFields(p, scope), probe = { repeat: rep, rKind: x.rKind, rN: x.rN, rDays: x.rDays, until: x.until };
+    q('rprev').textContent = rep === 'custom' ? 'Repeats: ' + (repLabel(probe) || 'pick at least one day') : '';
+  }
+  function wireRepeat(p, scope, dateOf) {
+    var q = function (s) { return $('#' + p + '-' + s, scope); };
+    var sync = function () { syncRepeat(p, scope); };
+    q('rep').addEventListener('change', function () {
+      if (this.value === 'custom' && !$$('[data-d][aria-pressed="true"]', q('rdays')).length) {
+        var wd = parseKey(dateOf()).getDay();
+        $$('[data-d]', q('rdays')).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.d === wd)); });
+      }
+      sync();
+    });
+    wireSeg(q('rkind')); wireSeg(q('rend'));
+    q('rkind').addEventListener('click', function () { setTimeout(sync, 0); });
+    q('rend').addEventListener('click', function () {
+      setTimeout(function () { if (!q('until').value) q('until').value = addDays(dateOf(), 30); sync(); }, 0);
+    });
+    q('rdays').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-d]'); if (!b) return;
+      b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+      SFX.play('tick', 0.6); sync();
+    });
+    q('rc').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-step]'); if (!b) return;
+      q('rn').value = clamp((parseInt(q('rn').value, 10) || 1) + +b.dataset.step, 1, 52); sync();
+    });
+    q('rn').addEventListener('input', sync);
+    q('until').addEventListener('change', sync);
+    sync();
+  }
+  // copy the repeat fields onto a task (custom repeats need at least one weekday)
+  function applyRepeat(t, x) {
+    t.repeat = x.repeat; t.rKind = x.rKind; t.rN = x.rN; t.until = x.until;
+    t.rDays = x.rDays.length ? x.rDays : [parseKey(t.date).getDay()];
   }
 
   /* ---------- actions ---------- */
@@ -3555,17 +3921,19 @@ var Sched = (function () {
       return;
     }
     var extra = readFields('qa', $('#add-form'));
-    var t = sanitizeTask({ id: uid(), title: title, date: sel, time: $('#add-time').value, duration: extra.duration, priority: extra.priority, category: extra.category, repeat: extra.repeat, notes: extra.notes, created: Date.now() });
+    var t = sanitizeTask({ id: uid(), title: title, date: sel, time: $('#add-time').value, duration: extra.duration, priority: extra.priority, category: extra.category, repeat: extra.repeat, rKind: extra.rKind, rN: extra.rN, rDays: extra.rDays, until: extra.until, notes: extra.notes, created: Date.now() });
     S.tasks.push(t);
     save();
     SFX.play('add');
     ti.value = ''; $('#add-time').value = ''; $('#qa-notes').value = '';
     // category stays (handy for batches); one-off settings go back to defaults
-    setSeg($('#qa-prio'), 'normal'); $('#qa-rep').value = 'none'; $('#qa-dur').value = '0';
+    setSeg($('#qa-prio'), 'normal'); $('#qa-rep').value = 'none'; $('#qa-dur').value = '0'; syncRepeat('qa', $('#add-form'));
     render();
     var li = $('.task[data-id="' + t.id + '"]');
     if (li) { li.classList.add('flash'); if (li.scrollIntoView && !isInView(li)) li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
-    toast('Task added' + (t.time ? ' for ' + fmtTime(t.time) : '') + (t.repeat !== 'none' ? ' (repeats)' : ''), { kind: 'ok', timeout: 2500 });
+    if (t.time) toast('Task added for ' + fmtTime(t.time) + (t.repeat !== 'none' ? ' (repeats)' : ''), { kind: 'ok', timeout: 2500 });
+    else toast('Added without a time (Anytime)', { kind: 'warn', timeout: 6000, action: { label: 'Set a time', fn: function () { editTask(t.id, sel, 'time'); } } });
+    renderTimePicks();
     if (finePointer) ti.focus();
   }
   function isInView(el) { var r = el.getBoundingClientRect(); return r.top >= 80 && r.bottom <= window.innerHeight; }
@@ -3627,7 +3995,7 @@ var Sched = (function () {
     });
   }
 
-  function editTask(id, k) {
+  function editTask(id, k, focusField) {
     var t = find(id); if (!t) return;
     Modal.open({
       title: 'Edit task', width: 560,
@@ -3640,16 +4008,19 @@ var Sched = (function () {
         $('#ed-time', w).value = t.time;
         fillFields('ed', t, w);
         wireSeg($('#ed-prio', w));
+        wireRepeat('ed', w, function () { return validKey($('#ed-date', w).value) ? $('#ed-date', w).value : t.date; });
+        if (focusField === 'time') setTimeout(function () { var ti = $('#ed-time', w); ti.focus(); try { if (ti.showPicker) ti.showPicker(); } catch (e) { /* needs a tap on some browsers */ } }, 80);
         var saveIt = function () {
           var title = $('#ed-title', w).value.trim();
           if (!title) { SFX.play('error'); $('#ed-title', w).focus(); return; }
           var d = $('#ed-date', w).value;
           var x = readFields('ed', w);
+          if (x.repeat === 'custom' && x.rKind === 'week' && !x.rDays.length) { SFX.play('error'); toast('Pick at least one day for the repeat.', { kind: 'warn' }); return; }
           t.title = title.slice(0, 140);
           if (validKey(d)) t.date = d;
           t.time = /^\d{2}:\d{2}$/.test($('#ed-time', w).value) ? $('#ed-time', w).value : '';
           t.priority = x.priority; t.category = x.category; t.duration = x.duration; t.notes = x.notes.slice(0, 1000);
-          if (t.repeat !== x.repeat) { t.repeat = x.repeat; t.until = ''; }
+          applyRepeat(t, x);
           save(); SFX.play('add'); close(); render();
           toast('Changes saved', { kind: 'ok', timeout: 2200 });
         };
@@ -3683,24 +4054,77 @@ var Sched = (function () {
   function taskHTML(t) {
     var st = status(t, sel), cat = catOf(t.category);
     var stLabel = st === 'overdue' ? 'Overdue' : st === 'soon' ? 'Soon' : '';
-    var rep = { daily: 'Daily', weekdays: 'Weekdays', weekly: 'Weekly' }[t.repeat];
-    return '<li class="task" data-id="' + t.id + '" data-status="' + st + '">' +
+    var rep = repLabel(t);
+    var steps = t.steps || [], sDone = steps.filter(function (x) { return x.done[sel]; }).length, open = openSteps[t.id];
+    return '<li class="task' + (open ? ' steps-open' : '') + '" data-id="' + t.id + '" data-status="' + st + '">' +
       '<button class="check" type="button" role="checkbox" aria-checked="' + (st === 'done') + '" aria-label="Mark \u201c' + esc(t.title) + '\u201d ' + (st === 'done' ? 'not done' : 'done') + '" data-act="toggle" data-sfx="none">' + checkSVG + '</button>' +
       '<div class="task-time' + (t.time ? '' : ' any') + '">' + (t.time ? esc(fmtTime(t.time)) : 'Anytime') + (t.duration ? '<small>' + fmtDur(t.duration) + '</small>' : '') + '</div>' +
-      '<div class="task-body" data-act="edit" title="Edit">' +
+      '<div class="task-body" data-act="steps" title="' + (open ? 'Hide steps' : 'Show steps') + '">' +
         '<div class="task-title">' + esc(t.title) + '</div>' +
         '<div class="task-meta">' +
           '<span class="chip" style="--c:' + cat.c + '"><span class="dot"></span>' + cat.name + '</span>' +
           (t.priority !== 'normal' ? '<span class="chip prio-' + t.priority + '">' + (t.priority === 'high' ? 'High priority' : 'Low priority') + '</span>' : '') +
-          (rep ? '<span class="chip">' + I.repeat.replace('<svg', '<svg style="width:12px;height:12px"') + rep + '</span>' : '') +
+          (rep ? '<span class="chip">' + I.repeat.replace('<svg', '<svg style="width:12px;height:12px"') + esc(rep) + '</span>' : '') +
+          (steps.length ? '<span class="chip steps-chip' + (sDone === steps.length ? ' all' : '') + '">' + sDone + '/' + steps.length + ' steps</span>' : '') +
           (stLabel ? '<span class="chip st-' + st + '">' + stLabel + '</span>' : '') +
         '</div>' +
         (t.notes ? '<p class="task-notes">' + esc(t.notes) + '</p>' : '') +
+        (steps.length ? '<div class="steps-line" aria-hidden="true"><i style="width:' + Math.round(sDone / steps.length * 100) + '%"></i></div>' : '') +
       '</div>' +
       '<div class="task-actions">' +
-        '<button class="icon-btn" type="button" data-act="edit" aria-label="Edit task">' + I.edit + '</button>' +
-        '<button class="icon-btn del" type="button" data-act="delete" aria-label="Delete task" data-sfx="none">' + I.trash + '</button>' +
-      '</div></li>';
+        '<button class="icon-btn steps-btn" type="button" data-act="steps" aria-expanded="' + !!open + '" aria-label="Steps for this task" title="Steps">' + I.steps + (steps.length > sDone ? '<b>' + (steps.length - sDone) + '</b>' : '') + '</button>' +
+        '<button class="icon-btn" type="button" data-act="edit" aria-label="Edit task" title="Edit">' + I.edit + '</button>' +
+        '<button class="icon-btn del" type="button" data-act="delete" aria-label="Delete task" title="Delete" data-sfx="none">' + I.trash + '</button>' +
+      '</div>' +
+      (open ? stepsHTML(t, sDone) : '') + '</li>';
+  }
+  // the checklist inside a task: small steps that add up to the whole task
+  var openSteps = {};
+  function stepsHTML(t, sDone) {
+    var steps = t.steps || [];
+    return '<div class="steps-box" data-for="' + t.id + '">' +
+      '<div class="sb-head"><b>Steps</b><span>' + (steps.length ? sDone + ' of ' + steps.length + ' done' : 'Break this task into small steps') + '</span>' +
+        (steps.length ? '<span class="sb-bar"><i style="width:' + Math.round(sDone / steps.length * 100) + '%"></i></span>' : '') + '</div>' +
+      (steps.length ? '<ul class="sb-list">' + steps.map(function (x, i) {
+        var d = !!x.done[sel];
+        return '<li class="sb-item' + (d ? ' done' : '') + '" data-step="' + x.id + '">' +
+          '<button type="button" class="cbox" data-act="step-toggle" aria-pressed="' + d + '" aria-label="Mark step done" data-sfx="none">' + (d ? '[x]' : '[ ]') + '</button>' +
+          '<span class="sb-num">' + pad2(i + 1) + '</span><span class="sb-text">' + esc(x.text) + '</span>' +
+          '<button type="button" class="sb-del" data-act="step-del" aria-label="Remove step" title="Remove step" data-sfx="none">\u00d7</button></li>';
+      }).join('') + '</ul>' : '') +
+      '<form class="sb-add" data-steps-form="' + t.id + '" autocomplete="off"><input class="field sb-input" type="text" maxlength="120" placeholder="Add a step&hellip;" aria-label="New step" enterkeyhint="done"><button class="btn btn-primary btn-sm" type="submit" data-sfx="none">' + I.plus + 'Add step</button></form>' +
+    '</div>';
+  }
+  function toggleSteps(id) {
+    openSteps[id] = !openSteps[id]; SFX.play(openSteps[id] ? 'open' : 'close'); render();
+    if (openSteps[id]) { var inp = $('.task[data-id="' + id + '"] .sb-input'); var t = find(id); if (inp && finePointer && t && !t.steps.length) inp.focus(); }
+  }
+  function addStep(id, text) {
+    var t = find(id); text = String(text || '').trim();
+    if (!t) return;
+    if (!text) { SFX.play('error'); return; }
+    if (t.steps.length >= 40) { SFX.play('error'); toast('A task can have up to 40 steps.', { kind: 'warn' }); return; }
+    t.steps.push({ id: uid(), text: text.slice(0, 120), done: {} });
+    save(); SFX.play('add'); openSteps[id] = true; render();
+    var inp = $('.task[data-id="' + id + '"] .sb-input'); if (inp) inp.focus();
+  }
+  function toggleStep(id, sid) {
+    var t = find(id); if (!t) return;
+    var x = t.steps.filter(function (y) { return y.id === sid; })[0]; if (!x) return;
+    if (x.done[sel]) { delete x.done[sel]; SFX.play('uncheck'); }
+    else {
+      x.done[sel] = true; SFX.play('tick', 0.9);
+      var all = t.steps.every(function (y) { return y.done[sel]; });
+      if (all && !t.done[sel]) { save(); toggleDone(id, sel); toast('All steps done \u2013 \u201c' + t.title + '\u201d is complete', { kind: 'ok' }); return; }
+    }
+    save(); render();
+  }
+  function removeStep(id, sid) {
+    var t = find(id); if (!t) return;
+    var i = -1; t.steps.forEach(function (y, n) { if (y.id === sid) i = n; }); if (i < 0) return;
+    var gone = t.steps.splice(i, 1)[0];
+    save(); SFX.play('del'); render();
+    toast('Step removed', { action: { label: 'Undo', fn: function () { t.steps.splice(Math.min(i, t.steps.length), 0, gone); save(); render(); SFX.play('add'); } }, timeout: 4000 });
   }
 
   function renderList(all) {
@@ -3735,6 +4159,24 @@ var Sched = (function () {
   }
 
   function polar(cx, cy, r, deg) { var a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+  // move the clock hands to the exact current time (called every second, on the second)
+  function tickFace(force) {
+    var dial = document.getElementById('dial'); if (!dial) return;
+    if (!force && (document.hidden || $('#view-schedule').hidden)) return;
+    var d = new Date(), h = d.getHours() % 12, m = d.getMinutes(), sec = d.getSeconds();
+    var set = function (el, p, prefix) { if (!el) return; el.setAttribute(prefix + 'x', p[0].toFixed(2)); el.setAttribute(prefix + 'y', p[1].toFixed(2)); };
+    set(dial.querySelector('.dial-hour'), polar(120, 120, 60, (h + m / 60 + sec / 3600) * 30), 'c');
+    set(dial.querySelector('.dial-min'), polar(120, 120, 60, (m + sec / 60) * 6), 'c');
+    var sl = dial.querySelector('.dial-sec');
+    if (sl) {
+      var s1 = polar(120, 120, 40, sec * 6), s2 = polar(120, 120, 64, sec * 6);
+      sl.setAttribute('x1', s1[0].toFixed(2)); sl.setAttribute('y1', s1[1].toFixed(2)); sl.setAttribute('x2', s2[0].toFixed(2)); sl.setAttribute('y2', s2[1].toFixed(2));
+      set(dial.querySelector('.dial-sec-tip'), s2, 'c');
+    }
+    var hand = dial.querySelector('.d-hand');
+    if (hand) { var nd = nowMinutes() / 1440 * 360, n1 = polar(120, 120, 86, nd), n2 = polar(120, 120, 103, nd); hand.setAttribute('x1', n1[0].toFixed(1)); hand.setAttribute('y1', n1[1].toFixed(1)); hand.setAttribute('x2', n2[0].toFixed(1)); hand.setAttribute('y2', n2[1].toFixed(1)); }
+  }
+  function faceLoop() { tickFace(); setTimeout(faceLoop, 1000 - (Date.now() % 1000) + 5); }
   function renderDial(all) {
     var done = all.filter(function (t) { return isDone(t, sel); }).length, total = all.length;
     var pct = total ? Math.round(done / total * 100) : 0;
@@ -3755,16 +4197,18 @@ var Sched = (function () {
       var nd = nowMinutes() / 1440 * 360, n1 = polar(cx, cy, PR + 8, nd), n2 = polar(cx, cy, R + 3, nd);
       parts.push('<line class="d-hand" x1="' + n1[0].toFixed(1) + '" y1="' + n1[1].toFixed(1) + '" x2="' + n2[0].toFixed(1) + '" y2="' + n2[1].toFixed(1) + '" stroke="var(--hi)" stroke-width="2.2" stroke-linecap="square"/>');
     }
-    // inner clock: 12-hour face; orange ring = hour, red ring = minute
-    var CR = 60, nd2 = new Date(), hh = nd2.getHours() % 12, mm = nd2.getMinutes();
+    // inner clock: a real 12-hour clock face with numbers. Orange ring = hour, red ring = minute,
+    // thin line = seconds. tickFace() moves them every second so it always matches the real time.
+    var CR = 60;
     parts.push('<circle class="d-face" cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.3)" stroke-width="1"/>');
     for (var q = 0; q < 12; q++) {
-      var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30);
+      var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30), qn = polar(cx, cy, CR + 7.5, q * 30);
       parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
+      parts.push('<text class="d-num' + (big ? ' big' : '') + '" x="' + qn[0].toFixed(1) + '" y="' + (qn[1] + 2.6).toFixed(1) + '" text-anchor="middle" font-size="' + (big ? 7.6 : 6.4) + '" font-family="JetBrains Mono, monospace">' + (q === 0 ? 12 : q) + '</text>');
     }
-    var hp = polar(cx, cy, CR, (hh + mm / 60) * 30), mp = polar(cx, cy, CR, mm * 6);
-    parts.push('<circle class="dial-hour" cx="' + hp[0].toFixed(1) + '" cy="' + hp[1].toFixed(1) + '" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
-    parts.push('<circle class="dial-min" cx="' + mp[0].toFixed(1) + '" cy="' + mp[1].toFixed(1) + '" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
+    parts.push('<line class="dial-sec" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/><circle class="dial-sec-tip" cx="120" cy="120" r="1.8"/>');
+    parts.push('<circle class="dial-hour" cx="120" cy="120" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
+    parts.push('<circle class="dial-min" cx="120" cy="120" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
     var colors = { done: 'var(--ok)', overdue: 'var(--red)', soon: 'var(--orange)', upcoming: 'var(--accent)', anytime: 'var(--accent)' };
     all.forEach(function (t) {
@@ -3773,6 +4217,7 @@ var Sched = (function () {
       parts.push('<circle class="dial-marker" data-id="' + t.id + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" fill="' + (st === 'done' ? colors.done : 'var(--bg)') + '" stroke="' + colors[st] + '" stroke-width="2"><title>' + esc(fmtTime(t.time) + ' ' + t.title) + '</title></circle>');
     });
     $('#dial').innerHTML = parts.join('');
+    tickFace(true);
     $('#dial-pct').innerHTML = pct + '<small>%</small>';
     $('#dial-sub').textContent = total ? done + ' of ' + total + ' done' : 'No tasks yet';
     $('#dial-date').textContent = sel === todayKey() ? '' : relLabel(sel);
@@ -3884,6 +4329,19 @@ var Sched = (function () {
     });
   }
 
+  /* ---------- quick time chips under the add box, so a time is never forgotten ---------- */
+  function hhmm(min) { min = ((Math.round(min) % 1440) + 1440) % 1440; return pad2(Math.floor(min / 60)) + ':' + pad2(min % 60); }
+  function renderTimePicks() {
+    var now = nowMinutes(), soon = Math.ceil((now + 30) / 15) * 15, hour = Math.ceil((now + 60) / 15) * 15, cur = $('#add-time').value;
+    var picks = [['', 'Anytime'], [hhmm(soon), 'In 30m'], [hhmm(hour), 'In 1h'], ['09:00'], ['12:00'], ['15:00'], ['18:00'], ['21:00']];
+    $('#time-picks').innerHTML = '<span class="tp-lbl">' + I.clock + 'Time</span>' + picks.map(function (p) {
+      var on = p[0] === cur;
+      return '<button type="button" data-tp="' + p[0] + '" aria-pressed="' + on + '" data-sfx="none">' + (p[1] ? esc(p[1]) + (p[0] ? ' <small>' + esc(fmtTime(p[0])) + '</small>' : '') : esc(fmtTime(p[0]))) + '</button>';
+    }).join('');
+    $('#add-btn').innerHTML = I.plus + (cur ? 'Add \u00b7 ' + esc(fmtTime(cur)) : 'Add task');
+    $('#add-form').classList.toggle('has-time', !!cur);
+  }
+
   /* ---------- init ---------- */
   function init() {
     $('#day-prev').innerHTML = I.left; $('#day-next').innerHTML = I.right;
@@ -3891,11 +4349,21 @@ var Sched = (function () {
     $('#more-toggle').innerHTML = 'More options' + I.down;
     $('#add-more').innerHTML = fieldsHTML('qa', false);
     wireSeg($('#qa-prio'));
+    wireRepeat('qa', $('#add-form'), function () { return sel; });
     $('#qa-cat').value = 'personal';
     $('#cat-filter').innerHTML = '<option value="all">All categories</option>' + CATEGORIES.map(function (c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
     if (S.ui.moreOpen) { $('#add-more').hidden = false; $('#more-toggle').setAttribute('aria-expanded', 'true'); }
 
     $('#add-form').addEventListener('submit', addTask);
+    renderTimePicks();
+    setInterval(function () { if (!$('#add-time').value || document.activeElement !== $('#add-time')) renderTimePicks(); }, 60000);
+    $('#time-picks').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-tp]'); if (!b) return;
+      $('#add-time').value = b.dataset.tp; SFX.play('tick', 0.7); renderTimePicks();
+      if (finePointer) $('#add-title').focus();
+    });
+    $('#add-time').addEventListener('input', renderTimePicks);
+    $('#add-time').addEventListener('change', renderTimePicks);
     $('#more-toggle').addEventListener('click', function () {
       var open = $('#add-more').hidden;
       $('#add-more').hidden = !open;
@@ -3923,8 +4391,17 @@ var Sched = (function () {
       if (act === 'clear-filter') { S.ui.filter = 'all'; S.ui.cat = 'all'; save(); render(); return; }
       if (!li) return;
       if (act === 'toggle') toggleDone(li.dataset.id);
+      else if (act === 'steps') toggleSteps(li.dataset.id);
       else if (act === 'edit') editTask(li.dataset.id);
       else if (act === 'delete') deleteTask(li.dataset.id);
+      else if (act === 'step-toggle' || act === 'step-del') { var sid = a.closest('[data-step]').dataset.step; if (act === 'step-toggle') toggleStep(li.dataset.id, sid); else removeStep(li.dataset.id, sid); }
+    });
+    $('#tasklist').addEventListener('submit', function (e) {
+      var f = e.target.closest('[data-steps-form]'); if (!f) return;
+      e.preventDefault(); addStep(f.dataset.stepsForm, $('.sb-input', f).value);
+    });
+    $('#tasklist').addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && e.target.classList.contains('sb-input')) { var li = e.target.closest('.task'); e.target.blur(); if (li) { openSteps[li.dataset.id] = false; render(); } }
     });
     $('#dial').addEventListener('click', function (e) {
       var m = e.target.closest('.dial-marker'); if (!m) return;
@@ -3954,6 +4431,7 @@ var Sched = (function () {
 
     render();
     loadLog();
+    faceLoop();
     setInterval(checkReminders, 15000);
     setTimeout(checkReminders, 2000);
   }
@@ -3970,7 +4448,7 @@ var Sched = (function () {
     focusAdd: function () { var t = $('#add-title'); t.focus(); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); },
     prev: function () { go(addDays(sel, -1)); }, next: function () { go(addDays(sel, 1)); }, today: function () { go(todayKey()); },
     selected: function () { return sel; }, tasksOn: tasksOn, occurs: occurs, status: status, fmtTime: fmtTime,
-    editTask: editTask, relLabel: relLabel, longDate: longDate, fmtDur: fmtDur
+    editTask: editTask, relLabel: relLabel, longDate: longDate, fmtDur: fmtDur, repLabel: repLabel
   };
 }());
 
@@ -4066,7 +4544,7 @@ var Cal = (function () {
       return '<div class="cd-row ' + clsFor(t, sel) + '" data-id="' + t.id + '">' +
         '<button type="button" class="cbox" data-toggle="' + t.id + '" data-k="' + sel + '" aria-pressed="' + !!t.done[sel] + '" aria-label="Mark done">' + (t.done[sel] ? '[x]' : '[ ]') + '</button>' +
         '<span class="cc-t">' + esc(timeLabel(t)) + '</span>' +
-        '<button type="button" class="cd-title" data-edit="' + t.id + '">' + esc(t.title) + (t.repeat !== 'none' ? ' <small>↻</small>' : '') + '</button></div>';
+        '<button type="button" class="cd-title" data-edit="' + t.id + '">' + esc(t.title) + (t.steps && t.steps.length ? ' <small>' + t.steps.filter(function (x) { return x.done[sel]; }).length + '/' + t.steps.length + '</small>' : '') + (t.repeat !== 'none' ? ' <small>↻</small>' : '') + '</button></div>';
     }).join('') : '<p class="cal-empty">Nothing on this day yet.</p>';
   }
   function untilLabel(t, days) {
@@ -4228,10 +4706,20 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '1.9.1';
+  var VERSION = '2.0.0';
   var WHATS_NEW = [
-    'Red mode is easier to see in the dark: brighter lines and outlines on every button, box and field.',
-    'The day overview dial is fully highlighted in red mode. The hour shows as a solid dot and the minute as a ring, so you can tell them apart.'
+    'Steps inside tasks: click a task (or its list button) to open a checklist. Add small steps, tick them off, and the task completes itself when every step is done.',
+    'Custom repeats: pick the days of the week, every few days or every few weeks, every month, and an end date if you want one.',
+    'Day overview has a real clock: numbers 1 to 12, a seconds hand, and hour and minute rings that move every second with the real time.',
+    'The time and date in the top bar are bigger and brighter.',
+    'Now playing comes alive: the meters in Focus audio, the tab, the bottom bar, the side panel and the mini player move with the music.',
+    'Never forget a time: quick time buttons sit under the add box, and a task added without a time offers \u201cSet a time\u201d.',
+    'Every sound control now has a % ruler under it (0 to 100). Click a mark to jump straight to it.',
+    'A full-width status bar runs along the top, and the side rails stay on at every desktop size.',
+    'Low blue mode replaces Red mode: a warm filter that cuts blue light, keeps the orange and red marks, and has a Warmth slider in Settings.',
+    'Notes can be locked with a passcode. They are encrypted on this device and lock again when you close them.',
+    'Screen saver: after 6 minutes without use, the screen runs the app\u2019s own code like the loading screen. Any key or click brings you back.',
+    'Cleaner, fuller sound: new reverb, real noise for the atmosphere, smoother mastering and no harsh edges.'
   ];
 
   /* ---------- themes ---------- */
@@ -4262,19 +4750,20 @@ var App = (function () {
     if (!quiet) { SFX.play('theme'); toast('Theme: ' + t.name, { timeout: 1600 }); }
   }
 
-  /* red mode: a red filter over the whole screen that removes blue and green light */
+  /* blue light filter: a warm amber layer over the whole screen that takes out most of the blue light
+     (reds and oranges stay red and orange) */
   function toggleRed() {
     S.settings.redMode = !S.settings.redMode; save();
     applySettings();
     SFX.play(S.settings.redMode ? 'on' : 'off');
-    toast(S.settings.redMode ? 'Red mode on \u2013 blue light off. Press R to switch back.' : 'Red mode off', { timeout: 2200 });
+    toast(S.settings.redMode ? 'Blue light filter on \u2013 warmer screen for the evening. Press R to switch back.' : 'Blue light filter off', { timeout: 2400 });
   }
 
   /* ---------- tabs ---------- */
   function buildTabs() {
     $$('.tab[data-tab]').forEach(function (b) {
       var t = TABS.filter(function (x) { return x.id === b.dataset.tab; })[0];
-      b.innerHTML = t.ic + '<span>' + t.label + '</span>';
+      b.innerHTML = t.ic + '<span>' + t.label + '</span>' + (t.id === 'audio' ? '<span class="mini-bars tab-bars paused" aria-hidden="true"><i></i><i></i><i></i><i></i></span>' : '');
       b.setAttribute('aria-controls', 'view-' + t.id);
       b.addEventListener('click', function () { show(t.id); });
     });
@@ -4308,10 +4797,12 @@ var App = (function () {
   function tuiStatus() {
     if (document.hidden) return;
     var tk = todayKey(), list = Sched.tasksOn(tk), done = list.filter(function (t) { return t.done[tk]; }).length;
-    var l = 'TASK MATRIX ' + VERSION + '  NODE 01  USER:' + (S.profile.callsign || 'operator').toUpperCase();
-    var r = (S.settings.sfx ? '' : 'MUTED  ') + 'ONLINE  TASKS:' + done + '/' + list.length + '  LV:' + levelInfo(S.profile.xp).level + '  ?:KEYS';
+    var seg = function (txt, cls) { return '<span class="ts-seg' + (cls ? ' ' + cls : '') + '">' + txt + '</span>'; };
+    var l = seg('Task Matrix ' + VERSION, 'inv') + seg('Node 01', 'ts-x') + seg('User <b>' + esc((S.profile.callsign || 'operator').toUpperCase()) + '</b>');
+    var r = (S.settings.redMode ? seg('Low blue', 'ts-blf') : '') + (S.settings.sfx ? '' : seg('Muted', 'ts-x')) +
+      seg((navigator.onLine === false ? 'Offline' : 'Online'), 'ts-x') + seg('Tasks <b>' + done + '/' + list.length + '</b>') + seg('LV <b>' + levelInfo(S.profile.xp).level + '</b>', 'ts-x') + seg('<b>?</b> Keys', 'ts-x');
     if (l + r === tsLast) return; tsLast = l + r;
-    $('#ts-left').textContent = l; $('#ts-right').textContent = r;
+    $('#ts-left').innerHTML = l; $('#ts-right').innerHTML = r;
   }
   function tickClock() {
     tuiStatus();
@@ -4330,7 +4821,9 @@ var App = (function () {
     var st = S.settings;
     document.documentElement.classList.toggle('rails', st.sideRails !== false);
     document.documentElement.classList.toggle('red', !!st.redMode);
-    var rb = $('#dock-red'); if (rb) { rb.setAttribute('aria-pressed', String(!!st.redMode)); rb.title = (st.redMode ? 'Red mode is on' : 'Red mode: cut blue light') + ' (R)'; }
+    var rb = $('#dock-red'); if (rb) { rb.setAttribute('aria-pressed', String(!!st.redMode)); rb.title = (st.redMode ? 'Blue light filter is on' : 'Blue light filter: warmer screen, less blue light') + ' (R)'; }
+    var w = clamp(typeof st.blfWarm === 'number' ? st.blfWarm : 0.75, 0.2, 1), ov = $('#redmode');
+    if (ov) ov.style.backgroundColor = 'rgb(255,' + Math.round(255 * (1 - 0.62 * w)) + ',' + Math.round(255 * (1 - 0.92 * w)) + ')';
     var th = themeOf(st.theme);
     document.documentElement.setAttribute('data-theme', th.id);
     var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', st.redMode ? '#000000' : th.bg);
@@ -4374,7 +4867,7 @@ var App = (function () {
     ['M', 'Mute / unmute sound effects'],
     ['Y', 'Next theme'],
     ['F', 'Full screen on / off'],
-    ['R', 'Red mode on / off (night light)'],
+    ['R', 'Blue light filter on / off'],
     ['\u2191 / \u2193', 'Previous / next week (Calendar)'],
     ['PgUp / PgDn', 'Previous / next month (Calendar)'],
     ['Esc', 'Close dialogs'],
@@ -4423,7 +4916,9 @@ var App = (function () {
           '</div>' +
         '</div>' +
         '<input type="file" id="wp-file" accept="image/*" hidden>' +
-        setRow('Red mode', 'Turns the whole screen red to cut blue light at night (key R)', sw('set-red', !!st.redMode, 'Red mode')) +
+        setRow('Blue light filter', 'A warm screen with much less blue light for the evening (key R)', sw('set-red', !!st.redMode, 'Blue light filter')) +
+        '<div class="row"><label class="label" for="set-warm">Warmth</label><input class="range" type="range" id="set-warm" min="20" max="100" value="' + Math.round((st.blfWarm || 0.75) * 100) + '"><span class="val" id="set-warm-v">' + Math.round((st.blfWarm || 0.75) * 100) + '%</span></div>' +
+        setRow('Screen saver', 'Shows running code after 6 minutes without use', sw('set-saver', st.idleSaver !== false, 'Screen saver')) +
         setRow('24-hour clock', 'Off shows AM / PM', sw('set-24', st.clock24, '24-hour clock')) +
         setRow('Side panels', 'Mission and Systems displays beside the screen (wide screens)', sw('set-rails', st.sideRails !== false, 'Side panels')) +
         setRow('Reduce motion', 'Fewer animations', sw('set-motion', st.reduceMotion, 'Reduce motion')) +
@@ -4486,6 +4981,7 @@ var App = (function () {
         $('#wp-remove', w).addEventListener('click', function () {
           Wallpaper.remove().then(function () { if (st.scene === 'custom') useScene('none'); else wpPreview(); toast('Wallpaper removed', { timeout: 1800 }); });
         });
+        $('#set-warm', w).addEventListener('input', function () { st.blfWarm = this.value / 100; $('#set-warm-v', w).textContent = this.value + '%'; save(); applySettings(); });
         $('#wp-dim', w).addEventListener('input', function () { st.wpDim = this.value / 100; $('#wp-dim-v', w).textContent = this.value + '%'; Wallpaper.applyDim(); save(); });
         if ($('#set-pin', w)) $('#set-pin', w).addEventListener('click', function () { close(); setTimeout(pinApp, 30); });
         var switches = {
@@ -4493,6 +4989,7 @@ var App = (function () {
           'set-formkeys': function (on) { st.formKeys = on; },
           'set-24': function (on) { st.clock24 = on; Sched.render(); },
           'set-red': function (on) { st.redMode = on; SFX.play(on ? 'on' : 'off'); },
+          'set-saver': function (on) { st.idleSaver = on; },
           'set-motion': function (on) { st.reduceMotion = on; },
           'set-rails': function (on) { st.sideRails = on; },
           'set-rem': function (on) { st.reminders = on; }
@@ -4778,7 +5275,7 @@ var App = (function () {
     var body = themeCardsHTML() +
       '<div class="set-sec" style="margin-top:6px"><h3>QUICK ACCESS</h3><div class="quick-links">' +
         '<button class="btn btn-sm" type="button" data-q="pin">' + I.download + 'Install app</button>' +
-        '<button class="btn btn-sm" type="button" data-q="red" data-sfx="none">' + I.red + (S.settings.redMode ? 'Red mode: on' : 'Red mode: off') + '</button>' +
+        '<button class="btn btn-sm" type="button" data-q="red" data-sfx="none">' + I.red + (S.settings.redMode ? 'Low blue: on' : 'Low blue: off') + '</button>' +
         '<button class="btn btn-sm" type="button" data-q="timer">' + I.clock + 'Quick timer</button>' +
         '<button class="btn btn-sm" type="button" data-q="deck">' + I.audio + 'Focus deck</button>' +
         '<button class="btn btn-sm" type="button" data-q="copy">' + I.link + 'Copy link</button>' +
@@ -4792,7 +5289,7 @@ var App = (function () {
         var b = e.target.closest('[data-q]'); if (!b) return;
         var q = b.dataset.q;
         if (q === 'copy') { copyLink(); return; }
-        if (q === 'red') { toggleRed(); b.innerHTML = I.red + (S.settings.redMode ? 'Red mode: on' : 'Red mode: off'); return; }
+        if (q === 'red') { toggleRed(); b.innerHTML = I.red + (S.settings.redMode ? 'Low blue: on' : 'Low blue: off'); return; }
         close();
         setTimeout(function () { ({ pin: pinApp, profile: openProfile, settings: openSettings, fs: toggleFullscreen, timer: QTimer.openModal, deck: FocusDeck.openModal })[q](); }, 30);
       });
@@ -4967,7 +5464,7 @@ var AudioUI = (function () {
     var id = 'ac-' + c.k, v = A[c.k];
     if (c.type === 'range') {
       return '<div class="ctl"><label class="label" for="' + id + '">' + c.label + '</label>' +
-        '<input class="range" type="range" id="' + id + '" data-k="' + c.k + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" value="' + c.toUI(v) + '">' +
+        ruler('<input class="range" type="range" id="' + id + '" data-k="' + c.k + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '" value="' + c.toUI(v) + '">', c) +
         '<span class="val" data-val="' + c.k + '">' + c.fmt(v) + '</span></div>' + (c.hint ? '<p class="ctl-hint" style="margin-top:-8px">' + c.hint + '</p>' : '');
     }
     if (c.type === 'select') {
@@ -4984,6 +5481,20 @@ var AudioUI = (function () {
     }
     return '';
   }
+  // a 0-100% (or units) ruler under every slider; tap a mark to jump straight to it
+  function ruler(input, c) {
+    var min = +c.min, max = +c.max, pctUnit = !c.fmt || c.fmt === pct, marks = '';
+    for (var i = 0; i <= 10; i++) {
+      var raw = Math.round(min + (max - min) * i / 10), label = pctUnit ? Math.round(i * 10) + '%' : String(raw);
+      marks += '<button type="button" class="vt' + (i % 5 === 0 ? ' maj' : '') + (i % 2 ? ' odd' : '') + '" data-rv="' + raw + '" style="--p:' + i * 10 + '" aria-label="Set to ' + label + '" data-sfx="none"><b>' + label + '</b></button>';
+    }
+    return '<div class="vol-track ctl-track">' + input + '<div class="vol-scale" role="group" aria-label="Steps">' + marks + '</div></div>';
+  }
+  function markRuler(el) {
+    var sc = el.parentNode && el.parentNode.querySelector('.vol-scale'); if (!sc) return;
+    var v = +el.value, min = +el.min, max = +el.max, near = (max - min) / 20;
+    $$('.vt', sc).forEach(function (t) { var r = +t.dataset.rv; t.classList.toggle('on', r <= v); t.classList.toggle('cur', Math.abs(r - v) < near); });
+  }
   function renderControls() {
     var tab = CTL_TABS.some(function (t) { return t[0] === S.ui.ctlTab; }) ? S.ui.ctlTab : 'mixer';
     $('#ctl-tabs').innerHTML = CTL_TABS.map(function (t) {
@@ -4996,7 +5507,7 @@ var AudioUI = (function () {
         return '<div class="mix-row' + (on ? '' : ' off') + '" data-layer="' + L.k + '">' +
           '<button type="button" class="switch" role="switch" data-k="' + L.k + 'On" aria-checked="' + !!on + '" aria-label="' + L.name + ' on/off" data-sfx="none"></button>' +
           '<span class="name">' + L.name + '<small>' + L.sub + '</small></span>' +
-          '<input class="range" type="range" data-k="' + L.k + '" min="0" max="100" value="' + Math.round(A[L.k] * 100) + '" aria-label="' + L.name + ' level">' +
+          ruler('<input class="range" type="range" data-k="' + L.k + '" min="0" max="100" value="' + Math.round(A[L.k] * 100) + '" aria-label="' + L.name + ' level">', { min: 0, max: 100 }) +
           '<span class="val" data-val="' + L.k + '">' + pct(A[L.k]) + '</span></div>';
       }).join('') + '<p class="ctl-hint">Switch layers on or off and set how loud each one is. Everything is generated live \u2013 no two minutes sound exactly the same.</p>';
     } else {
@@ -5006,7 +5517,7 @@ var AudioUI = (function () {
       if (tab === 'sound' && !A.drumsOn) html += '<p class="ctl-hint">Drums are off. Picking a drum pattern turns them on.</p>';
     }
     $('#ctl-body').innerHTML = html;
-    $$('#ctl-body input[type="range"]').forEach(App.rangeFill);
+    $$('#ctl-body input[type="range"]').forEach(function (el) { App.rangeFill(el); markRuler(el); });
   }
   function renderPrograms() {
     $('#prog-grid').innerHTML = Object.keys(PROGRAMS).map(function (id) {
@@ -5038,7 +5549,10 @@ var AudioUI = (function () {
     b.textContent = p ? 'Stop' : 'Play'; b.classList.toggle('is-stop', p);
     b.setAttribute('aria-label', p ? 'Stop music' : 'Play music');
     b.setAttribute('aria-pressed', String(p));
-    var st = $('#np-state'); st.textContent = p ? '\u25a0 PLAYING' : '\u25a1 STOPPED'; st.classList.toggle('on', p);
+    var st = $('#np-state'); $('#np-state-t').textContent = p ? 'PLAYING' : 'STOPPED'; st.classList.toggle('on', p);
+    $('#deck-panel').classList.toggle('playing', p);
+    $$('.tab[data-tab="audio"]').forEach(function (tb) { tb.classList.toggle('playing', p); });
+    liveKick();
   }
   function renderAll() { renderControls(); renderPrograms(); renderNow(); renderPlay(); }
 
@@ -5099,6 +5613,38 @@ var AudioUI = (function () {
       save(); renderAll(); SFX.play('add');
       toast(existing ? 'Preset \u201c' + name + '\u201d updated' : 'Preset \u201c' + name + '\u201d saved', { kind: 'ok' });
     });
+  }
+
+  /* ---------- live equalizer bars: every little "now playing" meter moves with the real sound
+     (Now playing panel, the Focus audio tab, the bottom bar, the side panel and the mini player) ---------- */
+  var live = { raf: 0, last: 0, bins: null, els: [], lv: [0, 0, 0, 0], scan: 0 };
+  var BANDS = [[2, 6], [6, 18], [18, 50], [50, 140]];
+  function liveDraw(now) {
+    live.raf = 0;
+    var an = Music.isPlaying() ? Music.analyser() : null;
+    if (!an || document.hidden || S.settings.reduceMotion) { liveClear(); return; }
+    if (now - live.last < 33) { live.raf = requestAnimationFrame(liveDraw); return; }
+    var dt = live.last ? Math.min(0.1, (now - live.last) / 1000) : 0.033; live.last = now;
+    if (!live.bins || live.bins.length !== an.frequencyBinCount) live.bins = new Uint8Array(an.frequencyBinCount);
+    an.getByteFrequencyData(live.bins);
+    if (now - live.scan > 500 || !live.els.length) { live.els = $$('.mini-bars:not(.paused)'); live.scan = now; }
+    for (var b = 0; b < 4; b++) {
+      var sum = 0, r = BANDS[b]; for (var k = r[0]; k < r[1]; k++) sum += live.bins[k];
+      var v = clamp(Math.pow(sum / (r[1] - r[0]) / 255, 1.6) * (1.1 + b * 0.35), 0, 1);
+      live.lv[b] = v > live.lv[b] ? v : Math.max(v, live.lv[b] - dt * 2.4);
+    }
+    live.els.forEach(function (box) {
+      var bars = box.children, H = box.clientHeight || 16;
+      for (var i = 0; i < bars.length && i < 4; i++) bars[i].style.height = Math.round(3 + live.lv[i] * (H - 3)) + 'px';
+    });
+    live.raf = requestAnimationFrame(liveDraw);
+  }
+  function liveClear() { live.last = 0; live.lv = [0, 0, 0, 0]; $$('.mini-bars i').forEach(function (i) { i.style.height = ''; }); }
+  function liveKick() {
+    var on = Music.isPlaying();
+    $$('.np-bars, .tab-bars').forEach(function (b) { b.classList.toggle('paused', !on); });
+    if (!on) { if (live.raf) { cancelAnimationFrame(live.raf); live.raf = 0; } liveClear(); return; }
+    if (!live.raf) { live.els = []; live.raf = requestAnimationFrame(liveDraw); }
   }
 
   /* ---------- live spectrum: LED-style level bars with peak caps and a reflection ---------- */
@@ -5225,6 +5771,7 @@ var AudioUI = (function () {
     var body = $('#ctl-body');
     body.addEventListener('input', function (e) {
       var el = e.target; if (el.type !== 'range' || !el.dataset.k) return;
+      markRuler(el);
       var k = el.dataset.k, c = null;
       Object.keys(SPEC).forEach(function (t) { SPEC[t].forEach(function (x) { if (x.k === k) c = x; }); });
       var v = c ? c.fromUI(+el.value) : +el.value / 100;
@@ -5239,6 +5786,13 @@ var AudioUI = (function () {
       if (el.dataset.k === 'drumPattern' && wasOff) { renderControls(); toast('Drums turned on', { timeout: 1600 }); }
     });
     body.addEventListener('click', function (e) {
+      var mk = e.target.closest('[data-rv]');
+      if (mk) {
+        var inp = mk.closest('.vol-track').querySelector('input[type="range"]');
+        inp.value = mk.dataset.rv; App.rangeFill(inp); SFX.play('tick', (inp.value - inp.min) / ((inp.max - inp.min) || 1));
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
       var s = e.target.closest('.switch[data-k]');
       if (s) {
         var k = s.dataset.k, on = s.getAttribute('aria-checked') !== 'true';
@@ -5259,7 +5813,7 @@ var AudioUI = (function () {
 
     Music.on(function () { renderPlay(); Mini.update(); App.dockStatus(); specKick(); });
     new (window.ResizeObserver || function () { this.observe = function () {}; })(function () { specKick(); }).observe($('#spectrum'));
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) specKick(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { specKick(); liveKick(); } });
   }
   function pickProgram(id) { loadParams(programParams(id)); SFX.play('open'); if (!Music.isPlaying()) Music.play(); }
   function setVolume(v) { applyParam('master', clamp(v, 0, 1)); }
@@ -5763,7 +6317,7 @@ var Rails = (function () {
     var r = app.getBoundingClientRect(), cs = getComputedStyle(app);
     var cl = r.left + (parseFloat(cs.paddingLeft) || 18), cr = r.right - (parseFloat(cs.paddingRight) || 18);
     var pw = clamp(Math.round(cl - 12), 0, 84);
-    if (pw < 54) { hide(); return; }
+    if (pw < 40) { hide(); return; }
     place(cl + 1 - pw, cl + 1, cr - 1, cr - 1 + pw);
   }
   window.addEventListener('resize', debounce(layout, 200));
@@ -5870,48 +6424,167 @@ var Notes = (function () {
   var MAX = 20000, panel = null, area = null, stateEl = null, countEl = null, data = S.notes;
   if (typeof data.text !== 'string') data.text = '';
   if (typeof data.at !== 'number') data.at = 0;
+  if (data.lock && !(isPlainObj(data.lock) && typeof data.lock.salt === 'string' && typeof data.lock.iv === 'string' && typeof data.lock.ct === 'string')) data.lock = null;
   // notes saved by the paste-in version (1.3 extend) move into the main save once
   (function () {
     var old = null; try { old = JSON.parse(Store.get('taskmatrix.notes') || 'null'); } catch (e) { old = null; }
-    if (old && typeof old.text === 'string' && old.text && !data.text) { data.text = old.text.slice(0, MAX); data.at = old.at || Date.now(); save(); }
+    if (old && typeof old.text === 'string' && old.text && !data.text && !data.lock) { data.text = old.text.slice(0, MAX); data.at = old.at || Date.now(); save(); }
     if (old) Store.remove('taskmatrix.notes');
   }());
+
+  /* ---------- passcode: the notes are encrypted on this device (AES-GCM, key made from the passcode) ---------- */
+  var key = null, salt = null, seq = 0, fails = 0, waitUntil = 0;
+  var subtle = window.crypto && window.crypto.subtle;
+  function b64(buf) { var b = new Uint8Array(buf), s = ''; for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+  function unb64(str) { var s = atob(str), b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; }
+  function deriveKey(pass, saltBytes) {
+    return subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return subtle.deriveKey({ name: 'PBKDF2', salt: saltBytes, iterations: 150000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+  }
+  function encrypt(text) {
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(text)).then(function (ct) { return { salt: b64(salt), iv: b64(iv), ct: b64(ct) }; });
+  }
+  function locked() { return !!data.lock && !key; }
+
   function stamp(t) { var d = new Date(t); return Sched.fmtTime(pad2(d.getHours()) + ':' + pad2(d.getMinutes())); }
   function commit() {
-    data.text = area.value.slice(0, MAX); data.at = Date.now();
+    var text = area.value.slice(0, MAX), at = Date.now();
+    if (data.lock) {
+      if (!key) return;
+      var my = ++seq;
+      encrypt(text).then(function (lk) { if (my !== seq) return; data.lock = lk; data.text = ''; data.at = at; save(); stateEl.textContent = 'Saved, locked ' + stamp(at); marker(); });
+      return;
+    }
+    data.text = text; data.at = at;
     save();
     stateEl.textContent = 'Saved ' + stamp(data.at);
     marker();
   }
   var saveSoon = debounce(commit, 400);
   function marker() {
-    var has = !!(data.text && data.text.trim());
-    [$('#dock-notes'), $('#nav-notes')].forEach(function (b) { if (b) b.classList.toggle('has-text', has); });
+    var has = !!(data.lock || (data.text && data.text.trim()));
+    [$('#dock-notes'), $('#nav-notes')].forEach(function (b) { if (b) { b.classList.toggle('has-text', has); b.classList.toggle('is-locked', !!data.lock); } });
   }
   function count() { countEl.textContent = area.value.length + ' / ' + MAX + ' characters'; }
+  function render() {
+    var lk = locked();
+    panel.classList.toggle('locked', lk); panel.classList.toggle('has-pass', !!data.lock);
+    $('#notes-lockview', panel).hidden = !lk;
+    area.hidden = lk; $('.notes-foot', panel).hidden = lk;
+    $('[data-n="lock"]', panel).innerHTML = I.lock + (data.lock ? 'Lock now' : 'Set passcode');
+    $('[data-n="lock"]', panel).hidden = lk;
+    $('[data-n="lock"]', panel).title = data.lock ? 'Lock the notes now' : 'Protect the notes with a passcode';
+    $('[data-n="remove"]', panel).hidden = !data.lock || lk;
+    $('[data-n="change"]', panel).hidden = !data.lock || lk;
+    if (lk) { stateEl.textContent = 'Locked'; var pin = $('#notes-pin', panel); pin.value = ''; if (finePointer) setTimeout(function () { try { pin.focus({ preventScroll: true }); } catch (e) { pin.focus(); } }, 30); }
+    else { stateEl.textContent = data.at ? 'Saved ' + stamp(data.at) : 'Empty'; count(); }
+  }
+  function lockNow(quiet) {
+    if (!data.lock || !key || !panel) return;
+    if (key) { saveSoon.flush(); }
+    var finishLock = function () { key = null; area.value = ''; render(); if (!quiet) { SFX.play('close'); toast('Notes locked', { timeout: 1600 }); } };
+    // let a pending save finish first
+    setTimeout(finishLock, 60);
+  }
+  function unlock() {
+    var pin = $('#notes-pin', panel), msg = $('#notes-lockmsg', panel), pass = pin.value;
+    if (!pass) { SFX.play('error'); pin.focus(); return; }
+    if (Date.now() < waitUntil) { msg.textContent = 'Too many tries. Wait a few seconds.'; SFX.play('error'); return; }
+    msg.textContent = 'Checking…';
+    var sb = unb64(data.lock.salt);
+    deriveKey(pass, sb).then(function (k) {
+      return subtle.decrypt({ name: 'AES-GCM', iv: unb64(data.lock.iv) }, k, unb64(data.lock.ct)).then(function (plain) {
+        key = k; salt = sb; fails = 0;
+        area.value = new TextDecoder().decode(plain);
+        msg.textContent = ''; SFX.play('start'); render();
+        if (finePointer) { try { area.focus({ preventScroll: true }); } catch (e) { area.focus(); } }
+      });
+    }).catch(function () {
+      fails++; if (fails >= 5) { waitUntil = Date.now() + 15000; fails = 0; }
+      msg.textContent = 'Wrong passcode.'; SFX.play('error');
+      panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+      pin.select();
+    });
+  }
+  function askPasscode(title, text) {
+    return Modal.confirm({ title: title, text: text, input: true, inputType: 'password', value: '', maxlength: 32, placeholder: 'At least 4 characters', ok: 'Next' }).then(function (a) {
+      if (a === null || a === false) return null;
+      a = String(a);
+      if (a.length < 4) { SFX.play('error'); toast('Use at least 4 characters.', { kind: 'warn' }); return null; }
+      return Modal.confirm({ title: 'Type it again', text: 'Type the same passcode again to make sure.', input: true, inputType: 'password', value: '', maxlength: 32, placeholder: 'Passcode again', ok: 'Save passcode' }).then(function (b) {
+        if (b === null || b === false) return null;
+        if (String(b) !== a) { SFX.play('error'); toast('The two passcodes did not match. Try again.', { kind: 'warn' }); return null; }
+        return a;
+      });
+    });
+  }
+  function setPasscode(change) {
+    if (!subtle) { SFX.play('error'); toast('Passcodes work on the website (https) version of Task Matrix.', { kind: 'warn', timeout: 5000 }); return; }
+    askPasscode(change ? 'New passcode' : 'Set a passcode', 'Your notes will be locked with this passcode and encrypted on this device. If you forget it, the notes cannot be recovered.').then(function (pass) {
+      if (!pass) return;
+      var text = area.value.slice(0, MAX);
+      salt = crypto.getRandomValues(new Uint8Array(16));
+      deriveKey(pass, salt).then(function (k) {
+        key = k; return encrypt(text);
+      }).then(function (lk) {
+        data.lock = lk; data.text = ''; data.at = Date.now(); save(); marker(); render();
+        SFX.play('add'); toast(change ? 'Passcode changed' : 'Passcode set. The notes lock when you close them.', { kind: 'ok', timeout: 3500 });
+      }).catch(function () { SFX.play('error'); toast('Could not set the passcode.', { kind: 'danger' }); });
+    });
+  }
+  function removePasscode() {
+    Modal.confirm({ title: 'Remove passcode?', text: 'Your notes will be stored without a passcode again.', ok: 'Remove passcode' }).then(function (yes) {
+      if (!yes) return;
+      data.lock = null; key = null; salt = null; commit(); render(); SFX.play('off'); toast('Passcode removed', { timeout: 2000 });
+    });
+  }
+  function forgot() {
+    Modal.confirm({ title: 'Forgot the passcode?', text: 'Without the passcode the notes cannot be opened. You can erase them and start again with empty notes.', ok: 'Erase notes', danger: true }).then(function (yes) {
+      if (!yes) return;
+      data.lock = null; data.text = ''; data.at = Date.now(); key = null; save(); marker(); area.value = ''; render(); SFX.play('del');
+      toast('Notes erased', { timeout: 2200 });
+    });
+  }
+
   function build() {
     panel = document.createElement('section');
     panel.className = 'notes-panel'; panel.id = 'notes-panel'; panel.hidden = true;
     panel.setAttribute('aria-label', 'Notes');
     panel.innerHTML =
       '<div class="qt-head"><h3>Notes</h3><span class="notes-state" id="notes-state"></span>' +
+      '<button class="btn btn-sm notes-lockbtn" type="button" data-n="lock" data-sfx="none"></button>' +
       '<button class="icon-btn" type="button" data-n="close" aria-label="Close notes" data-sfx="none">' + I.close + '</button></div>' +
-      '<textarea class="notes-text" id="notes-text" maxlength="' + MAX + '" spellcheck="true" placeholder="Write anything \u2013 ideas, reminders, numbers\u2026 Saved automatically on this device."></textarea>' +
+      '<div class="notes-lockview" id="notes-lockview" hidden>' +
+        '<div class="nl-icon" aria-hidden="true">' + I.lock + '</div>' +
+        '<p class="nl-title">Notes are locked</p><p class="nl-sub">Type your passcode to open them.</p>' +
+        '<form class="nl-form" id="notes-lockform" autocomplete="off"><input class="field" id="notes-pin" type="password" maxlength="32" placeholder="Passcode" aria-label="Passcode" autocomplete="current-password"><button class="btn btn-primary" type="submit" data-sfx="none">Unlock</button></form>' +
+        '<p class="nl-msg" id="notes-lockmsg" aria-live="polite"></p>' +
+        '<button class="nl-forgot" type="button" data-n="forgot" data-sfx="none">Forgot passcode?</button>' +
+      '</div>' +
+      '<textarea class="notes-text" id="notes-text" maxlength="' + MAX + '" spellcheck="true" placeholder="Write anything – ideas, reminders, numbers… Saved automatically on this device."></textarea>' +
       '<div class="notes-foot"><span class="notes-count" id="notes-count"></span>' +
+      '<button class="btn btn-sm" type="button" data-n="change" data-sfx="none" hidden title="Change the passcode">Change code</button>' +
+      '<button class="btn btn-sm" type="button" data-n="remove" data-sfx="none" hidden title="Remove the passcode">Remove code</button>' +
       '<button class="btn btn-sm" type="button" data-n="copy" data-sfx="none">' + I.link + 'Copy</button>' +
       '<button class="btn btn-sm btn-danger" type="button" data-n="clear" data-sfx="none">' + I.trash + 'Clear</button></div>';
     document.body.appendChild(panel);
     area = $('#notes-text', panel); stateEl = $('#notes-state', panel); countEl = $('#notes-count', panel);
-    area.value = data.text;
-    stateEl.textContent = data.at ? 'Saved ' + stamp(data.at) : 'Empty';
-    count();
-    area.addEventListener('input', function () { stateEl.textContent = 'Saving\u2026'; count(); saveSoon(); });
+    area.value = data.lock ? '' : data.text;
+    render();
+    area.addEventListener('input', function () { stateEl.textContent = 'Saving…'; count(); saveSoon(); });
     area.addEventListener('blur', function () { saveSoon.flush(); });
+    $('#notes-lockform', panel).addEventListener('submit', function (e) { e.preventDefault(); unlock(); });
     panel.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !Modal.isOpen()) { e.stopPropagation(); toggle(false); } });
     panel.addEventListener('click', function (e) {
       var b = e.target.closest('[data-n]'); if (!b) return;
       var a = b.getAttribute('data-n');
       if (a === 'close') toggle(false);
+      else if (a === 'lock') { if (!data.lock) setPasscode(false); else if (key) lockNow(); }
+      else if (a === 'change') setPasscode(true);
+      else if (a === 'remove') removePasscode();
+      else if (a === 'forgot') forgot();
       else if (a === 'copy') {
         var ok = function () { SFX.play('add'); toast('Notes copied', { kind: 'ok', timeout: 1600 }); };
         try { navigator.clipboard.writeText(area.value).then(ok, function () { area.select(); document.execCommand('copy'); ok(); }); } catch (err) { area.select(); document.execCommand('copy'); ok(); }
@@ -5933,8 +6606,8 @@ var Notes = (function () {
     panel.hidden = !show;
     [$('#dock-notes'), $('#nav-notes')].forEach(function (b) { if (b) b.setAttribute('aria-expanded', String(show)); });
     SFX.play(show ? 'open' : 'close');
-    if (show) { if (finePointer) { try { area.focus({ preventScroll: true }); } catch (e) { area.focus(); } } }
-    else { saveSoon.flush(); }
+    if (show) { render(); if (!locked() && finePointer) { try { area.focus({ preventScroll: true }); } catch (e) { area.focus(); } } }
+    else { saveSoon.flush(); if (data.lock) lockNow(true); }   // closing the notes locks them again
   }
   function init() {
     var db = $('#dock-notes'), nb = $('#nav-notes');
@@ -5942,8 +6615,171 @@ var Notes = (function () {
     if (nb) { nb.innerHTML = I.book + '<span>Notes</span>'; nb.addEventListener('click', function () { toggle(); }); }
     marker();
     window.addEventListener('pagehide', function () { if (panel) saveSoon.flush(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden && panel) saveSoon.flush(); });
   }
-  return { init: init, toggle: toggle };
+  return { init: init, toggle: toggle, lock: function () { lockNow(true); }, isLocked: function () { return !!data.lock; } };
+}());
+
+/* =====================================================================
+   SCREEN SAVER — after 6 minutes without use the screen turns into the boot
+   log again: the app's own source scrolls past, with live status lines
+   ===================================================================== */
+var Saver = (function () {
+  var IDLE = 6 * 60 * 1000, last = Date.now(), el = null, logEl = null, clockEl = null, on = false, shownAt = 0;
+  var startX = null, startY = null, timer = null, tick = null, src = null, queue = [], cur = null, curText = '', pos = 0, swallowUntil = 0;
+  function hl(text) {
+    var out = '', re = /(\/\/.*$|\/\*.*?\*\/)|('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|\b(var|function|return|if|else|for|while|new|typeof|this|true|false|null|try|catch|break|continue)\b|\b(\d+(?:\.\d+)?)\b/g, i = 0, m;
+    while ((m = re.exec(text))) {
+      out += esc(text.slice(i, m.index));
+      out += '<span class="' + (m[1] ? 'sv-c' : m[2] ? 'sv-s' : m[3] ? 'sv-k' : 'sv-n') + '">' + esc(m[0]) + '</span>';
+      i = re.lastIndex;
+    }
+    return out + esc(text.slice(i));
+  }
+  function source() {
+    if (src) return src;
+    var sc = document.scripts[document.scripts.length - 1];
+    src = (sc && sc.textContent ? sc.textContent : '').split('\n');
+    return src;
+  }
+  function ts() { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+  function minsLeft(m) { var h = Math.floor(m / 60), r = m % 60; return h ? h + 'h ' + pad2(r) + 'm' : r + 'm'; }
+  // one honest status line: what the app is actually doing right now
+  function status() {
+    var picks = [
+      function () {
+        var tk = todayKey(), list = Sched.tasksOn(tk), done = list.filter(function (t) { return t.done[tk]; }).length;
+        var now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), nx = null;
+        list.forEach(function (t) { if (nx || t.done[tk] || !t.time) return; var m = +t.time.slice(0, 2) * 60 + +t.time.slice(3, 5); if (m >= nm) nx = { t: t, m: m }; });
+        return ['sched', done + '/' + list.length + ' done today' + (nx ? ', next "' + nx.t.title.slice(0, 40) + '" at ' + Sched.fmtTime(nx.t.time) + ' (in ' + minsLeft(nx.m - nm) + ')' : ', nothing else timed')];
+      },
+      function () { return ['audio', Music.isPlaying() ? '"' + (S.ui.presetName || (PROGRAMS[S.audio.program] || PROGRAMS.drift).name) + '" playing, ' + Math.round(S.audio.master * 100) + '% volume' : 'Synth idle']; },
+      function () { return ['focus', Focus.active() ? Focus.label() + ' running, ' + Focus.fmt(Focus.remaining()) + ' left' : 'No session running']; },
+      function () { return ['store', STORE_KEY + ', ' + ((Store.get(STORE_KEY) || '').length / 1024).toFixed(1) + ' KB, ' + S.tasks.length + ' tasks']; },
+      function () { return ['net', navigator.onLine ? 'Online' : 'Offline, working from the saved copy']; },
+      function () { var lv = levelInfo(S.profile.xp); return ['user', (S.profile.callsign || 'operator') + ', level ' + lv.level + ', ' + S.profile.xp + ' XP']; },
+      function () { return ['idle', 'No input for ' + Math.floor((Date.now() - last) / 60000) + ' min']; }
+    ];
+    var r; try { r = picks[Math.floor(Math.random() * picks.length)](); } catch (e) { r = ['idle', 'Waiting']; }
+    return { status: true, name: r[0], text: r[1] };
+  }
+  // the next piece of real source: one function or block, 14 to 34 lines
+  function chunk() {
+    var lines = source(), n = lines.length, tries = 0, start = 0;
+    if (n < 40) return [{ text: '// waiting for input', plain: false }];
+    do { start = Math.floor(Math.random() * (n - 40)); tries++; } while (tries < 60 && !/^\s*(function |var [A-Za-z]+ = (\(function|function)|\/\* -+)/.test(lines[start]));
+    var len = 14 + Math.floor(Math.random() * 20), out = [{ text: '', plain: true }, { cmd: true, text: 'sed -n ' + (start + 1) + ',' + (start + len) + 'p task-matrix.js' }];
+    for (var i = start; i < start + len && i < n; i++) out.push({ text: lines[i].replace(/\t/g, '  ').replace(/\s+$/, '').slice(0, 160) });
+    return out;
+  }
+  function refill() {
+    var c = chunk();
+    queue = queue.concat(c);
+    queue.push({ text: '', plain: true });
+    queue.push(status());
+    if (Math.random() < 0.5) queue.push(status());
+  }
+  function addLine(o) {
+    var d = document.createElement('div');
+    if (o.status) { d.className = 'sc'; d.innerHTML = '<span class="dim">' + ts() + '</span><span>' + esc(o.name) + '</span><span class="val">' + esc(o.text) + '</span>'; }
+    else if (o.cmd) { d.className = 'sv-cmd'; d.innerHTML = '<span class="dim">PS C:\\Users\\' + esc(who()) + '&gt;</span> '; d.appendChild(document.createElement('span')); }
+    else { d.className = 'sv-code'; d.appendChild(document.createElement('span')); }
+    logEl.appendChild(d);
+    // keep the screen to what fits, like a real terminal
+    while (logEl.childNodes.length > 80) logEl.removeChild(logEl.firstChild);
+    return d;
+  }
+  function who() { return (S.profile.callsign || 'operator').replace(/\s+/g, '').toLowerCase() || 'operator'; }
+  function step() {
+    if (!on) return;
+    var fast = S.settings.reduceMotion;
+    if (!cur) {
+      if (!queue.length) refill();
+      var o = queue.shift();
+      cur = { o: o, el: addLine(o) }; curText = o.text || ''; pos = 0;
+      if (o.status || o.plain || fast) { finish(); return later(o.status ? 90 : fast ? 260 : 30); }
+    }
+    // type a few characters at a time, faster through indentation
+    var target = cur.el.lastChild, k = 2 + Math.floor(Math.random() * 4);
+    while (pos < curText.length && curText.charAt(pos) === ' ') pos++;
+    pos = Math.min(curText.length, pos + k);
+    target.textContent = curText.slice(0, pos);
+    scroll();
+    if (pos >= curText.length) { finish(); return later(cur ? 0 : (cur === null && Math.random() < 0.08 ? 520 : 60)); }
+    later(14 + Math.random() * 18);
+  }
+  function finish() {
+    if (!cur) return;
+    var target = cur.el.lastChild;
+    if (cur.o.cmd) target.textContent = curText;
+    else if (!cur.o.status && !cur.o.plain) target.innerHTML = hl(curText);
+    cur = null; scroll();
+  }
+  function scroll() { logEl.scrollTop = logEl.scrollHeight; }
+  function later(ms) { clearTimeout(timer); timer = setTimeout(step, ms); }
+  function clock() { if (clockEl) clockEl.textContent = S.settings.clock24 ? ts() : (function () { var d = new Date(), h = d.getHours(); return (h % 12 || 12) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()) + (h < 12 ? ' AM' : ' PM'); }()); }
+  function build() {
+    el = document.createElement('div');
+    el.className = 'saver'; el.id = 'saver'; el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="boot-log saver-log" id="saver-log"></div>' +
+      '<div class="saver-foot"><span>taskmatrix idle --watch</span><span class="sv-hint">' + (finePointer ? 'press any key or click to return' : 'tap to return') + '</span><span class="sv-clock" id="saver-clock"></span></div>';
+    document.body.appendChild(el);
+    logEl = $('#saver-log', el); clockEl = $('#saver-clock', el);
+  }
+  function show() {
+    if (on || !S.settings.idleSaver || document.hidden || $('#boot')) return;
+    if (!el) build();
+    on = true; shownAt = performance.now(); startX = startY = null;
+    logEl.innerHTML = ''; queue = []; cur = null;
+    addLine({ text: '', plain: true });
+    var first = addLine({ cmd: true, text: '' }); first.lastChild.textContent = 'taskmatrix idle --watch';
+    addLine({ status: true, name: 'idle', text: 'No input for 6 min, showing the source until you are back' });
+    el.hidden = false;
+    requestAnimationFrame(function () { el.classList.add('on'); });
+    document.documentElement.classList.add('saver-on');
+    try { Notes.lock(); } catch (e) { /* noop */ }
+    clock(); tick = setInterval(clock, 1000);
+    later(400);
+  }
+  function hide() {
+    if (!on) return;
+    on = false; clearTimeout(timer); clearInterval(tick);
+    el.classList.remove('on');
+    document.documentElement.classList.remove('saver-on');
+    setTimeout(function () { if (!on) { el.hidden = true; logEl.innerHTML = ''; } }, 220);
+    last = Date.now();
+  }
+  function activity(e) {
+    if (on) {
+      if (e.type === 'pointermove' || e.type === 'mousemove') {
+        if (e.pointerType === 'touch') return;
+        if (startX === null) { startX = e.clientX; startY = e.clientY; return; }
+        if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) < 24) return;
+      }
+      if (performance.now() - shownAt < 350 && e.type !== 'keydown') return;
+      if (e.type === 'keydown' && /^(Shift|Control|Alt|Meta|CapsLock|Fn|OS)$/.test(e.key)) { hide(); return; }
+      // the key or tap that wakes the screen does nothing else
+      if (e.type !== 'pointermove' && e.type !== 'mousemove' && e.type !== 'scroll') {
+        if (e.type === 'keydown' || e.type === 'pointerdown') e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.type === 'pointerdown' || e.type === 'touchstart') swallowUntil = performance.now() + 700;
+      }
+      hide();
+      return;
+    }
+    last = Date.now();
+  }
+  function init() {
+    ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, activity, { capture: true, passive: ev !== 'keydown' && ev !== 'pointerdown' });
+    });
+    window.addEventListener('scroll', function () { if (!on) last = Date.now(); }, { capture: true, passive: true });
+    window.addEventListener('click', function (e) { if (performance.now() < swallowUntil) { swallowUntil = 0; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { if (on) hide(); } else last = Date.now(); });
+    setInterval(function () { if (!on && Date.now() - last >= IDLE) show(); }, 5000);
+  }
+  return { init: init, show: show, hide: hide, active: function () { return on; }, idleFor: function () { return Date.now() - last; } };
 }());
 
 /* =====================================================================
@@ -5970,7 +6806,7 @@ function boot() {
     ['', ''],
     ['', 'OPTIONS:'],
     ['i2', '--theme <THEME>'], ['i3', 'Colour theme of the console [current: ' + (S.settings.theme || 'mono') + ']'], ['', ''],
-    ['i2', '--red-mode'], ['i3', 'Red night light that removes blue light [' + (S.settings.redMode ? 'on' : 'off') + ']'], ['', ''],
+    ['i2', '--low-blue <WARMTH>'], ['i3', 'Blue light filter for the evening [' + (S.settings.redMode ? 'on, ' + Math.round((S.settings.blfWarm || 0.75) * 100) + '%' : 'off') + ']'], ['', ''],
     ['i2', '--sound <VOLUME>'], ['i3', 'Sound effects [' + (S.settings.sfx ? 'on, ' + Math.round(S.settings.sfxVol * 100) + '%' : 'off') + ']'], ['', ''],
     ['i2', '--clock <FORMAT>'], ['i3', 'Clock format [' + (S.settings.clock24 ? '24h' : '12h') + ']'],
     ['', ''],
@@ -5991,8 +6827,9 @@ function boot() {
     ['focus', Focus.init, function () { return Focus.active() ? 'Session restored, ' + Focus.fmt(Focus.remaining()) + ' left' : 'Idle, ' + Focus.length() + ' min preset'; }],
     ['timer', QTimer.init, function () { return QTimer.active() ? 'Quick timer restored, ' + QTimer.fmt(QTimer.remaining()) + ' left' : 'Quick timer idle'; }],
     ['deck', FocusDeck.init, function () { return 'Music and focus linked'; }],
-    ['notes', Notes.init, function () { return plural(S.notes.text.length, 'character') + ' restored'; }],
+    ['notes', Notes.init, function () { return S.notes.lock ? 'locked with passcode' : plural(S.notes.text.length, 'character') + ' restored'; }],
     ['player', Mini.init, function () { return 'Mini player ready'; }],
+    ['saver', Saver.init, function () { return S.settings.idleSaver ? 'Screen saver after 6 min idle' : 'Screen saver off'; }],
     ['shell', App.init, function () { return 'Build ' + App.version + ', keys 1 2 3 N ? ready'; }]
   ];
   function line(cls, html) { var d = document.createElement('div'); if (cls) d.className = cls; d.innerHTML = html; if (log) { log.appendChild(d); log.scrollTop = log.scrollHeight; } return d; }
@@ -6019,7 +6856,7 @@ function boot() {
       try { navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ }); } catch (e) { /* noop */ }
       sub('net', 'Offline copy registered');
     }
-    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX };
+    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes };
     // wait for the font (with a time limit), then wait for the player
     var fontsDone = false;
     function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'JetBrains Mono ready'); waitForPlayer(); }
