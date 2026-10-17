@@ -2291,6 +2291,142 @@ html.tui .deck > .deck-actions:last-child, html.tui .panel > .cal-open:last-chil
 
 /* four theme buttons (Auto added): icons only until there is room for names */
 @media (max-width: 1120px) and (min-width: 901px) { html.tui .theme-btn { font-size: 0; gap: 0; padding: 0 10px; } html.tui .theme-btn i { width: 9px; height: 9px; } html.tui .dock-console .lbl { display: none; } }
+
+/* =====================================================================
+   2.2.0 — bigger day overview with second marks and timer rings
+   ===================================================================== */
+#dial .d-stick { stroke: rgba(var(--tint-rgb), 0.28); }
+#dial .d-stick.on { stroke: var(--hi); stroke-width: 1.4; }
+#dial .dial-sec, #dial .dial-sec-tail { stroke: var(--hi); }
+#dial .dt-track { stroke: rgba(var(--tint-rgb), 0.1); }
+#dial .d-timer-qt .dt-arc { stroke: var(--orange); }
+#dial .d-timer-qt .dt-tip { fill: var(--orange); }
+#dial .d-timer-fo .dt-arc { stroke: rgba(var(--tint-rgb), 0.7); }
+#dial .d-timer-fo .dt-tip { fill: var(--hi); }
+#dial .d-timer.paused .dt-arc { stroke-dasharray: 2 3; opacity: 0.6; }
+#dial .d-timer.paused .dt-tip { opacity: 0.6; }
+html.red #dial .d-stick.on, html.red #dial .dial-sec-tail { stroke: #ffffff; }
+.dial-timers { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 6px; }
+.dial-timers[hidden] { display: none; }
+.dtl { display: inline-flex; align-items: center; gap: 5px; font: 600 0.58rem var(--font-mono), monospace; letter-spacing: 0.04em; color: var(--text-2); white-space: nowrap; }
+.dtl b { color: var(--hi); font-variant-numeric: tabular-nums; }
+.dtl i { width: 7px; height: 7px; flex: none; background: var(--orange); }
+.dtl-fo i { background: var(--hi); }
+.dtl.paused { opacity: 0.6; }
+/* the dial is larger now that Next up is gone */
+html.tui .dial-wrap { max-width: 420px; width: calc(100% - 8px); }
+@media (min-width: 901px) and (max-height: 980px) { html.tui .sched-side .dial-wrap { max-width: 352px; margin: 0 auto; } }
+@media (min-width: 901px) and (max-height: 820px) { html.tui .sched-side .dial-wrap { max-width: 300px; } }
+/* phones: the dial gets the full width, the numbers sit in a row under it */
+@media (max-width: 900px) {
+  html.tui .sched-side .dial-panel { grid-template-columns: minmax(0, 1fr); }
+  html.tui .sched-side .dial-panel .dial-wrap { width: min(100%, 360px); max-width: none; margin: 4px auto 0; }
+  html.tui .sched-side .dial-panel > .dial-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 10px calc(-1 * var(--pp) - 1px) calc(-1 * var(--pp) - 1px); align-self: stretch; }
+  html.tui .sched-side .dial-panel .stat.side-extra { display: block; }
+  html.tui .sched-side .dial-panel .stat:not(.side-extra) { display: block; }
+}
+@media (max-width: 380px) { html.tui .sched-side .dial-panel { grid-template-columns: minmax(0, 1fr); } }
+
+/* =====================================================================
+   2.3.0 — CALENDAR TIMELINE (week / day): hours down the side, tasks as
+   blocks placed by time and length; drag the dotted grip to move one
+   ===================================================================== */
+.tl { --gut: 54px; display: flex; flex-direction: column; flex: 1; min-height: 0; font-family: var(--font-mono), monospace; }
+.tl-row, .tl-body { display: grid; grid-template-columns: var(--gut) repeat(var(--cols), minmax(0, 1fr)); }
+.tl-row { overflow-y: hidden; scrollbar-gutter: stable; }
+.tl-gut { display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); border-right: 1px solid var(--line); }
+.tl-head { border-bottom: 1px solid var(--frame); }
+.tl-dh { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 7px 4px 6px; min-width: 0; border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--text-2); font: inherit; cursor: pointer; }
+.tl-dh:first-of-type { border-left: 0; }
+.tl-dh span { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; }
+.tl-dh b { display: grid; place-items: center; min-width: 30px; height: 28px; padding: 0 4px; font-size: 1.05rem; color: var(--text); }
+.tl-dh small { font-size: 0.56rem; color: var(--dim); }
+.tl-dh:hover { background: rgba(var(--tint-rgb), 0.06); }
+.tl-dh.today span { color: var(--red); }
+.tl-dh.today b { background: var(--red); color: #fff; }
+.tl-dh.sel:not(.today) b { box-shadow: inset 0 0 0 1px var(--hi); }
+.tl-any { border-bottom: 1px solid var(--frame); min-height: 32px; }
+.tl-ad { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 3px; padding: 4px 3px; min-width: 0; border-left: 1px solid var(--line); }
+.tl-ad:first-of-type { border-left: 0; }
+.tl-chip { max-width: 100%; padding: 2px 6px 2px 7px; border: 0; border-left: 3px solid var(--cc); background: rgba(var(--tint-rgb), 0.08); color: var(--text); font: 600 0.62rem/1.3 var(--font-mono), monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; }
+.tl-chip:hover { background: var(--sel); color: var(--sel-ink); }
+.tl-chip.done { opacity: 0.5; text-decoration: line-through; }
+.tl-scroll { position: relative; height: clamp(380px, calc(100vh - 330px), 1100px); height: clamp(380px, calc(100dvh - 330px), 1100px); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; }
+.tl-body { position: relative; height: calc(var(--hh) * 24); }
+.tl-hours { position: relative; border-right: 1px solid var(--line); }
+.tl-hours span { position: absolute; right: 7px; transform: translateY(-50%); font-size: 0.56rem; letter-spacing: 0.04em; color: var(--dim); white-space: nowrap; }
+.tl-col { position: relative; min-width: 0; border-left: 1px solid var(--line);
+  background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px), linear-gradient(to bottom, rgba(var(--tint-rgb), 0.05) 1px, transparent 1px);
+  background-size: 100% var(--hh), 100% calc(var(--hh) / 2); cursor: copy; }
+.tl-col:first-of-type { border-left: 0; }
+.tl-col.wknd { background-color: rgba(var(--tint-rgb), 0.025); }
+.tl-col.today { background-color: rgba(239, 65, 54, 0.045); }
+.tl-ev { position: absolute; z-index: 1; display: flex; flex-direction: column; gap: 1px; overflow: hidden; padding: 3px 6px 6px 17px; border: 1px solid rgba(var(--tint-rgb), 0.28); border-left: 3px solid var(--cc);
+  background: var(--bg); background: color-mix(in srgb, var(--cc) 14%, var(--bg)); color: var(--text); font-size: 0.64rem; line-height: 1.3; cursor: pointer; box-sizing: border-box; transition: box-shadow 0.12s; }
+.tl-ev:hover { z-index: 3; border-color: var(--hi); border-left-color: var(--cc); }
+.tl-et { color: var(--text-2); font-size: 0.58rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.tl-en { font-weight: 700; color: var(--hi); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.tl-meta { font-size: 0.56rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.tl-ev.short { flex-direction: row; align-items: center; gap: 6px; padding-top: 0; padding-bottom: 0; }
+.tl-ev.short .tl-en { -webkit-line-clamp: 1; white-space: nowrap; display: block; }
+.tl-ev.short .tl-et { flex: none; }
+.tl-ev.done { opacity: 0.55; }
+.tl-ev.done .tl-en { text-decoration: line-through; }
+.tl-ev.late { border-color: rgba(239, 65, 54, 0.6); }
+.tl-ev.late .tl-et { color: var(--red); }
+.tl-ev.soon .tl-et { color: var(--orange); }
+/* the drag grip: a column of dots on the left of every block */
+.tl-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 15px; cursor: grab; touch-action: none;
+  background-image: radial-gradient(circle, currentColor 1.1px, transparent 1.4px); background-size: 5px 5px; background-position: 3px 4px; background-repeat: repeat; color: rgba(var(--tint-rgb), 0.45);
+  -webkit-mask: linear-gradient(to bottom, #000 0 22px, transparent 22px); mask: linear-gradient(to bottom, #000 0 22px, transparent 22px); }
+.tl-ev:hover .tl-grip, .tl-ev.dragging .tl-grip { color: var(--hi); }
+.tl-rs { position: absolute; left: 15px; right: 0; bottom: 0; height: 7px; cursor: ns-resize; touch-action: none; }
+.tl-rs::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 18px; height: 2px; margin-left: -9px; background: rgba(var(--tint-rgb), 0.5); opacity: 0; transition: opacity 0.12s; }
+.tl-ev:hover .tl-rs::after, .tl-ev.dragging .tl-rs::after { opacity: 1; }
+.tl-ev.dragging { z-index: 6; cursor: grabbing; border-color: var(--hi); border-left-color: var(--cc); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--hi); transition: none; }
+.tl-ev.dragging .tl-et { color: var(--hi); }
+body.tl-dragging, body.tl-dragging * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+/* the red line for "now", like Google Calendar */
+.tl-now { position: absolute; left: -1px; right: 0; z-index: 4; height: 2px; margin-top: -1px; background: var(--red); pointer-events: none; }
+.tl-now::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); }
+.tl-one .tl-ev { font-size: 0.72rem; padding-left: 19px; }
+.tl-one .tl-et { font-size: 0.64rem; }
+html[data-theme="white"] .tl-ev { background: color-mix(in srgb, var(--cc) 22%, #ffffff); }
+html[data-theme="white"] .tl-dh.today b { color: #fff; }
+@media (max-width: 640px) {
+  .tl { --gut: 40px; }
+  .tl-gut { padding-right: 5px; font-size: 0.5rem; }
+  .tl-hours span { right: 4px; font-size: 0.5rem; }
+  .tl-scroll { height: clamp(360px, 62vh, 640px); }
+  .tl-ev { padding-left: 15px; font-size: 0.6rem; }
+  .tl-grip { width: 13px; }
+}
+
+/* ---- 2.3.0: quick times are one tidy row of equal cells ---- */
+.time-picks { display: grid; grid-template-columns: 38px repeat(8, minmax(0, 1fr)); overflow: hidden; }
+.time-picks > * { min-width: 0; }
+.tp-lbl { justify-content: center; padding: 0; }
+.time-picks button { padding: 7px 2px; text-align: center; font-size: 0.7rem; letter-spacing: 0.02em; overflow: hidden; text-overflow: clip; }
+.time-picks button:last-child { border-right: 0; }
+@media (max-width: 560px) { .time-picks { grid-template-columns: 30px repeat(8, minmax(0, 1fr)); } .time-picks button { padding: 7px 0; font-size: 0.62rem; letter-spacing: 0; } .tp-lbl svg { width: 12px; height: 12px; } }
+
+/* ---- 2.3.0: section colours: Focus audio is green, Calendar is red ---- */
+:root { --green: #3ddc84; --tab-red: #ff5a4e; }
+html[data-theme="white"] { --green: #138a43; --tab-red: #c62828; }
+html[data-theme="dark"] { --green: #39c97a; --tab-red: #f0574b; }
+html.tui .tab[data-tab="audio"], html.tui .tab[data-tab="audio"] svg { color: var(--green); }
+html.tui .tab[data-tab="calendar"], html.tui .tab[data-tab="calendar"] svg { color: var(--tab-red); }
+html.tui .tab[data-tab="audio"]:hover { background: rgba(61, 220, 132, 0.12); color: var(--green); }
+html.tui .tab[data-tab="calendar"]:hover { background: rgba(239, 65, 54, 0.12); color: var(--tab-red); }
+html.tui .tab[data-tab="audio"][aria-selected="true"], html.tui .tab[data-tab="audio"][aria-selected="true"] svg { background: var(--green); color: #000; }
+html.tui .tab[data-tab="calendar"][aria-selected="true"], html.tui .tab[data-tab="calendar"][aria-selected="true"] svg { background: var(--tab-red); color: #fff; }
+html.tui .bottom-nav .tab[data-tab][aria-selected="true"] svg { background: transparent; }
+html[data-theme="white"].tui .tab[data-tab="audio"][aria-selected="true"], html[data-theme="white"].tui .tab[data-tab="audio"][aria-selected="true"] svg { color: #fff; }
+
+.tl-ev.narrow { padding-left: 13px; padding-right: 3px; }
+.tl-ev.narrow .tl-grip { width: 11px; background-position: 2px 4px; }
+.tl-ev.narrow .tl-et { display: none; }
+.tl-ev.narrow .tl-en { overflow-wrap: normal; word-break: normal; -webkit-line-clamp: 4; font-size: 0.6rem; }
 </style>
 </head>
 <body>
@@ -2401,10 +2537,11 @@ html.tui .deck > .deck-actions:last-child, html.tui .panel > .cal-open:last-chil
               <h2 class="panel-title">Day overview <small id="dial-date"></small></h2>
             </div>
             <div class="dial-wrap">
-              <svg id="dial" viewBox="0 0 240 240" role="img" aria-label="24-hour day dial"></svg>
+              <svg id="dial" viewBox="-20 -20 280 280" role="img" aria-label="24-hour day dial"></svg>
               <div class="dial-center">
                 <div class="dial-pct" id="dial-pct">0<small>%</small></div>
                 <div class="dial-sub" id="dial-sub">No tasks yet</div>
+                <div class="dial-timers" id="dial-timers" hidden></div>
               </div>
             </div>
             <div class="dial-stats">
@@ -2414,10 +2551,6 @@ html.tui .deck > .deck-actions:last-child, html.tui .panel > .cal-open:last-chil
             </div>
           </div>
 
-          <div class="panel" id="nextup-panel">
-            <div class="panel-head" style="margin-bottom:8px"><h2 class="panel-title">Next up</h2></div>
-            <div id="nextup"></div>
-          </div>
 
           <div class="panel" id="week-panel">
             <div class="panel-head"><h2 class="panel-title">This week <small id="week-range"></small></h2></div>
@@ -2427,7 +2560,7 @@ html.tui .deck > .deck-actions:last-child, html.tui .panel > .cal-open:last-chil
           <div class="panel" id="log-panel">
             <div class="panel-head"><h2 class="panel-title">Daily log</h2><small class="muted" id="log-state"></small></div>
             <label class="sr-only" for="log">Daily log</label>
-            <textarea class="field log-area" id="log" maxlength="4000" placeholder="What happened today? Wins, notes, things to remember tomorrow."></textarea>
+            <textarea class="field log-area" id="log" maxlength="4000"></textarea>
             <div class="log-foot"><span>Saved on this device</span><span id="log-count">0 / 4000</span></div>
           </div>
         </aside>
@@ -2522,6 +2655,7 @@ html.tui .deck > .deck-actions:last-child, html.tui .panel > .cal-open:last-chil
         <div class="seg" id="cal-view" role="group" aria-label="Calendar view">
           <button type="button" data-cv="month" aria-pressed="true">Month</button>
           <button type="button" data-cv="week" aria-pressed="false">Week</button>
+          <button type="button" data-cv="day" aria-pressed="false">Day</button>
           <button type="button" data-cv="agenda" aria-pressed="false">Agenda</button>
         </div>
       </div>
@@ -3161,8 +3295,83 @@ var SFX = (function () {
       else if (style === 'beep') tone({ f: pick([1568, 1760, 2093]), dur: 0.016, vol: 0.011, type: 'square', lp: 3200, attack: 0.001 });
       else { tk(now(), 0.024, 6000); bl(pick([2637, 2794, 2960]), now(), 0.006, 0.006); }
     },
-    keyErr: function () { tone({ f: 180, type: 'square', lp: 900, dur: 0.04, vol: 0.035, attack: 0.001 }); }
+    keyErr: function () { tone({ f: 180, type: 'square', lp: 900, dur: 0.04, vol: 0.035, attack: 0.001 }); },
+    // Low blue on: like the big hangar lights in a film - a heavy breaker clunks, then banks of
+    // lamps thump on one after another, left, right, centre, flickering and buzzing before they settle
+    lightsOn: function () {
+      var t = now(), room = echo(0.11, 0.32, 2600);
+      breaker(t, room);
+      [[0.2, -0.7, 1], [0.46, 0.7, 0.9], [0.7, 0, 1.15]].forEach(function (b) { lampBank(t + b[0], b[1], b[2], room); });
+      hum(t + 0.75, 1.5, 0.012, room, false);
+    },
+    // Low blue off: the breaker drops and the power winds down
+    lightsOff: function () {
+      var t = now(), room = echo(0.11, 0.28, 2400);
+      breaker(t, room);
+      hum(t + 0.02, 1.1, 0.016, room, true);
+      tone({ f: 820, f2: 70, at: t + 0.04, dur: 0.95, vol: 0.012, attack: 0.02, type: 'sine' });
+      tone({ f: 46, f2: 30, at: t + 0.05, dur: 0.6, vol: 0.07, attack: 0.004 });
+    }
   };
+  // a short slap-back so the big sounds feel like they are in a room
+  function echo(time, fb, lp) {
+    var inG = c.createGain(), d = c.createDelay(0.5), f = c.createBiquadFilter(), g = c.createGain(), wet = c.createGain();
+    d.delayTime.value = time; f.type = 'lowpass'; f.frequency.value = lp; g.gain.value = fb; wet.gain.value = 0.55;
+    inG.connect(AC.sfx); inG.connect(d); d.connect(f); f.connect(g); g.connect(d); f.connect(wet); wet.connect(AC.sfx);
+    setTimeout(function () { try { inG.disconnect(); d.disconnect(); f.disconnect(); g.disconnect(); wet.disconnect(); } catch (e) { /* noop */ } }, 4500);
+    return inG;
+  }
+  function to(node, dest, pan) {
+    if (pan && c.createStereoPanner) { var p = c.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); node.connect(p); p.connect(dest); }
+    else node.connect(dest);
+  }
+  // the main switch: a low body thump, a metal contact snap and a short spark
+  function breaker(t, dest) {
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.16);
+    env(g, t, 0.002, 0.12, 0.2); o.connect(g); to(g, dest); o.start(t); o.stop(t + 0.25);
+    var src = c.createBufferSource(), f = c.createBiquadFilter(), g2 = c.createGain();
+    src.buffer = noiseBuffer(); f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 1.4;
+    env(g2, t, 0.0008, 0.09, 0.035); src.connect(f); f.connect(g2); to(g2, dest); src.start(t, Math.random()); src.stop(t + 0.06);
+    var m = c.createOscillator(), mg = c.createGain(), mf = c.createBiquadFilter();
+    m.type = 'square'; m.frequency.setValueAtTime(3300, t); m.frequency.exponentialRampToValueAtTime(2100, t + 0.03);
+    mf.type = 'bandpass'; mf.frequency.value = 3000; mf.Q.value = 3;
+    env(mg, t, 0.0005, 0.02, 0.04); m.connect(mf); mf.connect(mg); to(mg, dest); m.start(t); m.stop(t + 0.06);
+  }
+  // one bank of lamps: a deep "thoom", a zap, then a flickering electric buzz that settles
+  function lampBank(t, pan, size, dest) {
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(78 * size, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.32);
+    env(g, t, 0.003, 0.1 * size, 0.42); o.connect(g); to(g, dest, pan * 0.6); o.start(t); o.stop(t + 0.5);
+    var src = c.createBufferSource(), f = c.createBiquadFilter(), zg = c.createGain();
+    src.buffer = noiseBuffer(); f.type = 'highpass'; f.frequency.value = 2800;
+    env(zg, t, 0.001, 0.035, 0.07); src.connect(f); f.connect(zg); to(zg, dest, pan); src.start(t, Math.random()); src.stop(t + 0.1);
+    // flicker: the buzz cuts in and out a few times, then holds and fades
+    var b = c.createOscillator(), b2 = c.createOscillator(), bf = c.createBiquadFilter(), fl = c.createGain(), bg = c.createGain();
+    b.type = 'sawtooth'; b.frequency.value = 100; b2.type = 'square'; b2.frequency.value = 200.6;
+    bf.type = 'bandpass'; bf.frequency.value = 900; bf.Q.value = 0.9;
+    var at = t, on = true;
+    fl.gain.setValueAtTime(1, at);
+    while (at < t + 0.32) { at += rand(0.018, 0.055); on = !on; fl.gain.setValueAtTime(on ? 1 : 0.08, at); }
+    fl.gain.setValueAtTime(1, at);
+    bg.gain.setValueAtTime(0.0001, t);
+    bg.gain.exponentialRampToValueAtTime(0.022 * size, t + 0.01);
+    bg.gain.setValueAtTime(0.022 * size, t + 0.36);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+    b.connect(bf); b2.connect(bf); bf.connect(fl); fl.connect(bg); to(bg, dest, pan);
+    b.start(t); b2.start(t); b.stop(t + 1.15); b2.stop(t + 1.15);
+  }
+  // the steady mains hum of the lights (or the hum dying away when they go off)
+  function hum(t, d, vol, dest, down) {
+    var a = c.createOscillator(), b = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    a.type = 'sawtooth'; b.type = 'sine';
+    a.frequency.setValueAtTime(100, t); b.frequency.setValueAtTime(50, t);
+    if (down) { a.frequency.exponentialRampToValueAtTime(34, t + d); b.frequency.exponentialRampToValueAtTime(20, t + d); }
+    f.type = 'lowpass'; f.frequency.setValueAtTime(down ? 1400 : 700, t); if (down) f.frequency.exponentialRampToValueAtTime(160, t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + (down ? 0.01 : 0.2)); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    a.connect(f); b.connect(f); f.connect(g); to(g, dest);
+    a.start(t); b.start(t); a.stop(t + d + 0.05); b.stop(t + d + 0.05);
+  }
   function run(name, arg) {
     c = AC.ctx;
     if (!c || !AC.sfx) return;
@@ -4431,12 +4640,40 @@ var Sched = (function () {
     set(dial.querySelector('.dial-min'), polar(120, 120, 60, (m + sec / 60) * 6), 'c');
     var sl = dial.querySelector('.dial-sec');
     if (sl) {
-      var s1 = polar(120, 120, 40, sec * 6), s2 = polar(120, 120, 64, sec * 6);
+      var s1 = polar(120, 120, 34, sec * 6), s2 = polar(120, 120, 58, sec * 6);
       sl.setAttribute('x1', s1[0].toFixed(2)); sl.setAttribute('y1', s1[1].toFixed(2)); sl.setAttribute('x2', s2[0].toFixed(2)); sl.setAttribute('y2', s2[1].toFixed(2));
       set(dial.querySelector('.dial-sec-tip'), s2, 'c');
+      var tl = dial.querySelector('.dial-sec-tail'), u1 = polar(120, 120, 34, sec * 6 + 180), u2 = polar(120, 120, 44, sec * 6 + 180);
+      if (tl) { tl.setAttribute('x1', u1[0].toFixed(2)); tl.setAttribute('y1', u1[1].toFixed(2)); tl.setAttribute('x2', u2[0].toFixed(2)); tl.setAttribute('y2', u2[1].toFixed(2)); }
+      var lit = dial.querySelector('.d-stick.on'); if (lit) lit.classList.remove('on');
+      var cur = dial.querySelector('.d-stick[data-s="' + sec + '"]'); if (cur) cur.classList.add('on');
     }
+    timerRings(dial);
     var hand = dial.querySelector('.d-hand');
     if (hand) { var nd = nowMinutes() / 1440 * 360, n1 = polar(120, 120, 86, nd), n2 = polar(120, 120, 103, nd); hand.setAttribute('x1', n1[0].toFixed(1)); hand.setAttribute('y1', n1[1].toFixed(1)); hand.setAttribute('x2', n2[0].toFixed(1)); hand.setAttribute('y2', n2[1].toFixed(1)); }
+  }
+  // the rings around the day overview that count down a running quick timer and focus session
+  function timerRings(dial) {
+    var box = $('#dial-timers'), lines = [];
+    [['qt', QTimer.active(), function () { return QTimer.remaining(); }, function () { return S.qtimer.run ? S.qtimer.run.total : 1; }, function () { return S.qtimer.run && S.qtimer.run.step ? S.qtimer.run.label : 'Timer'; }, QTimer.running()],
+     ['fo', Focus.active(), function () { return Focus.remaining(); }, function () { return Focus.total(); }, function () { return Focus.label(); }, Focus.running()]].forEach(function (t) {
+      var g = dial.querySelector('.d-timer-' + t[0]); if (!g) return;
+      if (!t[1]) { g.style.display = 'none'; return; }
+      var left = t[2](), total = Math.max(1, t[3]()), f = clamp(left / total, 0, 1), arc = g.querySelector('.dt-arc'), C = +arc.getAttribute('data-c');
+      var r = t[0] === 'qt' ? 124 : 131, tip = polar(120, 120, r, f * 360);
+      g.style.display = '';
+      g.classList.toggle('paused', !t[5]);
+      arc.setAttribute('stroke-dasharray', (C * f).toFixed(2) + ' ' + C.toFixed(2));
+      g.querySelector('.dt-tip').setAttribute('cx', tip[0].toFixed(2)); g.querySelector('.dt-tip').setAttribute('cy', tip[1].toFixed(2));
+      var name = String(t[4]()); if (name.length > 12) name = name.slice(0, 11) + '\u2026';
+      lines.push('<span class="dtl dtl-' + t[0] + (t[5] ? '' : ' paused') + '"><i></i>' + esc(name) + ' <b>' + QTimer.fmt(left) + '</b></span>');
+    });
+    var vb = lines.length ? '-20 -20 280 280' : '-6 -6 252 252';
+    if (dial.getAttribute('viewBox') !== vb) dial.setAttribute('viewBox', vb);
+    if (!box) return;
+    var html = lines.join('');
+    box.hidden = !html;
+    if (box.innerHTML !== html) box.innerHTML = html;
   }
   function faceLoop() { tickFace(); setTimeout(faceLoop, 1000 - (Date.now() % 1000) + 5); }
   function renderDial(all) {
@@ -4468,7 +4705,21 @@ var Sched = (function () {
       parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
       parts.push('<text class="d-num' + (big ? ' big' : '') + '" x="' + qn[0].toFixed(1) + '" y="' + (qn[1] + 2.6).toFixed(1) + '" text-anchor="middle" font-size="' + (big ? 7.6 : 6.4) + '" font-family="JetBrains Mono, monospace">' + (q === 0 ? 12 : q) + '</text>');
     }
+    // a small line for every second around the clock face
+    for (var sq = 0; sq < 60; sq++) {
+      if (sq % 5 === 0) continue;
+      var t1 = polar(cx, cy, CR - 2.6, sq * 6), t2 = polar(cx, cy, CR, sq * 6);
+      parts.push('<line class="d-stick" data-s="' + sq + '" x1="' + t1[0].toFixed(2) + '" y1="' + t1[1].toFixed(2) + '" x2="' + t2[0].toFixed(2) + '" y2="' + t2[1].toFixed(2) + '" stroke-width="0.7"/>');
+    }
+    parts.push('<line class="dial-sec-tail" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/>');
     parts.push('<line class="dial-sec" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/><circle class="dial-sec-tip" cx="120" cy="120" r="1.8"/>');
+    // timer rings (outside the 24-hour labels): quick timer and focus session
+    [['qt', 124], ['fo', 131]].forEach(function (rr) {
+      var Cq = 2 * Math.PI * rr[1];
+      parts.push('<g class="d-timer d-timer-' + rr[0] + '" style="display:none"><circle class="dt-track" cx="120" cy="120" r="' + rr[1] + '" fill="none" stroke-width="2.4"/>' +
+        '<circle class="dt-arc" cx="120" cy="120" r="' + rr[1] + '" fill="none" stroke-width="2.4" stroke-linecap="butt" stroke-dasharray="0 ' + Cq.toFixed(2) + '" transform="rotate(-90 120 120)" data-c="' + Cq.toFixed(3) + '"/>' +
+        '<circle class="dt-tip" cx="120" cy="' + (120 - rr[1]) + '" r="3.4"/></g>');
+    });
     parts.push('<circle class="dial-hour" cx="120" cy="120" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
     parts.push('<circle class="dial-min" cx="120" cy="120" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
@@ -4492,22 +4743,6 @@ var Sched = (function () {
     var xpToday = 0;
     S.tasks.forEach(function (t) { var d = t.done[tk]; if (d && d.xp) xpToday += d.xp; });
     $('#st-xp').textContent = xpToday;
-
-    // next up (always about the real today)
-    var now = nowMinutes(), next = null;
-    today.forEach(function (t) { if (!next && !t.done[tk] && t.time && minutesOf(t.time) >= now - 1) next = t; });
-    var anyLeft = today.filter(function (t) { return !t.done[tk] && !t.time; }).length;
-    var nu = $('#nextup');
-    if (next) {
-      var diff = Math.round(minutesOf(next.time) - now), when;
-      if (diff <= 0) when = 'Starting now';
-      else if (diff < 60) when = 'In ' + diff + ' min';
-      else when = 'In ' + Math.floor(diff / 60) + 'h ' + (diff % 60) + 'm';
-      nu.innerHTML = '<div class="nextup-row"><div style="min-width:0"><div class="nextup-when">' + when + ' \u00b7 ' + esc(fmtTime(next.time)) + '</div><div class="nextup-title">' + esc(next.title) + '</div></div>' +
-        '<button class="btn btn-sm" type="button" data-next-done="' + next.id + '" data-sfx="none">Done</button></div>';
-    } else {
-      nu.innerHTML = '<p class="muted" style="font-size:.92rem">' + (today.length ? 'No more timed tasks today.' + (anyLeft ? ' ' + anyLeft + ' anytime ' + (anyLeft === 1 ? 'task' : 'tasks') + ' left.' : '') : 'Nothing scheduled today yet.') + '</p>';
-    }
 
     // week strip (Mon..Sun around the selected day)
     var d = parseKey(sel), start = addDays(sel, -((d.getDay() + 6) % 7)), html = '';
@@ -4595,10 +4830,12 @@ var Sched = (function () {
   function hhmm(min) { min = ((Math.round(min) % 1440) + 1440) % 1440; return pad2(Math.floor(min / 60)) + ':' + pad2(min % 60); }
   function renderTimePicks() {
     var now = nowMinutes(), soon = Math.ceil((now + 30) / 15) * 15, hour = Math.ceil((now + 60) / 15) * 15, cur = $('#add-time').value;
-    var picks = [['', 'Anytime'], [hhmm(soon), 'In 30m'], [hhmm(hour), 'In 1h'], ['09:00'], ['12:00'], ['15:00'], ['18:00'], ['21:00']];
-    $('#time-picks').innerHTML = '<span class="tp-lbl">' + I.clock + 'Time</span>' + picks.map(function (p) {
-      var on = p[0] === cur;
-      return '<button type="button" data-tp="' + p[0] + '" aria-pressed="' + on + '" data-sfx="none">' + (p[1] ? esc(p[1]) + (p[0] ? ' <small>' + esc(fmtTime(p[0])) + '</small>' : '') : esc(fmtTime(p[0]))) + '</button>';
+    // short labels only: Any, +30m, +1h and five times of day (the full time is in the tooltip)
+    var short = function (v) { if (S.settings.clock24) return v; var h = +v.slice(0, 2); return (h % 12 || 12) + (h < 12 ? 'a' : 'p'); };
+    var picks = [['', 'Any', 'Anytime'], [hhmm(soon), '+30m', 'In 30 min'], [hhmm(hour), '+1h', 'In 1 hour'], ['09:00'], ['12:00'], ['15:00'], ['18:00'], ['21:00']];
+    $('#time-picks').innerHTML = '<span class="tp-lbl" title="Quick time">' + I.clock + '</span>' + picks.map(function (p) {
+      var on = p[0] === cur, tip = p[2] ? p[2] + (p[0] ? ' \u2013 ' + fmtTime(p[0]) : '') : fmtTime(p[0]);
+      return '<button type="button" data-tp="' + p[0] + '" aria-pressed="' + on + '" title="' + esc(tip) + '" aria-label="' + esc(tip) + '" data-sfx="none">' + esc(p[1] || short(p[0])) + '</button>';
     }).join('');
     $('#add-btn').innerHTML = I.plus + (cur ? 'Add \u00b7 ' + esc(fmtTime(cur)) : 'Add task');
     $('#add-form').classList.toggle('has-time', !!cur);
@@ -4679,7 +4916,6 @@ var Sched = (function () {
       if (li) { li.scrollIntoView({ block: 'center', behavior: 'smooth' }); li.classList.remove('flash'); void li.offsetWidth; li.classList.add('flash'); }
     });
     $('#week').addEventListener('click', function (e) { var b = e.target.closest('[data-day]'); if (b) go(b.dataset.day); });
-    $('#nextup').addEventListener('click', function (e) { var b = e.target.closest('[data-next-done]'); if (b) toggleDone(b.dataset.nextDone, todayKey()); });
     $('#carry-move').addEventListener('click', carryOver);
     $('#carry-dismiss').addEventListener('click', function () { carryDismissed = true; render(); });
     $('#log').addEventListener('input', function () { $('#log-state').textContent = 'Saving\u2026'; $('#log-count').textContent = this.value.length + ' / 4000'; logSave(); });
@@ -4692,7 +4928,7 @@ var Sched = (function () {
       [$('#week-panel'), $('#log-panel')].forEach(function (p) { if (p.parentNode !== target) target.appendChild(p); });
       $('#mobile-extras').style.display = mq.matches ? 'flex' : '';
       $('#mobile-extras').style.flexDirection = 'column';
-      $('#mobile-extras').style.gap = '14px';
+      $('#mobile-extras').style.gap = 'var(--bgap, 10px)';
     };
     if (mq.addEventListener) mq.addEventListener('change', place); else if (mq.addListener) mq.addListener(place);
     place();
@@ -4725,8 +4961,8 @@ var Sched = (function () {
    with a day panel to tick off, open or add tasks, drag-to-move, and stats
    ===================================================================== */
 var Cal = (function () {
-  var sel = todayKey(), drag = null;
-  var VIEWS = ['month', 'week', 'agenda'];
+  var sel = todayKey(), drag = null, tl = null, tlTop = null, tlKind = '', justDragged = 0;
+  var VIEWS = ['month', 'week', 'day', 'agenda'];
   var DN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   function view() { return VIEWS.indexOf(S.ui.calView) >= 0 ? S.ui.calView : 'month'; }
   function weekStart(k) { var d = parseKey(k), wd = (d.getDay() + 6) % 7; return addDays(k, -wd); }
@@ -4772,19 +5008,135 @@ var Cal = (function () {
     }
     return html + '</div>';
   }
-  function weekHTML() {
-    var ws = weekStart(sel), tk = todayKey(), html = '<div class="cal-grid week" role="grid" aria-label="Week">';
-    for (var i = 0; i < 7; i++) {
-      var k = addDays(ws, i), info = dayInfo(k), d = parseKey(k);
-      html += '<div class="cw-col' + (k === tk ? ' today' : '') + (k === sel ? ' sel' : '') + (i > 4 ? ' wknd' : '') + '" data-k="' + k + '">' +
-        '<div class="cw-head"><span>' + DN[i] + '</span><b>' + d.getDate() + '</b><small>' + (info.list.length ? info.done + '/' + info.list.length : '') + '</small></div>' +
-        '<ul class="cw-list">' + info.list.map(function (t) {
-          return '<li class="cw-task ' + clsFor(t, k) + '" data-id="' + t.id + '"' + (t.repeat === 'none' ? ' draggable="true"' : '') + '><span class="cc-t">' + esc(timeLabel(t)) + '</span><span class="cw-title">' + esc(t.title) + '</span></li>';
-        }).join('') + '</ul>' +
-        '<button type="button" class="cw-add" data-add="' + k + '" aria-label="Add a task on ' + esc(shortDate(k)) + '">+ add</button>' +
-      '</div>';
+  /* ---------- timeline (week and day): hours down the side, tasks as blocks you can drag ---------- */
+  var narrowMq = window.matchMedia('(max-width: 640px)');
+  function hourH() { return narrowMq.matches ? 40 : 46; }
+  // week shows Mon-Sun (3 days around the selected one on a phone); day shows one day
+  function tlDays() {
+    if (view() === 'day') return [sel];
+    var n = narrowMq.matches ? 3 : 7, start = n === 7 ? weekStart(sel) : addDays(sel, -1), out = [];
+    for (var i = 0; i < n; i++) out.push(addDays(start, i));
+    return out;
+  }
+  function hm(m) { m = Math.round(m); return pad2(Math.floor(m / 60) % 24) + ':' + pad2(m % 60); }
+  function rangeLabel(s, d) { return Sched.fmtTime(hm(s)) + (d ? '–' + Sched.fmtTime(hm(Math.min(s + d, 1439))) : ''); }
+  // side-by-side lanes for tasks that overlap, like Google Calendar
+  function layoutDay(list) {
+    var items = list.filter(function (t) { return t.time; }).map(function (t) { var s0 = minutesOf(t.time); return { t: t, s: s0, e: Math.min(1440, s0 + Math.max(t.duration || 30, 20)) }; })
+      .sort(function (a, b) { return a.s - b.s || b.e - a.e; });
+    var cluster = null, end = -1, clusters = [];
+    items.forEach(function (it) { if (!cluster || it.s >= end) { cluster = []; clusters.push(cluster); end = it.e; } else end = Math.max(end, it.e); cluster.push(it); });
+    clusters.forEach(function (cl) {
+      var lanes = [];
+      cl.forEach(function (it) { var L = 0; while (lanes[L] != null && lanes[L] > it.s) L++; lanes[L] = it.e; it.lane = L; });
+      cl.forEach(function (it) { it.lanes = lanes.length; });
+    });
+    return items;
+  }
+  function timelineHTML() {
+    var days = tlDays(), tk = todayKey(), H = hourH(), one = days.length === 1;
+    var html = '<div class="tl' + (one ? ' tl-one' : '') + '" style="--hh:' + H + 'px;--cols:' + days.length + '">';
+    html += '<div class="tl-row tl-head"><div class="tl-gut"><span>' + (one ? 'Day' : 'Wk ' + isoWeek(days[0])) + '</span></div>' + days.map(function (k) {
+      var d = parseKey(k), info = dayInfo(k);
+      return '<button type="button" class="tl-dh' + (k === tk ? ' today' : '') + (k === sel ? ' sel' : '') + '" data-pick="' + k + '" aria-label="' + esc(shortDate(k)) + '">' +
+        '<span>' + DN[(d.getDay() + 6) % 7] + (one ? ' · ' + MONTHS[d.getMonth()].slice(0, 3) : '') + '</span><b>' + d.getDate() + '</b>' + (info.list.length ? '<small>' + info.done + '/' + info.list.length + '</small>' : '') + '</button>';
+    }).join('') + '</div>';
+    html += '<div class="tl-row tl-any"><div class="tl-gut"><span>Any</span></div>' + days.map(function (k) {
+      return '<div class="tl-ad" data-k="' + k + '">' + Sched.tasksOn(k).filter(function (t) { return !t.time; }).map(function (t) {
+        return '<button type="button" class="tl-chip ' + clsFor(t, k) + '" data-id="' + t.id + '" data-k="' + k + '" style="--cc:' + catOf(t.category).c + '" title="' + esc(t.title + ' · anytime') + '">' + esc(t.title) + '</button>';
+      }).join('') + '</div>';
+    }).join('') + '</div>';
+    html += '<div class="tl-scroll" id="tl-scroll"><div class="tl-body"><div class="tl-hours" aria-hidden="true">';
+    for (var h = 1; h < 24; h++) html += '<span style="top:' + (h * H) + 'px">' + (S.settings.clock24 ? pad2(h) + ':00' : (h % 12 || 12) + (h < 12 ? ' am' : ' pm')) + '</span>';
+    html += '</div>';
+    days.forEach(function (k) {
+      var d = parseKey(k), wk = (d.getDay() + 6) % 7 > 4;
+      html += '<div class="tl-col' + (k === tk ? ' today' : '') + (k === sel ? ' sel' : '') + (wk ? ' wknd' : '') + '" data-col="' + k + '">';
+      layoutDay(Sched.tasksOn(k)).forEach(function (it) {
+        var t = it.t, top = it.s / 60 * H, ht = Math.max((it.e - it.s) / 60 * H, 22), w = 100 / it.lanes, cat = catOf(t.category);
+        html += '<div class="tl-ev ' + clsFor(t, k) + (ht < 40 ? ' short' : '') + (!one && it.lanes > 1 ? ' narrow' : '') + '" data-id="' + t.id + '" data-k="' + k + '" style="top:' + top.toFixed(1) + 'px;height:' + (ht - 2).toFixed(1) + 'px;left:calc(' + (it.lane * w).toFixed(3) + '% + 2px);width:calc(' + w.toFixed(3) + '% - 4px);--cc:' + cat.c + '" title="' + esc(rangeLabel(it.s, t.duration) + ' · ' + t.title + (t.repeat !== 'none' ? ' (repeats)' : '')) + '">' +
+          '<span class="tl-grip" data-grip title="Drag to move" aria-label="Drag to move"></span>' +
+          '<span class="tl-et">' + esc(ht < 40 && !one ? Sched.fmtTime(t.time) : rangeLabel(it.s, t.duration)) + (t.repeat !== 'none' ? ' ↻' : '') + '</span><span class="tl-en">' + esc(t.title) + '</span>' +
+          (one && ht >= 60 && t.steps && t.steps.length ? '<span class="tl-meta">' + t.steps.filter(function (x) { return x.done[k]; }).length + '/' + t.steps.length + ' steps · ' + esc(cat.name) + '</span>' : one && ht >= 60 ? '<span class="tl-meta">' + esc(cat.name) + '</span>' : '') +
+          '<span class="tl-rs" data-resize title="Drag to change how long it takes"></span></div>';
+      });
+      if (k === tk) html += '<div class="tl-now" style="top:' + (nowMinutes() / 60 * H).toFixed(1) + 'px"></div>';
+      html += '</div>';
+    });
+    return html + '</div></div></div>';
+  }
+  // after drawing: keep the scroll position, or start near the first task / the current hour
+  function tlScrollInit() {
+    var sc = $('#tl-scroll'); if (!sc) { tlKind = ''; return; }
+    var kind = view() + ':' + tlDays()[0];
+    if (tlTop !== null && tlKind && tlKind.split(':')[0] === view()) { sc.scrollTop = tlTop; tlKind = kind; return; }
+    tlKind = kind;
+    var H = hourH(), first = 24;
+    tlDays().forEach(function (k) { Sched.tasksOn(k).forEach(function (t) { var m = minutesOf(t.time); if (m !== null) first = Math.min(first, m / 60); }); });
+    var target = tlDays().indexOf(todayKey()) >= 0 ? Math.min(first, nowMinutes() / 60 - 1) : (first < 24 ? first : 8);
+    sc.scrollTop = Math.max(0, (Math.max(0, target - 0.5)) * H);
+  }
+  function tlNow() {
+    var n = $('.tl-now'); if (n) n.style.top = (nowMinutes() / 60 * hourH()).toFixed(1) + 'px';
+  }
+  // drag the grip to move a task (to another time, or another day for one-off tasks); drag the bottom edge to resize
+  function tlDown(e) {
+    var g = e.target.closest('[data-grip],[data-resize]'); if (!g) return;
+    var ev = g.closest('.tl-ev'), t = S.tasks.filter(function (x) { return x.id === ev.dataset.id; })[0]; if (!t) return;
+    e.preventDefault(); e.stopPropagation();
+    var col = ev.parentNode, H = hourH(), r = col.getBoundingClientRect(), s0 = minutesOf(t.time);
+    tl = { t: t, ev: ev, mode: g.hasAttribute('data-resize') ? 'resize' : 'move', s0: s0, d0: t.duration || 30, k0: ev.dataset.k, k: ev.dataset.k,
+      s: s0, d: t.duration || 30, grab: (e.clientY - r.top) / H * 60 - s0, y0: e.clientY, x0: e.clientX, moved: false, id: e.pointerId, H: H };
+    try { ev.setPointerCapture(e.pointerId); } catch (er) { /* noop */ }
+    ev.classList.add('dragging'); document.body.classList.add('tl-dragging');
+    SFX.play('tick', 0.4);
+  }
+  function tlMove(e) {
+    if (!tl || e.pointerId !== tl.id) return;
+    if (!tl.moved && Math.abs(e.clientY - tl.y0) + Math.abs(e.clientX - tl.x0) < 4) return;
+    tl.moved = true;
+    var sc = $('#tl-scroll'), sr = sc.getBoundingClientRect();
+    if (e.clientY < sr.top + 28) sc.scrollTop -= 14; else if (e.clientY > sr.bottom - 28) sc.scrollTop += 14;
+    var col = tl.ev.parentNode;
+    if (tl.mode === 'move' && tl.t.repeat === 'none') {
+      $$('.tl-col', sc).forEach(function (c) { var cr = c.getBoundingClientRect(); if (e.clientX >= cr.left && e.clientX < cr.right && c !== col) { c.appendChild(tl.ev); col = c; } });
+      tl.k = col.dataset.col;
     }
-    return html + '</div>';
+    var r = col.getBoundingClientRect(), at = (e.clientY - r.top) / tl.H * 60, prevS = tl.s, prevD = tl.d;
+    if (tl.mode === 'move') { tl.s = clamp(Math.round((at - tl.grab) / 15) * 15, 0, 1440 - 15); tl.ev.style.top = (tl.s / 60 * tl.H).toFixed(1) + 'px'; }
+    else { tl.d = clamp(Math.round((tl.d0 + at - tl.s0 - tl.grab) / 15) * 15, 15, 1440 - tl.s0); tl.ev.style.height = (Math.max(tl.d / 60 * tl.H, 22) - 2).toFixed(1) + 'px'; }
+    if (tl.s !== prevS || tl.d !== prevD) SFX.play('tick', 0.3);
+    var et = $('.tl-et', tl.ev); if (et) et.textContent = rangeLabel(tl.s, tl.mode === 'resize' ? tl.d : tl.t.duration);
+  }
+  function tlUp(e) {
+    if (!tl || e.pointerId !== tl.id) return;
+    var d = tl; tl = null; document.body.classList.remove('tl-dragging');
+    justDragged = Date.now();
+    if (e.type === 'pointercancel' || !d.moved) { render(); return; }
+    var t = d.t, old = { time: t.time, date: t.date, duration: t.duration, done: t.done };
+    if (d.mode === 'resize') {
+      if (d.d === (t.duration || 30)) { render(); return; }
+      t.duration = d.d;
+      save(); SFX.play('add'); Sched.render(); render();
+      toast('“' + t.title + '” now takes ' + Sched.fmtDur(d.d), { action: { label: 'Undo', fn: function () { t.duration = old.duration; save(); Sched.render(); render(); } }, timeout: 5000 });
+      return;
+    }
+    var nt = hm(d.s);
+    if (nt === t.time && d.k === d.k0) { render(); return; }
+    t.time = nt;
+    if (d.k !== d.k0 && t.repeat === 'none') { var wasDone = t.done[t.date]; t.date = d.k; if (wasDone) { t.done = {}; t.done[d.k] = wasDone; } sel = d.k; }
+    save(); SFX.play('add'); Sched.render(); render();
+    toast('Moved to ' + (d.k !== d.k0 ? shortDate(d.k) + ', ' : '') + Sched.fmtTime(nt) + (t.repeat !== 'none' ? ' (every repeat)' : ''), { action: { label: 'Undo', fn: function () { t.time = old.time; t.date = old.date; t.done = old.done; save(); Sched.render(); render(); } }, timeout: 5000 });
+  }
+  // click an empty spot on the timeline: get the add box ready for that day and time
+  function tlSlot(e) {
+    var col = e.target.closest('.tl-col'); if (!col || e.target.closest('.tl-ev')) return false;
+    var r = col.getBoundingClientRect(), m = clamp(Math.floor((e.clientY - r.top) / hourH() * 2) * 30, 0, 1410);
+    select(col.dataset.col, true);
+    $('#cal-add-time').value = hm(m);
+    SFX.play('open'); focusAdd();
+    toast('New task on ' + shortDate(col.dataset.col) + ' at ' + Sched.fmtTime(hm(m)) + ' – type a name and press Add', { timeout: 3200 });
+    return true;
   }
   function agendaHTML() {
     var tk = todayKey(), from = sel < tk ? sel : tk, out = '', days = 0;
@@ -4850,13 +5202,14 @@ var Cal = (function () {
         var k = m + '-' + pad2(i + 1);
         return '<button type="button" class="hc' + (k === sel ? ' sel' : '') + (k === todayKey() ? ' today' : '') + '" data-go="' + k + '" style="--h:' + (n ? (0.2 + 0.8 * n / max).toFixed(2) : 0) + '" title="' + esc(shortDate(k) + ': ' + n + (n === 1 ? ' task' : ' tasks')) + '">' + (i + 1) + '</button>';
       }).join('') + '</div>' +
-      '<p class="cal-note">' + (busy ? 'Busiest: <b>' + esc(shortDate(busy)) + '</b> with ' + busyN + ' tasks.' : 'No tasks this month yet.') + ' Drag a task onto another day to move it.</p>';
+      '<p class="cal-note">' + (busy ? 'Busiest: <b>' + esc(shortDate(busy)) + '</b> with ' + busyN + ' tasks.' : 'No tasks this month yet.') + (view() === 'week' || view() === 'day' ? ' Drag a task by its dotted grip to move it, or its bottom edge to change how long it takes.' : ' Drag a task onto another day to move it.') + '</p>';
   }
   function renderBar() {
     var v = view(), d = parseKey(sel);
     $$('#cal-view [data-cv]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.cv === v)); });
     var label;
-    if (v === 'week') { var ws = weekStart(sel), we = addDays(ws, 6); label = 'Week ' + isoWeek(ws) + ' · ' + shortDate(ws).slice(4) + ' – ' + shortDate(we).slice(4); }
+    if (v === 'week') { var dd = tlDays(), ws = dd[0], we = dd[dd.length - 1]; label = (dd.length === 7 ? 'Week ' + isoWeek(ws) + ' · ' : '') + shortDate(ws).slice(4) + ' – ' + shortDate(we).slice(4); }
+    else if (v === 'day') label = shortDate(sel) + ' ' + d.getFullYear();
     else if (v === 'agenda') label = 'Next 30 days';
     else label = MONTHS[d.getMonth()] + ' ' + d.getFullYear();
     $('#cal-label').textContent = label;
@@ -4867,8 +5220,12 @@ var Cal = (function () {
     if (!$('#cal-main')) return;
     var v = view();
     renderBar();
-    $('#cal-main').innerHTML = v === 'week' ? weekHTML() : v === 'agenda' ? agendaHTML() : monthHTML();
+    var sc = $('#tl-scroll'); tlTop = sc ? sc.scrollTop : null;
+    var tlv = v === 'week' || v === 'day';
+    if (tlv && tlKind && tlKind !== v + ':' + tlDays()[0]) tlTop = null;   // a different week or day starts at its first task again
+    $('#cal-main').innerHTML = tlv ? timelineHTML() : v === 'agenda' ? agendaHTML() : monthHTML();
     $('#cal-main').setAttribute('data-view', v);
+    if (tlv) tlScrollInit(); else { tlKind = ''; tlTop = null; }
     renderDay(); renderUpcoming(); renderStats();
   }
 
@@ -4877,7 +5234,8 @@ var Cal = (function () {
   function step(n) {
     var v = view();
     if (v === 'month') select(addMonths(sel, n));
-    else if (v === 'week') select(addDays(sel, 7 * n));
+    else if (v === 'week') select(addDays(sel, (narrowMq.matches ? 3 : 7) * n));
+    else if (v === 'day') select(addDays(sel, n));
     else select(addDays(sel, 30 * n));
   }
   function setView(v) { if (VIEWS.indexOf(v) < 0 || v === view()) return; S.ui.calView = v; save(); SFX.play('tab'); render(); }
@@ -4907,6 +5265,10 @@ var Cal = (function () {
   function focusAdd() { var ti = $('#cal-add-title'); ti.focus(); if (ti.scrollIntoView) ti.scrollIntoView({ block: 'nearest' }); }
 
   function onMainClick(e) {
+    if (Date.now() - justDragged < 350) return;
+    var pk = e.target.closest('[data-pick]');
+    if (pk) { if (view() === 'week' && pk.dataset.pick === sel) { setView('day'); return; } select(pk.dataset.pick); return; }
+    if (tlSlot(e)) return;
     var tg = e.target.closest('[data-toggle]');
     if (tg) { Sched.toggleDone(tg.dataset.toggle, tg.dataset.k); return; }
     var add = e.target.closest('[data-add]');
@@ -4954,6 +5316,14 @@ var Cal = (function () {
     main.addEventListener('dragleave', function (e) { var c = e.target.closest('[data-k]'); if (c && !c.contains(e.relatedTarget)) c.classList.remove('drop'); });
     main.addEventListener('drop', function (e) { var c = e.target.closest('[data-k]'); if (!drag || !c) return; e.preventDefault(); var id = drag; drag = null; moveTask(id, c.dataset.k); });
     main.addEventListener('dragend', function () { drag = null; $$('.drop', main).forEach(function (x) { x.classList.remove('drop'); }); });
+    // timeline: grip to move, bottom edge to resize
+    main.addEventListener('pointerdown', tlDown);
+    main.addEventListener('pointermove', tlMove);
+    main.addEventListener('pointerup', tlUp);
+    main.addEventListener('pointercancel', tlUp);
+    var mqc = function () { if (view() === 'week' || view() === 'day') { tlKind = ''; render(); } };
+    if (narrowMq.addEventListener) narrowMq.addEventListener('change', mqc); else if (narrowMq.addListener) narrowMq.addListener(mqc);
+    setInterval(function () { if (!$('#view-calendar').hidden && !document.hidden) tlNow(); }, 30000);
     render();
   }
   function bootInfo() {
@@ -4974,13 +5344,13 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.1.0';
+  var VERSION = '2.3.0';
   var WHATS_NEW = [
-    'Edit steps: every step inside a task has an edit button. Change its text and give it a timer.',
-    'Step timers: a step with a timer shows a \u25b6 button. Press it and the countdown starts right away. When time is up you can tick the step off from the message. Typing \u201cVacuum 15m\u201d also sets a 15-minute timer.',
-    'Auto theme: White in the day, Dark at night. Pick Auto in the bottom bar or Settings and choose when each one starts.',
-    'Clearer layout: every part of each screen (tasks, next up, this week, daily log, programs\u2026) now sits in its own block with a title strip.',
-    'Your data is even safer through updates: a safety copy is kept, the browser is asked to keep storage, and anything a newer version saved is never dropped.'
+    'Calendar timeline: Week and the new Day view show your tasks as blocks on an hour grid, like Google Calendar. A red line marks the current time.',
+    'Drag a task by its dotted grip to move it to another time (or another day for one-off tasks). Drag its bottom edge to change how long it takes. Undo is one tap away.',
+    'Click an empty spot on the timeline to add a task at that time. Anytime tasks sit in the strip at the top.',
+    'Focus audio is now green and Calendar is red in the tabs.',
+    'The quick time row is shorter and tidier: Any, +30m, +1h and five times of day, all in one even row.'
   ];
 
   /* ---------- themes ---------- */
@@ -5046,7 +5416,7 @@ var App = (function () {
   function toggleRed() {
     S.settings.redMode = !S.settings.redMode; save();
     applySettings();
-    SFX.play(S.settings.redMode ? 'on' : 'off');
+    SFX.play(S.settings.redMode ? 'lightsOn' : 'lightsOff');
     toast(S.settings.redMode ? 'Blue light filter on \u2013 warmer screen for the evening. Press Shift + R to switch back.' : 'Blue light filter off', { timeout: 2400 });
   }
 
@@ -5282,7 +5652,7 @@ var App = (function () {
           'set-sfx': function (on) { st.sfx = on; if (on) SFX.play('on'); },
           'set-formkeys': function (on) { st.formKeys = on; },
           'set-24': function (on) { st.clock24 = on; Sched.render(); },
-          'set-red': function (on) { st.redMode = on; SFX.play(on ? 'on' : 'off'); },
+          'set-red': function (on) { st.redMode = on; SFX.play(on ? 'lightsOn' : 'lightsOff'); },
           'set-saver': function (on) { st.idleSaver = on; },
           'set-motion': function (on) { st.reduceMotion = on; },
           'set-rails': function (on) { st.sideRails = on; },
@@ -5680,7 +6050,7 @@ var App = (function () {
     if (!THEMES.some(function (t) { return t.id === S.settings.theme; })) S.settings.theme = 'mono';
     if (S.settings.scene !== 'custom') S.settings.scene = 'none';
     ['wpm30', 'wpm50', 'wpm70'].forEach(function (k) { delete S.profile.ach[k]; }); // code typing was removed in 1.8.0
-    if (['month', 'week', 'agenda'].indexOf(S.ui.calView) < 0) S.ui.calView = 'month';
+    if (['month', 'week', 'day', 'agenda'].indexOf(S.ui.calView) < 0) S.ui.calView = 'month';
     buildTabs();
     buildDock();
     $('#settings-btn').innerHTML = I.gear;
@@ -7173,7 +7543,7 @@ function boot() {
       try { navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ }); } catch (e) { /* noop */ }
       sub('net', 'Offline copy registered');
     }
-    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes };
+    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, bus: function () { return AC.sfx; }, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes };
     // wait for the font (with a time limit), then wait for the player
     var fontsDone = false;
     function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'JetBrains Mono ready'); waitForPlayer(); }
