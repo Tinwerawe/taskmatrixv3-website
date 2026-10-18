@@ -2427,6 +2427,49 @@ html[data-theme="white"].tui .tab[data-tab="audio"][aria-selected="true"], html[
 .tl-ev.narrow .tl-grip { width: 11px; background-position: 2px 4px; }
 .tl-ev.narrow .tl-et { display: none; }
 .tl-ev.narrow .tl-en { overflow-wrap: normal; word-break: normal; -webkit-line-clamp: 4; font-size: 0.6rem; }
+
+/* =====================================================================
+   2.4.0 — the three section buttons are filled with their own colour
+   (Schedule orange, Focus audio green, Calendar red); the text keeps the
+   theme's text colour. The open one is brightest and has a bar under it.
+   ===================================================================== */
+:root { --t-sched: #b8561f; --t-audio: #1d7a46; --t-cal: #b3271f; --t-ink: #ffffff; }
+html[data-theme="dark"] { --t-sched: #8f4519; --t-audio: #176239; --t-cal: #8f241c; --t-ink: #d8d8d8; }
+html[data-theme="white"] { --t-sched: #f6b689; --t-audio: #92dbb0; --t-cal: #f4a39b; --t-ink: #1a1a1a; }
+html.tui .tab[data-tab] { --tf: var(--t-sched); color: var(--t-ink); background: var(--tf); background: color-mix(in srgb, var(--tf) 72%, var(--bg)); }
+html.tui .tab[data-tab="audio"] { --tf: var(--t-audio); }
+html.tui .tab[data-tab="calendar"] { --tf: var(--t-cal); }
+html.tui .tab[data-tab] svg, html.tui .tab[data-tab]:hover svg, html.tui .tab[data-tab][aria-selected="true"] svg { color: inherit; background: transparent; }
+html.tui .tab[data-tab]:hover { background: var(--tf); color: var(--t-ink); }
+html.tui .tab[data-tab][aria-selected="true"], html.tui .tab[data-tab][aria-selected="true"]:hover { background: var(--tf); color: var(--t-ink); box-shadow: inset 0 -3px 0 var(--t-ink); font-weight: 700; }
+html.tui .topbar .tab[data-tab] + .tab[data-tab] { box-shadow: inset 1px 0 0 var(--bg); }
+html.tui .topbar .tab[data-tab][aria-selected="true"] + .tab[data-tab] { box-shadow: inset 1px 0 0 var(--bg); }
+html.tui .topbar .tab[data-tab] + .tab[data-tab][aria-selected="true"] { box-shadow: inset 1px 0 0 var(--bg), inset 0 -3px 0 var(--t-ink); }
+html.tui .bottom-nav .tab[data-tab][aria-selected="true"] { box-shadow: inset 0 3px 0 var(--t-ink); }
+html.tui .tab[data-tab="audio"].playing:not([aria-selected="true"]) { background: var(--tf); }
+
+/* =====================================================================
+   2.5.0 — the outer timer ring on the day overview: drag around it to set
+   the quick timer (one full turn = 60 minutes, up to 3 hours), let go to start
+   ===================================================================== */
+#dial .ds-track { stroke: rgba(var(--tint-rgb), 0.1); }
+#dial .ds-tick { stroke: rgba(var(--tint-rgb), 0.35); stroke-width: 1; }
+#dial .ds-tick.big { stroke: rgba(var(--tint-rgb), 0.6); stroke-width: 1.5; }
+#dial .ds-arc { stroke: var(--orange); opacity: 0.9; }
+#dial .d-set.lap2 .ds-track { stroke: rgba(240, 128, 60, 0.35); }
+#dial .ds-knob { fill: var(--bg); stroke: var(--orange); stroke-width: 2.2; transition: r 0.12s; }
+#dial .d-set .ds-knob { stroke: rgba(var(--tint-rgb), 0.75); }
+#dial .ds-hit { stroke: transparent; pointer-events: stroke; cursor: grab; outline: none; }
+#dial .ds-hit:focus-visible { stroke: rgba(var(--tint-rgb), 0.12); }
+#dial:hover .d-set .ds-knob, #dial .ds-hit:focus-visible ~ .ds-knob { stroke: var(--orange); }
+#dial.setting .ds-knob { r: 8.5; stroke: var(--orange); fill: var(--orange); }
+#dial.setting .ds-hit, body.dial-setting, body.dial-setting * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+#dial .d-timer-qt .dt-arc, #dial .d-timer-qt .dt-track { stroke-width: 3; }
+.dtl-set { font-size: 0.66rem; }
+.dtl-set i { background: var(--orange); }
+html.red #dial .ds-knob { stroke: #ffffff; }
+.dial-hint { margin-left: auto; font: 600 0.58rem var(--font-mono), monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+@media (max-width: 380px) { .dial-hint { display: none; } }
 </style>
 </head>
 <body>
@@ -2534,10 +2577,10 @@ html[data-theme="white"].tui .tab[data-tab="audio"][aria-selected="true"], html[
         <aside class="sched-side" aria-label="Day overview">
           <div class="panel dial-panel">
             <div class="panel-head">
-              <h2 class="panel-title">Day overview <small id="dial-date"></small></h2>
+              <h2 class="panel-title">Day overview <small id="dial-date"></small></h2><small class="dial-hint">Drag the outer ring to set a timer</small>
             </div>
             <div class="dial-wrap">
-              <svg id="dial" viewBox="-20 -20 280 280" role="img" aria-label="24-hour day dial"></svg>
+              <svg id="dial" viewBox="-28 -28 296 296" role="group" aria-label="24-hour day dial with a timer ring"></svg>
               <div class="dial-center">
                 <div class="dial-pct" id="dial-pct">0<small>%</small></div>
                 <div class="dial-sub" id="dial-sub">No tasks yet</div>
@@ -3296,81 +3339,18 @@ var SFX = (function () {
       else { tk(now(), 0.024, 6000); bl(pick([2637, 2794, 2960]), now(), 0.006, 0.006); }
     },
     keyErr: function () { tone({ f: 180, type: 'square', lp: 900, dur: 0.04, vol: 0.035, attack: 0.001 }); },
-    // Low blue on: like the big hangar lights in a film - a heavy breaker clunks, then banks of
-    // lamps thump on one after another, left, right, centre, flickering and buzzing before they settle
-    lightsOn: function () {
-      var t = now(), room = echo(0.11, 0.32, 2600);
-      breaker(t, room);
-      [[0.2, -0.7, 1], [0.46, 0.7, 0.9], [0.7, 0, 1.15]].forEach(function (b) { lampBank(t + b[0], b[1], b[2], room); });
-      hum(t + 0.75, 1.5, 0.012, room, false);
-    },
-    // Low blue off: the breaker drops and the power winds down
-    lightsOff: function () {
-      var t = now(), room = echo(0.11, 0.28, 2400);
-      breaker(t, room);
-      hum(t + 0.02, 1.1, 0.016, room, true);
-      tone({ f: 820, f2: 70, at: t + 0.04, dur: 0.95, vol: 0.012, attack: 0.02, type: 'sine' });
-      tone({ f: 46, f2: 30, at: t + 0.05, dur: 0.6, vol: 0.07, attack: 0.004 });
-    }
+    // Low blue on / off: one soft switch click and a short warm tone (down for on, up for off)
+    redOn: function () { var t = now(); tk(t, 0.022, 4200); tone({ f: 587.3, f2: 392, at: t + 0.01, dur: 0.16, vol: 0.042, attack: 0.004, type: 'triangle', lp: 1800 }); },
+    redOff: function () { var t = now(); tk(t, 0.022, 4200); tone({ f: 392, f2: 587.3, at: t + 0.01, dur: 0.14, vol: 0.036, attack: 0.004, type: 'triangle', lp: 2200 }); }
   };
-  // a short slap-back so the big sounds feel like they are in a room
-  function echo(time, fb, lp) {
-    var inG = c.createGain(), d = c.createDelay(0.5), f = c.createBiquadFilter(), g = c.createGain(), wet = c.createGain();
-    d.delayTime.value = time; f.type = 'lowpass'; f.frequency.value = lp; g.gain.value = fb; wet.gain.value = 0.55;
-    inG.connect(AC.sfx); inG.connect(d); d.connect(f); f.connect(g); g.connect(d); f.connect(wet); wet.connect(AC.sfx);
-    setTimeout(function () { try { inG.disconnect(); d.disconnect(); f.disconnect(); g.disconnect(); wet.disconnect(); } catch (e) { /* noop */ } }, 4500);
-    return inG;
-  }
-  function to(node, dest, pan) {
-    if (pan && c.createStereoPanner) { var p = c.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); node.connect(p); p.connect(dest); }
-    else node.connect(dest);
-  }
-  // the main switch: a low body thump, a metal contact snap and a short spark
-  function breaker(t, dest) {
-    var o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.16);
-    env(g, t, 0.002, 0.12, 0.2); o.connect(g); to(g, dest); o.start(t); o.stop(t + 0.25);
-    var src = c.createBufferSource(), f = c.createBiquadFilter(), g2 = c.createGain();
-    src.buffer = noiseBuffer(); f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 1.4;
-    env(g2, t, 0.0008, 0.09, 0.035); src.connect(f); f.connect(g2); to(g2, dest); src.start(t, Math.random()); src.stop(t + 0.06);
-    var m = c.createOscillator(), mg = c.createGain(), mf = c.createBiquadFilter();
-    m.type = 'square'; m.frequency.setValueAtTime(3300, t); m.frequency.exponentialRampToValueAtTime(2100, t + 0.03);
-    mf.type = 'bandpass'; mf.frequency.value = 3000; mf.Q.value = 3;
-    env(mg, t, 0.0005, 0.02, 0.04); m.connect(mf); mf.connect(mg); to(mg, dest); m.start(t); m.stop(t + 0.06);
-  }
-  // one bank of lamps: a deep "thoom", a zap, then a flickering electric buzz that settles
-  function lampBank(t, pan, size, dest) {
-    var o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(78 * size, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.32);
-    env(g, t, 0.003, 0.1 * size, 0.42); o.connect(g); to(g, dest, pan * 0.6); o.start(t); o.stop(t + 0.5);
-    var src = c.createBufferSource(), f = c.createBiquadFilter(), zg = c.createGain();
-    src.buffer = noiseBuffer(); f.type = 'highpass'; f.frequency.value = 2800;
-    env(zg, t, 0.001, 0.035, 0.07); src.connect(f); f.connect(zg); to(zg, dest, pan); src.start(t, Math.random()); src.stop(t + 0.1);
-    // flicker: the buzz cuts in and out a few times, then holds and fades
-    var b = c.createOscillator(), b2 = c.createOscillator(), bf = c.createBiquadFilter(), fl = c.createGain(), bg = c.createGain();
-    b.type = 'sawtooth'; b.frequency.value = 100; b2.type = 'square'; b2.frequency.value = 200.6;
-    bf.type = 'bandpass'; bf.frequency.value = 900; bf.Q.value = 0.9;
-    var at = t, on = true;
-    fl.gain.setValueAtTime(1, at);
-    while (at < t + 0.32) { at += rand(0.018, 0.055); on = !on; fl.gain.setValueAtTime(on ? 1 : 0.08, at); }
-    fl.gain.setValueAtTime(1, at);
-    bg.gain.setValueAtTime(0.0001, t);
-    bg.gain.exponentialRampToValueAtTime(0.022 * size, t + 0.01);
-    bg.gain.setValueAtTime(0.022 * size, t + 0.36);
-    bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
-    b.connect(bf); b2.connect(bf); bf.connect(fl); fl.connect(bg); to(bg, dest, pan);
-    b.start(t); b2.start(t); b.stop(t + 1.15); b2.stop(t + 1.15);
-  }
-  // the steady mains hum of the lights (or the hum dying away when they go off)
-  function hum(t, d, vol, dest, down) {
-    var a = c.createOscillator(), b = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
-    a.type = 'sawtooth'; b.type = 'sine';
-    a.frequency.setValueAtTime(100, t); b.frequency.setValueAtTime(50, t);
-    if (down) { a.frequency.exponentialRampToValueAtTime(34, t + d); b.frequency.exponentialRampToValueAtTime(20, t + d); }
-    f.type = 'lowpass'; f.frequency.setValueAtTime(down ? 1400 : 700, t); if (down) f.frequency.exponentialRampToValueAtTime(160, t + d);
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + (down ? 0.01 : 0.2)); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    a.connect(f); b.connect(f); f.connect(g); to(g, dest);
-    a.start(t); b.start(t); a.stop(t + d + 0.05); b.stop(t + d + 0.05);
+  // render a sound offline (used to check the sound design)
+  function renderOffline(name, secs) {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return Promise.reject(new Error('no offline audio'));
+    var oc = new OAC(2, Math.round(44100 * (secs || 2.6)), 44100), keepC = c, keepBus = AC.sfx, bus = oc.createGain();
+    bus.gain.value = S.settings.sfxVol; bus.connect(oc.destination);
+    c = oc; AC.sfx = bus;
+    try { fx[name](); } finally { c = keepC; AC.sfx = keepBus; }
+    return oc.startRendering();
   }
   function run(name, arg) {
     c = AC.ctx;
@@ -3388,7 +3368,7 @@ var SFX = (function () {
     try { cx.resume().then(function () { if (performance.now() - t0 < 400 && AC.ctx === cx) run(name, arg); }, function () {}); } catch (e) { /* noop */ }
   }
   function setVol(v) { if (AC.sfx && AC.ctx) AC.sfx.gain.setTargetAtTime(v, AC.ctx.currentTime, 0.03); }
-  var api = { play: play, setVol: setVol, n: 0 };
+  var api = { play: play, setVol: setVol, renderOffline: renderOffline, n: 0 };
   if (DEBUG) { api.names = Object.keys(fx); api._fx = function (n, a) { audioCtx(); c = AC.ctx; fx[n](a); }; }
   return api;
 }());
@@ -4660,7 +4640,7 @@ var Sched = (function () {
       var g = dial.querySelector('.d-timer-' + t[0]); if (!g) return;
       if (!t[1]) { g.style.display = 'none'; return; }
       var left = t[2](), total = Math.max(1, t[3]()), f = clamp(left / total, 0, 1), arc = g.querySelector('.dt-arc'), C = +arc.getAttribute('data-c');
-      var r = t[0] === 'qt' ? 124 : 131, tip = polar(120, 120, r, f * 360);
+      var r = t[0] === 'qt' ? 126 : 119, tip = polar(120, 120, r, f * 360);
       g.style.display = '';
       g.classList.toggle('paused', !t[5]);
       arc.setAttribute('stroke-dasharray', (C * f).toFixed(2) + ' ' + C.toFixed(2));
@@ -4668,12 +4648,83 @@ var Sched = (function () {
       var name = String(t[4]()); if (name.length > 12) name = name.slice(0, 11) + '\u2026';
       lines.push('<span class="dtl dtl-' + t[0] + (t[5] ? '' : ' paused') + '"><i></i>' + esc(name) + ' <b>' + QTimer.fmt(left) + '</b></span>');
     });
-    var vb = lines.length ? '-20 -20 280 280' : '-6 -6 252 252';
-    if (dial.getAttribute('viewBox') !== vb) dial.setAttribute('viewBox', vb);
+    // the drag ring only sets time: when you are not dragging, its knob rests at the top
+    var knob = dial.querySelector('.ds-knob'), set = dial.querySelector('.d-set');
+    if (knob && !setDrag && kbSet === null) {
+      knob.setAttribute('cx', '120'); knob.setAttribute('cy', String(120 - SR));
+      set.classList.remove('lap2');
+      var sa = dial.querySelector('.ds-arc'); sa.setAttribute('stroke-dasharray', '0 ' + sa.getAttribute('data-c'));
+    }
+    if (setDrag) lines.unshift('<span class="dtl dtl-set"><i></i>' + (setDrag.min ? 'Timer <b>' + fmtSet(setDrag.min) + '</b>' : 'Drag to set') + '</span>');
     if (!box) return;
     var html = lines.join('');
     box.hidden = !html;
     if (box.innerHTML !== html) box.innerHTML = html;
+  }
+  /* ---------- drag the outer ring to set the quick timer (like a kitchen timer) ---------- */
+  var SR = 136, SET_MAX = 180, setDrag = null, kbSet = null;
+  function fmtSet(m) { return m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + m % 60 + 'm' : '') : m + ' min'; }
+  // pointer position -> angle on the dial (0 = top, clockwise)
+  function dialAngle(dial, x, y) {
+    var pt = dial.createSVGPoint(); pt.x = x; pt.y = y;
+    var m = dial.getScreenCTM(); if (!m) return null;
+    var p = pt.matrixTransform(m.inverse()), dx = p.x - 120, dy = p.y - 120;
+    return { a: (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360, r: Math.sqrt(dx * dx + dy * dy) };
+  }
+  function onRing(dial, x, y) { var h = dialAngle(dial, x, y); return h && h.r > SR - 13 && h.r < SR + 14; }
+  function drawSet(dial) {
+    var arc = dial.querySelector('.ds-arc'), knob = dial.querySelector('.ds-knob'), C = +arc.getAttribute('data-c');
+    var deg = setDrag.min * 6, lap = deg % 360 || (deg ? 360 : 0), kp = polar(120, 120, SR, lap);
+    arc.setAttribute('stroke-dasharray', (C * lap / 360).toFixed(2) + ' ' + C.toFixed(2));
+    dial.querySelector('.d-set').classList.toggle('lap2', deg > 360);
+    knob.setAttribute('cx', kp[0].toFixed(2)); knob.setAttribute('cy', kp[1].toFixed(2));
+    dial.querySelector('.ds-hit').setAttribute('aria-valuenow', String(setDrag.min));
+    timerRings(dial);
+  }
+  function setStart(e) {
+    var dial = $('#dial'); if (!onRing(dial, e.clientX, e.clientY)) return;
+    e.preventDefault();
+    var h = dialAngle(dial, e.clientX, e.clientY);
+    // the ring is set to where you touched, then follows your finger (more turns = more time)
+    var total = h.a;
+    setDrag = { last: h.a, total: total, min: clamp(Math.round(total / 6), 0, SET_MAX), id: e.pointerId, moved: true };
+    try { dial.setPointerCapture(e.pointerId); } catch (er) { /* noop */ }
+    dial.classList.add('setting'); document.body.classList.add('dial-setting');
+    SFX.play('tick', 0.5); drawSet(dial);
+  }
+  function setMove(e) {
+    if (!setDrag || e.pointerId !== setDrag.id) return;
+    var dial = $('#dial'), h = dialAngle(dial, e.clientX, e.clientY); if (!h) return;
+    var d = h.a - setDrag.last; if (d > 180) d -= 360; if (d < -180) d += 360;
+    setDrag.last = h.a; setDrag.total = clamp(setDrag.total + d, 0, SET_MAX * 6); setDrag.moved = true;
+    var m = Math.round(setDrag.total / 6);
+    if (m !== setDrag.min) {
+      setDrag.min = m;
+      SFX.play('tick', m % 5 === 0 ? 0.9 : 0.35);
+      if (m % 5 === 0 && navigator.vibrate) { try { navigator.vibrate(6); } catch (er) { /* noop */ } }
+      drawSet(dial);
+    }
+  }
+  function setEnd(e) {
+    if (!setDrag || e.pointerId !== setDrag.id) return;
+    var d = setDrag, dial = $('#dial'); setDrag = null;
+    dial.classList.remove('setting'); document.body.classList.remove('dial-setting');
+    if (e.type === 'pointercancel' || !d.moved) { tickFace(true); return; }
+    if (d.min >= 1) QTimer.start(d.min);
+    tickFace(true);
+  }
+  function setKey(e) {
+    if (!e.target.classList.contains('ds-hit')) return;
+    var cur = kbSet !== null ? kbSet : 0, step = e.shiftKey ? 5 : 1, v = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = cur + step;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = cur - step;
+    else if (e.key === 'Enter' && cur >= 1) { e.preventDefault(); kbSet = null; QTimer.start(cur); tickFace(true); return; }
+    if (v === null) return;
+    e.preventDefault(); e.stopPropagation();
+    setDrag = { min: clamp(v, 0, SET_MAX) }; drawSet($('#dial')); var keep = setDrag.min; setDrag = null; kbSet = keep;
+    e.target.setAttribute('aria-valuenow', String(keep));
+    $('#dial-timers').hidden = false; $('#dial-timers').innerHTML = '<span class="dtl dtl-set"><i></i>Timer <b>' + fmtSet(keep) + '</b> \u00b7 Enter to start</span>';
+    SFX.play('tick', 0.6);
   }
   function faceLoop() { tickFace(); setTimeout(faceLoop, 1000 - (Date.now() % 1000) + 5); }
   function renderDial(all) {
@@ -4714,12 +4765,20 @@ var Sched = (function () {
     parts.push('<line class="dial-sec-tail" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/>');
     parts.push('<line class="dial-sec" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/><circle class="dial-sec-tip" cx="120" cy="120" r="1.8"/>');
     // timer rings (outside the 24-hour labels): quick timer and focus session
-    [['qt', 124], ['fo', 131]].forEach(function (rr) {
+    // countdown rings sit inside the drag ring: quick timer, then focus session
+    [['qt', 126], ['fo', 119]].forEach(function (rr) {
       var Cq = 2 * Math.PI * rr[1];
       parts.push('<g class="d-timer d-timer-' + rr[0] + '" style="display:none"><circle class="dt-track" cx="120" cy="120" r="' + rr[1] + '" fill="none" stroke-width="2.4"/>' +
         '<circle class="dt-arc" cx="120" cy="120" r="' + rr[1] + '" fill="none" stroke-width="2.4" stroke-linecap="butt" stroke-dasharray="0 ' + Cq.toFixed(2) + '" transform="rotate(-90 120 120)" data-c="' + Cq.toFixed(3) + '"/>' +
         '<circle class="dt-tip" cx="120" cy="' + (120 - rr[1]) + '" r="3.4"/></g>');
     });
+    // the outer timer dial: a track with a mark every 5 minutes and a knob to drag (one full turn = 60 min)
+    var SC = 2 * Math.PI * SR;
+    parts.push('<g class="d-set"><circle class="ds-track" cx="120" cy="120" r="' + SR + '" fill="none" stroke-width="5"/>');
+    for (var m5 = 0; m5 < 12; m5++) { var u1 = polar(cx, cy, SR - 2.5, m5 * 30), u2 = polar(cx, cy, SR + 2.5, m5 * 30); parts.push('<line class="ds-tick' + (m5 % 3 === 0 ? ' big' : '') + '" x1="' + u1[0].toFixed(2) + '" y1="' + u1[1].toFixed(2) + '" x2="' + u2[0].toFixed(2) + '" y2="' + u2[1].toFixed(2) + '"/>'); }
+    parts.push('<circle class="ds-arc" cx="120" cy="120" r="' + SR + '" fill="none" stroke-width="5" stroke-dasharray="0 ' + SC.toFixed(2) + '" transform="rotate(-90 120 120)" data-c="' + SC.toFixed(3) + '"/>' +
+      '<circle class="ds-knob" cx="120" cy="' + (120 - SR) + '" r="6.5"/>' +
+      '<circle class="ds-hit" cx="120" cy="120" r="' + SR + '" fill="none" stroke-width="22" tabindex="0" role="slider" aria-label="Timer: drag around the ring to set minutes" aria-valuemin="0" aria-valuemax="' + SET_MAX + '" aria-valuenow="0"><title>Drag around this ring to set a timer</title></circle></g>');
     parts.push('<circle class="dial-hour" cx="120" cy="120" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
     parts.push('<circle class="dial-min" cx="120" cy="120" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
@@ -4908,6 +4967,15 @@ var Sched = (function () {
     $('#tasklist').addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && e.target.classList.contains('sb-input')) { var li = e.target.closest('.task'); e.target.blur(); if (li) { openSteps[li.dataset.id] = false; render(); } }
     });
+    // outer ring: drag to set a timer (touch must not scroll the page while on the ring)
+    var dl = $('#dial');
+    dl.addEventListener('pointerdown', setStart);
+    dl.addEventListener('pointermove', setMove);
+    dl.addEventListener('pointerup', setEnd);
+    dl.addEventListener('pointercancel', setEnd);
+    dl.addEventListener('keydown', setKey);
+    dl.addEventListener('focusout', function () { if (kbSet !== null) { kbSet = null; tickFace(true); } });
+    dl.addEventListener('touchstart', function (e) { var t = e.touches[0]; if (t && onRing(dl, t.clientX, t.clientY)) e.preventDefault(); }, { passive: false });
     $('#dial').addEventListener('click', function (e) {
       var m = e.target.closest('.dial-marker'); if (!m) return;
       SFX.play('click');
@@ -5344,8 +5412,11 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.3.0';
+  var VERSION = '2.5.1';
   var WHATS_NEW = [
+    'Timer ring: the day overview has a new outer ring just for setting time. Drag around it (one full turn is 60 minutes, up to 3 hours) and let go to start. A running timer still counts down on its own circle just inside.',
+    'The Schedule, Focus audio and Calendar buttons are now filled with colour: orange, green and red. The one you are on is brightest, with a bar under it.',
+    'Low blue has a simple, soft sound now: a light click and a short warm tone.',
     'Calendar timeline: Week and the new Day view show your tasks as blocks on an hour grid, like Google Calendar. A red line marks the current time.',
     'Drag a task by its dotted grip to move it to another time (or another day for one-off tasks). Drag its bottom edge to change how long it takes. Undo is one tap away.',
     'Click an empty spot on the timeline to add a task at that time. Anytime tasks sit in the strip at the top.',
@@ -5416,7 +5487,7 @@ var App = (function () {
   function toggleRed() {
     S.settings.redMode = !S.settings.redMode; save();
     applySettings();
-    SFX.play(S.settings.redMode ? 'lightsOn' : 'lightsOff');
+    SFX.play(S.settings.redMode ? 'redOn' : 'redOff');
     toast(S.settings.redMode ? 'Blue light filter on \u2013 warmer screen for the evening. Press Shift + R to switch back.' : 'Blue light filter off', { timeout: 2400 });
   }
 
@@ -5652,7 +5723,7 @@ var App = (function () {
           'set-sfx': function (on) { st.sfx = on; if (on) SFX.play('on'); },
           'set-formkeys': function (on) { st.formKeys = on; },
           'set-24': function (on) { st.clock24 = on; Sched.render(); },
-          'set-red': function (on) { st.redMode = on; SFX.play(on ? 'lightsOn' : 'lightsOff'); },
+          'set-red': function (on) { st.redMode = on; SFX.play(on ? 'redOn' : 'redOff'); },
           'set-saver': function (on) { st.idleSaver = on; },
           'set-motion': function (on) { st.reduceMotion = on; },
           'set-rails': function (on) { st.sideRails = on; },
