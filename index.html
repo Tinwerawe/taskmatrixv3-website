@@ -43,7 +43,7 @@
 <link rel="mask-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23e8e8e8' fill-rule='evenodd' d='M6 6h52v52H6zM9 17v38h46V17zM11 10v3h3v-3zM16 10v3h3v-3zM21 10v3h3v-3z'/%3E%3Cpath fill='%23fff' d='M12 37 26 50.9 31.9 45 18 31zM29 48 52 25 46 19 23 42z'/%3E%3C/svg%3E" color="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@100..125,300..800&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
    TASK MATRIX v3  —  design tokens
@@ -78,9 +78,9 @@
   --sel-ink: #000000;
   --frame: rgba(var(--tint-rgb), 0.42);
   --radius: 0px;
-  --font-ui: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-ui: "Eurostile", "Eurostile LT Std", "Eurostile Next LT Pro", "Eurostile Next", "Saira", "Bahnschrift", "Microgramma", sans-serif;
+  --font-display: "Eurostile", "Eurostile LT Std", "Eurostile Next LT Pro", "Eurostile Next", "Saira", "Bahnschrift", "Microgramma", sans-serif;
+  --font-mono: "Eurostile", "Eurostile LT Std", "Eurostile Next LT Pro", "Eurostile Next", "Saira", "Bahnschrift", "Microgramma", sans-serif;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
@@ -1188,8 +1188,8 @@ button.rail-block:hover { border-color: rgba(var(--accent-rgb), 0.5); box-shadow
    ===================================================================== */
 .tui-status, .tui-keys { display: none; }
 html.tui {
-  --font-ui: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-ui: "Eurostile", "Eurostile LT Std", "Eurostile Next LT Pro", "Eurostile Next", "Saira", "Bahnschrift", "Microgramma", sans-serif;
+  --font-display: "Eurostile", "Eurostile LT Std", "Eurostile Next LT Pro", "Eurostile Next", "Saira", "Bahnschrift", "Microgramma", sans-serif;
 }
 html.tui body { background-image: none; font-size: 14.5px; }
 html.tui *, html.tui *::before, html.tui *::after { border-radius: 0 !important; }
@@ -1589,7 +1589,7 @@ html.tui .dial-sub { font-size: 0.74rem; margin-top: 4px; }
 @media (max-width: 560px) { .spectrum { height: 130px; } }
 /* loading screen: no box, just the program's output scrolling up the screen */
 html.tui .boot { transition: opacity 0.15s linear, visibility 0.15s; display: block; place-items: normal; padding: calc(var(--safe-t) + 18px) calc(var(--safe-r) + 22px) calc(var(--safe-b) + 18px) calc(var(--safe-l) + 22px); }
-.boot-log { height: 100%; overflow: hidden; font: 400 15px/1.5 "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--text); }
+.boot-log { height: 100%; overflow: hidden; font: 400 15px/1.5 var(--font-ui); color: var(--text); }
 .boot-log > div { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
 .boot-log .i1 { padding-left: 4ch; } .boot-log .i2 { padding-left: 8ch; } .boot-log .i3 { padding-left: 12ch; }
 .boot-log .sc { display: grid; grid-template-columns: 4ch 13ch minmax(0, 1fr); }
@@ -2175,7 +2175,7 @@ html.tui .notes-panel.shake { animation: shake 0.35s; }
 .saver-log .sv-n { color: var(--text-2); }
 .saver-log .sv-c { color: var(--dim); }
 .saver-log .sv-cmd { color: var(--hi); }
-.saver-foot { flex: none; display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--line-2); padding-top: 8px; margin-top: 8px; font: 400 12px/1.4 "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; }
+.saver-foot { flex: none; display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--line-2); padding-top: 8px; margin-top: 8px; font: 400 12px/1.4 var(--font-ui); letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; }
 .saver-foot .sv-hint { flex: 1; text-align: center; }
 .saver-foot .sv-clock { color: var(--hi); font-size: 15px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 html.saver-on, html.saver-on body { overflow: hidden; }
@@ -2469,7 +2469,24 @@ html.tui .tab[data-tab="audio"].playing:not([aria-selected="true"]) { background
 .dtl-set i { background: var(--orange); }
 html.red #dial .ds-knob { stroke: #ffffff; }
 .dial-hint { margin-left: auto; font: 600 0.58rem var(--font-mono), monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-@media (max-width: 380px) { .dial-hint { display: none; } }
+@media (max-width: 600px) { .dial-hint { display: none; } }
+html.tui .panel-title { white-space: nowrap; }
+
+/* =====================================================================
+   2.6.0 — EUROSTILE everywhere. Real Eurostile is used when the device has
+   it; otherwise Saira (a free, squarish look-alike) loads from Google Fonts.
+   Numbers stay fixed-width so clocks and timers never jitter.
+   ===================================================================== */
+html, body, button, input, select, textarea, kbd, .boot-log, .saver-log, #dial text { font-family: var(--font-ui); }
+body { font-stretch: 108%; font-feature-settings: "tnum" 1; }
+.clock-time, .dial-pct, .stat b, .task-time, .tl-et, .tl-hours span, .dtl b, .qt-time, .focus-ring .t b, #dock-timer-text, .ts-seg b, .rail-num, .sv-clock { font-variant-numeric: tabular-nums; }
+/* Eurostile is wider and taller than the old mono font: a touch less tracking keeps every label in its box */
+html.tui .tab, html.tui .btn, html.tui .panel-title, html.tui .tk, html.tui .theme-btn, html.tui .ctl-tab, html.tui .seg button { letter-spacing: 0.05em; }
+html.tui .brand-name { letter-spacing: 0.1em; }
+/* the wider letters need a little more room before the long key names show */
+@media (max-width: 1660px) { .tk .tk-l { display: none; } .tk .tk-s { display: inline; } }
+@media (max-width: 1300px) { html.tui .tk { gap: 5px; padding-right: 7px; font-size: 0.58rem; letter-spacing: 0.02em; } html.tui .tk kbd { min-width: 0; padding: 0 5px; } }
+@media (max-width: 1000px) { html.tui .tk { gap: 4px; padding-right: 5px; font-size: 0.54rem; letter-spacing: 0; } html.tui .tk kbd { padding: 0 4px; } }
 </style>
 </head>
 <body>
@@ -4736,7 +4753,7 @@ var Sched = (function () {
     for (var h = 0; h < 24; h++) {
       var major = h % 6 === 0, a1 = polar(cx, cy, R - (major ? 9 : 5), h * 15), a2 = polar(cx, cy, R, h * 15);
       parts.push('<line class="d-tick' + (major ? ' maj' : '') + '" x1="' + a1[0].toFixed(1) + '" y1="' + a1[1].toFixed(1) + '" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (major ? '.6' : '.25') + ')" stroke-width="' + (major ? 1.6 : 1) + '"/>');
-      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text class="d-label" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)" font-family="JetBrains Mono, monospace">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
+      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text class="d-label" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)" font-family="Eurostile, Saira, sans-serif">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
     }
     // progress ring
     var PR = 78, C = 2 * Math.PI * PR;
@@ -4754,7 +4771,7 @@ var Sched = (function () {
     for (var q = 0; q < 12; q++) {
       var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30), qn = polar(cx, cy, CR + 7.5, q * 30);
       parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
-      parts.push('<text class="d-num' + (big ? ' big' : '') + '" x="' + qn[0].toFixed(1) + '" y="' + (qn[1] + 2.6).toFixed(1) + '" text-anchor="middle" font-size="' + (big ? 7.6 : 6.4) + '" font-family="JetBrains Mono, monospace">' + (q === 0 ? 12 : q) + '</text>');
+      parts.push('<text class="d-num' + (big ? ' big' : '') + '" x="' + qn[0].toFixed(1) + '" y="' + (qn[1] + 2.6).toFixed(1) + '" text-anchor="middle" font-size="' + (big ? 7.6 : 6.4) + '" font-family="Eurostile, Saira, sans-serif">' + (q === 0 ? 12 : q) + '</text>');
     }
     // a small line for every second around the clock face
     for (var sq = 0; sq < 60; sq++) {
@@ -5412,8 +5429,9 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.5.1';
+  var VERSION = '2.6.0';
   var WHATS_NEW = [
+    'New look for all text: everything is set in Eurostile (or Saira, a close free match, on devices without it).',
     'Timer ring: the day overview has a new outer ring just for setting time. Drag around it (one full turn is 60 minutes, up to 3 hours) and let go to start. A running timer still counts down on its own circle just inside.',
     'The Schedule, Focus audio and Calendar buttons are now filled with colour: orange, green and red. The one you are on is brightest, with a bar under it.',
     'Low blue has a simple, soft sound now: a light click and a short warm tone.',
@@ -7617,7 +7635,7 @@ function boot() {
     if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, bus: function () { return AC.sfx; }, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes };
     // wait for the font (with a time limit), then wait for the player
     var fontsDone = false;
-    function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'JetBrains Mono ready'); waitForPlayer(); }
+    function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'Eurostile ready'); waitForPlayer(); }
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(fonts, fonts); else fonts(); } catch (e) { fonts(); }
     setTimeout(fonts, 1500);
   }
