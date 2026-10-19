@@ -2603,6 +2603,24 @@ div.sh-item { grid-template-columns: 96px minmax(0, 1fr) auto; cursor: default; 
 #dial .dial-ccw line { stroke: var(--orange); opacity: 0.85; }
 #dial .dial-ccw circle { fill: var(--orange); }
 html.red #dial .dial-ccw line, html.red #dial .dial-ccw circle { opacity: 1; }
+/* =====================================================================
+   2.9.0 — the day overview as the game's icon: brighter rings and marks,
+   and an outer seconds ring that fills up every minute
+   ===================================================================== */
+#dial .d-stick { stroke: rgba(var(--tint-rgb), 0.55); stroke-width: 0.9; }
+#dial .d-stick.on { stroke: var(--hi); stroke-width: 1.8; }
+#dial .ds-track { stroke: rgba(var(--tint-rgb), 0.2); }
+#dial .ds-tick { stroke: rgba(var(--tint-rgb), 0.6); stroke-width: 1.2; }
+#dial .ds-tick.big { stroke: rgba(var(--tint-rgb), 0.95); stroke-width: 1.8; }
+#dial .d-num { fill: var(--text); }
+#dial .dsr { stroke: rgba(var(--tint-rgb), 0.14); }
+#dial .dsr.on { stroke: var(--orange); }
+#dial .dsr.now { stroke: var(--hi); }
+html:not([data-theme="white"]) #dial { filter: drop-shadow(0 0 2.5px rgba(var(--tint-rgb), 0.28)); }
+html:not([data-theme="white"]) #dial .dsr.on { filter: drop-shadow(0 0 2px rgba(240, 128, 60, 0.55)); }
+html.red #dial .dsr { stroke: rgba(255, 255, 255, 0.18); }
+html.red #dial .dsr.on { stroke: #ffffff; }
+html.red #dial .dsr.now { stroke: #ffffff; stroke-width: 6.5; }
 </style>
 </head>
 <body>
@@ -2715,7 +2733,7 @@ html.red #dial .dial-ccw line, html.red #dial .dial-ccw circle { opacity: 1; }
               <h2 class="panel-title">Day overview <small id="dial-date"></small></h2><small class="dial-hint">Drag the outer ring to set a timer</small>
             </div>
             <div class="dial-wrap">
-              <svg id="dial" viewBox="-28 -28 296 296" role="group" aria-label="24-hour day dial with a timer ring"></svg>
+              <svg id="dial" viewBox="-38 -38 316 316" role="group" aria-label="24-hour day dial with a timer ring"></svg>
               <div class="dial-center">
                 <div class="dial-pct" id="dial-pct">0<small>%</small></div>
                 <div class="dial-sub" id="dial-sub">No tasks yet</div>
@@ -3332,6 +3350,7 @@ function audioStatus() {
 // watchdog: detects a frozen engine (clock not moving while "running") and rebuilds it
 setInterval(function () {
   var c = AC.ctx;
+  if (c && document.hidden && AC.unlocked && c.state !== 'running' && c.state !== 'closed') wakeAudio(); // also in the background
   if (!c || document.hidden || !AC.unlocked) { AC.lastT = -1; return; }
   if (c.state !== 'running') { wakeAudio(); AC.lastT = -1; return; }
   var now = performance.now(), t = c.currentTime;
@@ -3609,7 +3628,7 @@ var Music = (function () {
   // the engine was rebuilt (frozen or lost device): drop the old graph and carry on seamlessly
   AC.listeners.push(function () {
     var was = playing;
-    if (timer) { clearInterval(timer); timer = null; }
+    stopClock();
     playing = false; g = null; cont = { atmos: null, bin: null };
     if (was) play(); else emit();
   });
@@ -3988,22 +4007,59 @@ var Music = (function () {
     }
     if (A.drumsOn && A.drumPattern !== 'off') {
       var dp = DRUMS[A.drumPattern];
-      if (dp.k.indexOf(bs) >= 0) kick(t, bs === 0 ? 1 : 0.85);
-      if (dp.s.indexOf(bs) >= 0) snare(t, 0.9);
+      if (dp.k.indexOf(bs) >= 0) { kick(t, bs === 0 ? 1 : 0.85); hits.push([s, 'k', t]); }
+      if (dp.s.indexOf(bs) >= 0) { snare(t, 0.9); hits.push([s, 's', t]); }
+      if (dp.h.indexOf(bs) >= 0) hits.push([s, 'h', t]);
+      if (hits.length > 160) hits.splice(0, hits.length - 160);
       if (dp.h.indexOf(bs) >= 0) hat(t, bs % 4 === 2 ? 0.9 : 0.6, A.drumPattern === 'pulse' && bs % 4 === 2 && bs === 14);
       else if (A.chaos > 0.4 && bs % 2 === 1 && Math.random() < (A.chaos - 0.4)) hat(t, 0.3, false);
     }
   }
+  /* The clock that drives the sequencer. Browsers slow down normal page timers when the tab is in
+     the background, and the music then thins out and stops. So the beat comes from a small worker
+     thread (not slowed down), with a longer buffer while the tab is hidden, and after any pause it
+     snaps back onto the beat grid so the groove carries on in time instead of falling apart. */
+  var clockW = null, marks = [], hits = [];
+  function startClock() {
+    stopClock();
+    try {
+      var url = URL.createObjectURL(new Blob(['var id=0;onmessage=function(e){clearInterval(id);if(e.data)id=setInterval(function(){postMessage(1)},25)}'], { type: 'text/javascript' }));
+      clockW = new Worker(url);
+      clockW.onmessage = tick;
+      clockW.onerror = function () { stopClock(); timer = setInterval(tick, 25); };
+      clockW.postMessage(1);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) { clockW = null; }
+    timer = setInterval(tick, clockW ? 200 : 25);  // backup in case the worker is not available
+  }
+  function stopClock() {
+    if (clockW) { try { clockW.postMessage(0); clockW.terminate(); } catch (e) { /* noop */ } clockW = null; }
+    if (timer) { clearInterval(timer); timer = null; }
+  }
   function tick() {
     var c = AC.ctx; if (!c || !playing) return;
-    var ahead = document.hidden ? 1.6 : 0.16;
-    if (nextTime < c.currentTime - 0.2) nextTime = c.currentTime + 0.05; // resync after a stall
+    if (c.state !== 'running') { wakeAudio(); return; }
+    var ahead = document.hidden ? 3 : 0.16, sd = stepDur();
+    if (nextTime < c.currentTime + 0.03) {
+      // we fell behind (tab was asleep): skip the missed steps but stay on the grid
+      var miss = Math.ceil((c.currentTime + 0.06 - nextTime) / sd);
+      if (miss > 0 && nextTime < c.currentTime - 0.02) { step += miss; nextTime += miss * sd; }
+    }
     var guard = 0;
-    while (nextTime < c.currentTime + ahead && guard++ < 128) {
+    while (nextTime < c.currentTime + ahead && guard++ < 256) {
+      sd = stepDur();
+      marks.push([step, nextTime, sd]); if (marks.length > 96) marks.shift();
       try { scheduleStep(step, nextTime); } catch (e) { /* keep going */ }
-      nextTime += stepDur();
+      nextTime += sd;
       step++;
     }
+  }
+  // where the music is right now, in steps (16th notes) from the start, measured on the audio clock
+  function pos() {
+    var c = AC.ctx; if (!c || !playing || !marks.length) return null;
+    var at = c.currentTime;
+    for (var i = marks.length - 1; i >= 0; i--) if (marks[i][1] <= at) return { step: marks[i][0] + (at - marks[i][1]) / marks[i][2], sd: marks[i][2], at: at };
+    return { step: marks[0][0] - (marks[0][1] - at) / marks[0][2], sd: marks[0][2], at: at };
   }
 
   function play() {
@@ -4011,21 +4067,22 @@ var Music = (function () {
     if (!build()) return false;
     iosPlaybackMode(true);
     if (playing) return true;
-    playing = true; step = 0; arpIdx = 0; leadDeg = 0;
+    playing = true; step = 0; arpIdx = 0; leadDeg = 0; marks = []; hits = [];
     nextTime = c.currentTime + 0.1;
     g.master.gain.cancelScheduledValues(c.currentTime);
     g.master.gain.setValueAtTime(0.0001, c.currentTime);
     g.master.gain.setTargetAtTime(A.master * 0.9, c.currentTime, 0.4);
     syncContinuous();
     tick();
-    timer = setInterval(tick, 25);
+    startClock();
+    mediaSession(true);
     emit();
     return true;
   }
   function stop(fade) {
     if (!playing) return;
     playing = false;
-    clearInterval(timer); timer = null;
+    stopClock(); mediaSession(false);
     var c = AC.ctx;
     if (g && c) {
       g.master.gain.cancelScheduledValues(c.currentTime);
@@ -4036,6 +4093,20 @@ var Music = (function () {
     emit();
   }
   function toggle() { if (playing) stop(); else play(); return playing; }
+  // tell the system this is music playing (media keys, lock screen, keeps the tab treated as media)
+  function mediaSession(on) {
+    var ms = navigator.mediaSession; if (!ms) return;
+    try {
+      if (on && window.MediaMetadata) ms.metadata = new MediaMetadata({ title: (PROGRAMS[A.program] || { name: 'Focus audio' }).name, artist: 'Task Matrix', album: 'Focus audio' });
+      ms.playbackState = on ? 'playing' : 'paused';
+      ms.setActionHandler('play', function () { play(); });
+      ms.setActionHandler('pause', function () { stop(); });
+      ms.setActionHandler('stop', function () { stop(); });
+    } catch (e) { /* noop */ }
+  }
+  // coming back to the tab: wake the engine and re-lock onto the beat right away
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && playing) { wakeAudio(); tick(); } });
+  window.addEventListener('pageshow', function () { if (playing) { wakeAudio(); tick(); } });
 
   function setParam(k, v) {
     A[k] = v;
@@ -4055,6 +4126,10 @@ var Music = (function () {
     play: play, stop: stop, toggle: toggle, setParam: setParam, load: load,
     isPlaying: function () { return playing; },
     analyser: function () { return g ? g.analyser : null; },
+    pos: pos,
+    clockKind: function () { return clockW ? 'worker' : timer ? 'timer' : 'off'; },
+    hits: function () { return hits; },
+    pattern: function () { return A.drumsOn && A.drumPattern !== 'off' ? DRUMS[A.drumPattern] : null; },
     on: function (fn) { listeners.push(fn); }
   };
 }());
@@ -4778,6 +4853,8 @@ var Sched = (function () {
       var lit = dial.querySelector('.d-stick.on'); if (lit) lit.classList.remove('on');
       var cur = dial.querySelector('.d-stick[data-s="' + sec + '"]'); if (cur) cur.classList.add('on');
     }
+    var segs = dial.querySelectorAll('.d-secring .dsr');
+    for (var si = 0; si < segs.length; si++) segs[si].setAttribute('class', 'dsr' + (si < sec ? ' on' : si === sec ? ' on now' : ''));
     var ccw = dial.querySelector('.dial-ccw');
     if (ccw) ccw.setAttribute('transform', 'rotate(' + (-sec * 6) + ' 120 120)');
     timerRings(dial);
@@ -4884,15 +4961,15 @@ var Sched = (function () {
     var pct = total ? Math.round(done / total * 100) : 0;
     var cx = 120, cy = 120, R = 100, parts = [];
     // outer hour ring
-    parts.push('<circle class="d-ring" cx="120" cy="120" r="' + R + '" fill="none" style="stroke:rgba(var(--tint-rgb),.22)" stroke-width="1"/>');
+    parts.push('<circle class="d-ring" cx="120" cy="120" r="' + R + '" fill="none" style="stroke:rgba(var(--tint-rgb),.62)" stroke-width="1.4"/>');
     for (var h = 0; h < 24; h++) {
       var major = h % 6 === 0, a1 = polar(cx, cy, R - (major ? 9 : 5), h * 15), a2 = polar(cx, cy, R, h * 15);
-      parts.push('<line class="d-tick' + (major ? ' maj' : '') + '" x1="' + a1[0].toFixed(1) + '" y1="' + a1[1].toFixed(1) + '" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (major ? '.6' : '.25') + ')" stroke-width="' + (major ? 1.6 : 1) + '"/>');
-      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text class="d-label" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--dim)" font-family="Eurostile, Saira, sans-serif">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
+      parts.push('<line class="d-tick' + (major ? ' maj' : '') + '" x1="' + a1[0].toFixed(1) + '" y1="' + a1[1].toFixed(1) + '" x2="' + a2[0].toFixed(1) + '" y2="' + a2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (major ? '1' : '.6') + ')" stroke-width="' + (major ? 2 : 1.2) + '"/>');
+      if (major) { var lp = polar(cx, cy, R + 11, h * 15); parts.push('<text class="d-label" x="' + lp[0].toFixed(1) + '" y="' + (lp[1] + 3.5).toFixed(1) + '" text-anchor="middle" font-size="9" style="fill:var(--text-2)" font-weight="700" font-family="Eurostile, Saira, sans-serif">' + (S.settings.clock24 ? pad2(h) : (h === 0 ? '12a' : h === 12 ? '12p' : (h % 12) + (h < 12 ? 'a' : 'p'))) + '</text>'); }
     }
     // progress ring
     var PR = 78, C = 2 * Math.PI * PR;
-    parts.push('<circle class="d-track" cx="120" cy="120" r="' + PR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.12)" stroke-width="8"/>');
+    parts.push('<circle class="d-track" cx="120" cy="120" r="' + PR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.2)" stroke-width="8"/>');
     parts.push('<circle class="d-arc" cx="120" cy="120" r="' + PR + '" fill="none" stroke="' + (pct === 100 ? 'var(--ok)' : 'var(--accent)') + '" stroke-width="8" stroke-linecap="butt" stroke-dasharray="' + (C * pct / 100).toFixed(2) + ' ' + C.toFixed(2) + '" transform="rotate(-90 120 120)"/>');
     // now hand
     if (sel === todayKey()) {
@@ -4902,10 +4979,10 @@ var Sched = (function () {
     // inner clock: a real 12-hour clock face with numbers. Orange ring = hour, red ring = minute,
     // thin line = seconds. tickFace() moves them every second so it always matches the real time.
     var CR = 60;
-    parts.push('<circle class="d-face" cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.3)" stroke-width="1"/>');
+    parts.push('<circle class="d-face" cx="120" cy="120" r="' + CR + '" fill="none" style="stroke:rgba(var(--tint-rgb),.8)" stroke-width="1.4"/>');
     for (var q = 0; q < 12; q++) {
       var big = q % 3 === 0, q1 = polar(cx, cy, CR - (big ? 7 : 4), q * 30), q2 = polar(cx, cy, CR, q * 30), qn = polar(cx, cy, CR + 7.5, q * 30);
-      parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '.6' : '.3') + ')" stroke-width="' + (big ? 1.6 : 1) + '"/>');
+      parts.push('<line class="d-ctick' + (big ? ' big' : '') + '" x1="' + q1[0].toFixed(1) + '" y1="' + q1[1].toFixed(1) + '" x2="' + q2[0].toFixed(1) + '" y2="' + q2[1].toFixed(1) + '" style="stroke:rgba(var(--tint-rgb),' + (big ? '1' : '.65') + ')" stroke-width="' + (big ? 2 : 1.2) + '"/>');
       parts.push('<text class="d-num' + (big ? ' big' : '') + '" x="' + qn[0].toFixed(1) + '" y="' + (qn[1] + 2.6).toFixed(1) + '" text-anchor="middle" font-size="' + (big ? 7.6 : 6.4) + '" font-family="Eurostile, Saira, sans-serif">' + (q === 0 ? 12 : q) + '</text>');
     }
     // a small line for every second around the clock face
@@ -4934,6 +5011,13 @@ var Sched = (function () {
     parts.push('<circle class="ds-arc" cx="120" cy="120" r="' + SR + '" fill="none" stroke-width="5" stroke-dasharray="0 ' + SC.toFixed(2) + '" transform="rotate(-90 120 120)" data-c="' + SC.toFixed(3) + '"/>' +
       '<circle class="ds-knob" cx="120" cy="' + (120 - SR) + '" r="6.5"/>' +
       '<circle class="ds-hit" cx="120" cy="120" r="' + SR + '" fill="none" stroke-width="22" tabindex="0" role="slider" aria-label="Timer: drag around the ring to set minutes" aria-valuemin="0" aria-valuemax="' + SET_MAX + '" aria-valuenow="0"><title>Drag around this ring to set a timer</title></circle></g>');
+    // the outer seconds ring: 60 segments that fill up like a loading circle, one every second
+    parts.push('<g class="d-secring">');
+    for (var sgi = 0; sgi < 60; sgi++) {
+      var sa0 = polar(cx, cy, 150, sgi * 6 + 0.9), sa1 = polar(cx, cy, 150, sgi * 6 + 5.1);
+      parts.push('<path class="dsr" data-i="' + sgi + '" d="M' + sa0[0].toFixed(2) + ' ' + sa0[1].toFixed(2) + ' A150 150 0 0 1 ' + sa1[0].toFixed(2) + ' ' + sa1[1].toFixed(2) + '" fill="none" stroke-width="5"/>');
+    }
+    parts.push('</g>');
     parts.push('<circle class="dial-hour" cx="120" cy="120" r="5.4" style="fill:var(--bg)" stroke="#f0803c" stroke-width="2"><title>Hour</title></circle>');
     parts.push('<circle class="dial-min" cx="120" cy="120" r="4.2" style="fill:var(--bg)" stroke="#ef4136" stroke-width="1.7"><title>Minute</title></circle>');
     // task markers
@@ -5569,10 +5653,12 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.8.3';
+  var VERSION = '2.9.0';
   var WHATS_NEW = [
+    'Music keeps playing in the background: when you switch tabs or leave the app open for a long time the beat no longer thins out and stops. It also comes back on the beat the moment you return.',
+    'Now playing locks to the rhythm: the screen is two bars wide, the line sweeps in exact time with the tempo, and every kick, snare and hat lights up as it plays. Works with every track.',
+    'Day overview: brighter rings and marks, and a new outer ring that fills up one segment every second, like a loading circle.',
     'Day overview: two orange counter lines tick the other way round the clock (counter-clockwise), one step every second with the seconds hand, crossing it at :00 and :30.',
-    'Now playing has a live sound scope: it measures the real audio like an oscilloscope \u2013 orange for the whole mix, red for the lows, blue for the highs \u2013 with a level meter in dB and a beat lamp that flashes on every kick.',
     'Mission briefing: the first time you open the app each day you get a short briefing \u2013 today\u2019s tasks, what is left over from before and the first timed task.',
     'Evening debrief: from 19:00 a debrief shows what you finished, the XP you earned and your focus time, and asks one question for the daily log (+10 XP). Shift + B opens either one any time.',
     'Focus on a task: press \u25b6 on any task to start a focus session for it. The time is saved to the task and shows as \u201c2h 10m this week\u201d.',
@@ -6597,73 +6683,107 @@ var AudioUI = (function () {
     return c;
   }
   function db(v) { return v > 1e-5 ? 20 * Math.log10(v) : -100; }
+  /* The scope runs on the music's own clock: the screen is two bars wide (8 beats), the line sweeps
+     across in exact time with the tempo, and the sound level is painted behind it like a heart monitor.
+     Kicks, snares and hats light up on the lane below at the moment they play. */
   function scDraw(now) {
     sc.raf = 0;
     var c = scSize(); if (!c) return;
-    var g = c.getContext('2d'), W = sc.W, H = sc.H, mW = 46, gw = W - mW, hh = Math.round(H * 0.27), Hs = H - hh, mid = Hs / 2, t = taps(), playing = !!t;
+    var g = c.getContext('2d'), W = sc.W, H = sc.H, mW = 46, gw = W - mW, t = taps(), playing = !!t, P = playing ? Music.pos() : null;
+    if (!P) playing = false;
     var dt = sc.last ? Math.min(0.1, (now - sc.last) / 1000) : 0.016; sc.last = now;
+    var tint = css('--tint-rgb'), hi = css('--hi'), orange = css('--orange') || '#f0803c', font = css('--font-ui');
+    var top = 18, laneH = 36, bot = H - laneH - 6, mid = (top + bot) / 2, amp = (bot - top) / 2 - 3, STEPS = 32;
+    var X = function (st) { return st / STEPS * gw; };
     g.setTransform(sc.dpr, 0, 0, sc.dpr, 0, 0); g.clearRect(0, 0, W, H);
-    var tint = css('--tint-rgb'), hi = css('--hi'), orange = css('--orange') || '#f0803c';
-    // graph paper: 10 x 6 divisions with minor ticks on the centre lines, like a real scope
-    var dx = gw / 10, dy = Hs / 6;
-    g.lineWidth = 1; g.strokeStyle = 'rgba(' + tint + ',0.06)'; g.beginPath();
-    for (var i = 1; i < 50; i++) { var x = Math.round(i * dx / 5) + 0.5; if (i % 5) { g.moveTo(x, mid - 3); g.lineTo(x, mid + 3); } }
-    for (i = 1; i < 30; i++) { var y = Math.round(i * dy / 5) + 0.5; if (i % 5) { g.moveTo(gw / 2 - 3, y); g.lineTo(gw / 2 + 3, y); } }
-    g.stroke();
-    g.strokeStyle = 'rgba(' + tint + ',0.13)'; g.beginPath();
-    for (i = 1; i < 10; i++) { x = Math.round(i * dx) + 0.5; g.moveTo(x, 0); g.lineTo(x, H); }
-    for (i = 1; i < 6; i++) { y = Math.round(i * dy) + 0.5; g.moveTo(0, y); g.lineTo(gw, y); }
-    g.stroke();
-    g.strokeStyle = 'rgba(' + tint + ',0.3)'; g.beginPath(); g.moveTo(0, Hs + 0.5); g.lineTo(gw, Hs + 0.5); g.stroke();
-    g.strokeStyle = 'rgba(' + tint + ',0.45)'; g.beginPath(); g.moveTo(0, Math.round(mid) + 0.5); g.lineTo(gw, Math.round(mid) + 0.5); g.stroke();
-    g.strokeStyle = 'rgba(' + tint + ',0.3)'; g.strokeRect(0.5, 0.5, gw - 1, H - 1);
-    var rms = 0, peak = 0, loRms = 0;
+    // where we are: step inside the 2-bar window, beat and bar numbers
+    var cur = P ? ((P.step % STEPS) + STEPS) % STEPS : -1, beat = P ? Math.floor(P.step / 4) : -1, bar = P ? Math.floor(P.step / 16) : -1;
+    if (P && beat !== sc.beatN) { sc.beatN = beat; sc.beat = now; }
+    // grid: a line every 16th note (faint), every beat, and every bar (strong)
+    g.lineWidth = 1;
+    for (var k = 0; k <= STEPS; k++) {
+      var x = Math.round(X(k)) + 0.5, isBar = k % 16 === 0, isBeat = k % 4 === 0;
+      g.strokeStyle = 'rgba(' + tint + ',' + (isBar ? 0.5 : isBeat ? 0.22 : 0.07) + ')';
+      g.beginPath(); g.moveTo(x, isBeat ? top - 4 : top); g.lineTo(x, H - 3); g.stroke();
+    }
+    [0.5, 1].forEach(function (f) { g.strokeStyle = 'rgba(' + tint + ',0.07)'; g.beginPath(); g.moveTo(0, Math.round(mid - amp * f) + 0.5); g.lineTo(gw, Math.round(mid - amp * f) + 0.5); g.moveTo(0, Math.round(mid + amp * f) + 0.5); g.lineTo(gw, Math.round(mid + amp * f) + 0.5); g.stroke(); });
+    g.strokeStyle = 'rgba(' + tint + ',0.4)'; g.beginPath(); g.moveTo(0, Math.round(mid) + 0.5); g.lineTo(gw, Math.round(mid) + 0.5); g.stroke();
+    g.strokeStyle = 'rgba(' + tint + ',0.3)'; g.beginPath(); g.moveTo(0, bot + 3.5); g.lineTo(gw, bot + 3.5); g.stroke();
+    g.strokeRect(0.5, 0.5, gw - 1, H - 1);
+    // the beat we are on gets a soft highlight
+    if (P) { var bq = Math.floor(cur / 4) * 4, fl = clamp(1 - (now - sc.beat) / 260, 0, 1); g.fillStyle = 'rgba(' + tint + ',' + (0.04 + fl * 0.08) + ')'; g.fillRect(X(bq), top, X(4), H - top - 2); }
+    // beat numbers along the top: 1 2 3 4 | 1 2 3 4
+    g.font = '700 9px ' + font; g.textBaseline = 'middle'; g.textAlign = 'left';
+    for (var bn = 0; bn < 8; bn++) {
+      var on = P && Math.floor(cur / 4) === bn;
+      g.fillStyle = on ? (bn % 4 === 0 ? orange : hi) : 'rgba(' + tint + ',0.45)';
+      g.fillText(String(bn % 4 + 1), X(bn * 4) + 5, 9);
+    }
+    if (P) { g.textAlign = 'right'; g.fillStyle = 'rgba(' + tint + ',0.55)'; g.fillText('BAR ' + (bar + 1), gw - 6, 9); g.textAlign = 'left'; }
+    // ---- level, painted column by column at the sweep line
+    var n = Math.max(1, Math.floor(gw));
+    if (!sc.col || sc.col.length !== n * 3) { sc.col = new Float32Array(n * 3).fill(-1); sc.lx = -1; }
+    var rms = 0, peak = 0;
     if (playing) {
       t.src.getFloatTimeDomainData(t.bm); t.lo.getFloatTimeDomainData(t.bl); t.hi.getFloatTimeDomainData(t.bh);
-      var N = t.bm.length, span = Math.floor(N / 2), start = 0;
-      // trigger on a rising zero crossing of the low band so the picture stands still instead of jittering
-      for (i = 1; i < N - span; i++) if (t.bl[i - 1] < 0 && t.bl[i] >= 0) { start = i; break; }
-      var pkM = 0, pkL = 0, pkH = 0, sum = 0, sumL = 0;
-      for (i = 0; i < N; i++) { var m = Math.abs(t.bm[i]); if (m > pkM) pkM = m; sum += t.bm[i] * t.bm[i]; sumL += t.bl[i] * t.bl[i]; if (Math.abs(t.bl[i]) > pkL) pkL = Math.abs(t.bl[i]); if (Math.abs(t.bh[i]) > pkH) pkH = Math.abs(t.bh[i]); }
-      rms = Math.sqrt(sum / N); peak = pkM; loRms = Math.sqrt(sumL / N); sc.win = Math.round(span / t.src.context.sampleRate * 1000);
-      // slow auto-gain: quiet passages still show, but a kick drum visibly pushes the trace
-      var agc = function (k, pk, fill) { var want = clamp(fill / Math.max(pk, 0.004), 0.5, 60); sc.g[k] += (want - sc.g[k]) * (want < sc.g[k] ? 0.25 : 0.04); };
-      agc('m', pkM, 0.82); agc('l', pkL, 0.62); agc('h', pkH, 0.42);
-      var trace = function (buf, gain, color, width, alpha) {
-        g.globalAlpha = alpha; g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
-        for (var j = 0; j <= span; j++) { var xx = j / span * gw, yy = mid - clamp(buf[start + j] * gain, -1, 1) * (mid - 4); if (j) g.lineTo(xx, yy); else g.moveTo(xx, yy); }
-        g.stroke(); g.globalAlpha = 1;
+      var N = t.bm.length, pm = 0, pl = 0, ph = 0, sum = 0;
+      for (var i = 0; i < N; i++) { var m = Math.abs(t.bm[i]); if (m > pm) pm = m; sum += t.bm[i] * t.bm[i]; m = Math.abs(t.bl[i]); if (m > pl) pl = m; m = Math.abs(t.bh[i]); if (m > ph) ph = m; }
+      rms = Math.sqrt(sum / N); peak = pm;
+      // each band is shown in dB against its own recent loudest moment, so a kick is a clear bump
+      sc.mx = sc.mx || { m: -30, l: -30, h: -40 };
+      sc.ev = sc.ev || { m: 0, l: 0, h: 0 };
+      var lv = function (k, v, range) {   // instant rise, quick fall: like the needle of a real level meter
+        var d = db(v); sc.mx[k] = Math.max(d, sc.mx[k] - dt * 2.5);
+        var x = clamp((d - (sc.mx[k] - range)) / range, 0, 1);
+        sc.ev[k] = x > sc.ev[k] ? x : Math.max(x, sc.ev[k] - dt * 3.2);
+        return sc.ev[k];
       };
-      trace(t.bh, sc.g.h, '#4f8fd6', 2.2, 0.85);
-      trace(t.bl, sc.g.l, '#ef4136', 2.8, 0.9);
-      trace(t.bm, sc.g.m, orange, 3.2, 1);
-      // beat: the low end jumps well above its recent average
-      sc.loAvg += (loRms - sc.loAvg) * 0.04;
-      if (loRms > sc.loAvg * 1.45 && loRms > 0.02 && now - sc.beat > 180) sc.beat = now;
-      // loudness history for the strip underneath: a new column every 50 ms
-      if (!sc.ht || now - sc.ht > 50) {
-        sc.ht = now; sc.hist = sc.hist || [];
-        sc.hmax = Math.max(pkM, (sc.hmax || 0.05) * 0.995);
-        sc.hist.push([pkM, pkL, now - sc.beat < 60 ? 1 : 0]);
-        if (sc.hist.length > 400) sc.hist.shift();
+      var vm = lv('m', pm, 15), vl = lv('l', pl, 15), vh = lv('h', ph, 18);
+      var xn = Math.min(n - 1, Math.floor(X(cur))), lx = sc.lx, put = function (j) { sc.col[j * 3] = vm; sc.col[j * 3 + 1] = vl; sc.col[j * 3 + 2] = vh; };
+      if (lx < 0 || Math.abs(xn - lx) > n * 0.6 && !(lx > n * 0.8 && xn < n * 0.2)) { put(xn); }
+      else if (xn >= lx) { for (i = lx + 1; i <= xn; i++) put(i); }
+      else { for (i = lx + 1; i < n; i++) put(i); for (i = 0; i <= xn; i++) put(i); }
+      sc.lx = xn;
+      for (i = 1; i <= 10; i++) { var e = (xn + i) % n; sc.col[e * 3] = -1; }   // a small gap in front of the sweep
+    } else { sc.lx = -1; if (sc.col) sc.col.fill(-1); sc.mx = null; sc.ev = null; }
+    // draw: orange = whole mix (mirrored, like a recording), red = the low end inside it, blue edge = highs
+    var drawFill = function (o, color, alpha, scale) {
+      g.fillStyle = color; g.globalAlpha = alpha;
+      for (var j = 0; j < n; j++) { var v = sc.col[j * 3 + o]; if (sc.col[j * 3] < 0) continue; var hgt = clamp(v * scale, 0, 1) * amp; if (hgt > 0.4) g.fillRect(j, mid - hgt, 1, hgt * 2); }
+      g.globalAlpha = 1;
+    };
+    drawFill(0, orange, 0.42, 1);
+    var line = function (o, color, width, dir) {
+      g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.beginPath(); var pen = false;
+      for (var j = 0; j < n; j++) { if (sc.col[j * 3] < 0) { pen = false; continue; } var yy = mid - dir * clamp(sc.col[j * 3 + o], 0, 1) * amp; if (pen) g.lineTo(j, yy); else { g.moveTo(j, yy); pen = true; } }
+      g.stroke();
+    };
+    line(0, orange, 1.4, 1); line(0, orange, 1.4, -1);
+    line(1, '#ef4136', 2.2, 1);     // lows on the top half
+    line(2, '#4f8fd6', 1.8, -1);    // highs on the bottom half
+    // ---- drum lane: the pattern for both bars; each hit lights up when it plays
+    var pat = Music.pattern(), rows = [['k', 'KICK', '#ef4136'], ['s', 'SNARE', orange], ['h', 'HAT', '#4f8fd6']], rh = (laneH - 6) / 3, ly = bot + 6;
+    g.font = '600 7.5px ' + font; g.textBaseline = 'middle';
+    rows.forEach(function (r, ri) {
+      var y0 = ly + ri * rh, list = pat ? pat[r[0]] : [];
+      for (var st = 0; st < STEPS; st++) {
+        if (list.indexOf(st % 16) < 0) continue;
+        var x0 = X(st) + 1.5, w = Math.max(3, X(1) - 3), passed = P && st <= cur, age = P ? (cur - st) * P.sd : 9;
+        if (passed) { g.fillStyle = r[2]; g.globalAlpha = age < 0.12 ? 1 : 0.55; g.fillRect(x0, y0 + 1, w, rh - 2); }
+        else { g.strokeStyle = r[2]; g.globalAlpha = 0.45; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 1.5, w - 1, rh - 3); }
+        g.globalAlpha = 1;
       }
+    });
+    if (!pat) { g.fillStyle = 'rgba(' + tint + ',0.4)'; g.textAlign = 'left'; g.fillText('NO DRUMS IN THIS TRACK · BEAT GRID ONLY', 8, ly + laneH / 2 - 3); }
+    // ---- the sweep line
+    if (P) {
+      var px = Math.round(X(cur)) + 0.5;
+      g.strokeStyle = hi; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px, top - 6); g.lineTo(px, H - 2); g.stroke();
+      g.fillStyle = hi; g.beginPath(); g.moveTo(px - 4, top - 7); g.lineTo(px + 4, top - 7); g.lineTo(px, top - 2); g.closePath(); g.fill();
     } else {
-      g.strokeStyle = orange; g.globalAlpha = 0.6; g.lineWidth = 2; g.beginPath(); g.moveTo(0, mid); g.lineTo(gw, mid); g.stroke(); g.globalAlpha = 1;
-      sc.g = { m: 4, l: 4, h: 8 };
+      g.fillStyle = 'rgba(' + tint + ',0.55)'; g.font = '600 11px ' + font; g.textAlign = 'center'; g.fillText('NO SIGNAL · PRESS PLAY', gw / 2, mid); g.textAlign = 'left';
     }
-    // loudness strip: the last few seconds scrolling left, so every kick shows up as a spike
-    var cw = 3, cols = Math.floor(gw / cw), hs = sc.hist || [], n = Math.min(cols, hs.length), sm = Hs + 9 + (hh - 12) / 2, sh = (hh - 14) / 2, top = sc.hmax || 1;
-    g.strokeStyle = 'rgba(' + tint + ',0.18)'; g.beginPath(); g.moveTo(0, Math.round(sm) + 0.5); g.lineTo(gw, Math.round(sm) + 0.5); g.stroke();
-    for (i = 0; i < n; i++) {
-      var hv = hs[hs.length - n + i], hx = gw - (n - i) * cw, a1 = clamp(hv[0] / top, 0, 1) * sh, a2 = clamp(hv[1] / top, 0, 1) * sh;
-      g.fillStyle = orange; g.globalAlpha = playing ? 0.8 : 0.35; g.fillRect(hx, sm - a1, cw - 1, a1 * 2);
-      g.fillStyle = '#ef4136'; g.globalAlpha = playing ? 0.7 : 0.3; g.fillRect(hx, sm - a2, cw - 1, a2 * 2);
-      if (hv[2]) { g.fillStyle = hi; g.globalAlpha = playing ? 0.7 : 0.25; g.fillRect(hx, H - 4, cw - 1, 3); }
-    }
-    g.globalAlpha = 1;
-    g.fillStyle = 'rgba(' + tint + ',0.5)'; g.font = '600 9px ' + css('--font-ui'); g.textAlign = 'left'; g.textBaseline = 'top';
-    g.fillText('WAVEFORM · LAST ' + Math.round(cols * 0.05) + ' S', 8, Hs + 5);
-    // level meter on the right: RMS bar, peak line with hold, dB scale
+    // ---- level meter on the right: RMS bar, peak line with hold, dB scale
     var r = playing ? db(rms) : -100, pk = playing ? db(peak) : -100;
     sc.rmsDb = r > sc.rmsDb ? r : sc.rmsDb - dt * 24; sc.peakDb = pk > sc.peakDb ? pk : sc.peakDb - dt * 30;
     if (sc.peakDb >= sc.hold) { sc.hold = sc.peakDb; sc.holdT = 1.2; } else if ((sc.holdT -= dt) <= 0) sc.hold -= dt * 20;
@@ -6675,17 +6795,12 @@ var AudioUI = (function () {
       g.fillStyle = grad; g.fillRect(mx, mtop, mw, H - 4 - mtop);
     }
     if (sc.hold > -48) { g.fillStyle = hi; g.fillRect(mx - 2, Math.round(yDb(sc.hold)), mw + 4, 2); }
-    g.fillStyle = 'rgba(' + tint + ',0.6)'; g.font = '600 9px ' + css('--font-ui'); g.textAlign = 'left'; g.textBaseline = 'middle';
-    [0, -12, -24, -36, -48].forEach(function (v) { var yy = yDb(v); g.fillRect(mx + mw + 2, Math.round(yy), 3, 1); g.fillText(String(v), mx + mw + 7, Math.min(H - 6, Math.max(6, yy))); });
-    // beat lamp, top left of the scope
-    var on = playing && now - sc.beat < 140;
-    g.fillStyle = on ? orange : 'rgba(' + tint + ',0.18)'; g.beginPath(); g.arc(14, 14, 4.5, 0, Math.PI * 2); g.fill();
-    g.fillStyle = on ? hi : 'rgba(' + tint + ',0.5)'; g.font = '700 9px ' + css('--font-ui'); g.textBaseline = 'middle'; g.fillText('BEAT', 24, 14.5);
-    if (!playing) { g.fillStyle = 'rgba(' + tint + ',0.55)'; g.font = '600 11px ' + css('--font-ui'); g.textAlign = 'center'; g.fillText('NO SIGNAL · PRESS PLAY', gw / 2, mid - 16); g.textAlign = 'left'; }
-    // readout under the graph (updated a few times a second, not every frame)
-    if (!sc.txtT || now - sc.txtT > 250) {
+    g.fillStyle = 'rgba(' + tint + ',0.6)'; g.font = '600 9px ' + font; g.textAlign = 'left'; g.textBaseline = 'middle';
+    [0, -12, -24, -36, -48].forEach(function (v) { var yy2 = yDb(v); g.fillRect(mx + mw + 2, Math.round(yy2), 3, 1); g.fillText(String(v), mx + mw + 7, Math.min(H - 6, Math.max(6, yy2))); });
+    // ---- readout under the graph (a few times a second)
+    if (!sc.txtT || now - sc.txtT > 200) {
       sc.txtT = now;
-      var txt = playing ? 'RMS <b>' + Math.round(Math.max(-60, sc.rmsDb)) + ' dB</b> · PEAK <b>' + Math.round(Math.max(-60, sc.hold)) + ' dB</b> · <b>' + A.bpm + '</b> BPM · ' + (sc.win || 11) + ' ms window' : 'Idle · ' + A.bpm + ' BPM';
+      var txt = P ? 'BAR <b>' + (bar + 1) + '</b> · BEAT <b>' + (Math.floor(cur / 4) % 4 + 1) + '</b> · <b>' + A.bpm + '</b> BPM · RMS <b>' + Math.round(Math.max(-60, sc.rmsDb)) + ' dB</b> · PEAK <b>' + Math.round(Math.max(-60, sc.hold)) + ' dB</b>' : 'Idle · ' + A.bpm + ' BPM';
       if (txt !== sc.txt) { sc.txt = txt; var rd = $('#wv-read'); if (rd) rd.innerHTML = txt; }
     }
     if (spec.on && !document.hidden && (playing || sc.peakDb > -90 || sc.hold > -60)) sc.raf = requestAnimationFrame(scDraw);
