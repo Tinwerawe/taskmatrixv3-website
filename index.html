@@ -2596,6 +2596,14 @@ div.sh-item { grid-template-columns: 96px minmax(0, 1fr) auto; cursor: default; 
 .sc-read { margin-left: auto; color: var(--dim); font-variant-numeric: tabular-nums; }
 .sc-read b { color: var(--hi); font-weight: 700; }
 @media (max-width: 560px) { .wv-graph, html.tui .deck > .wv-graph { height: 190px; } .sc-read { margin-left: 0; width: 100%; } }
+/* =====================================================================
+   2.8.2 — two counter lines in the day overview that turn the other way
+   ===================================================================== */
+#dial .dial-ccw { transform-box: view-box; transform-origin: 120px 120px; animation: dial-ccw 60s linear infinite; pointer-events: none; }
+#dial .dial-ccw line { stroke: var(--orange); opacity: 0.85; }
+#dial .dial-ccw circle { fill: var(--orange); }
+html.red #dial .dial-ccw line, html.red #dial .dial-ccw circle { opacity: 1; }
+@keyframes dial-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
 </style>
 </head>
 <body>
@@ -4771,6 +4779,8 @@ var Sched = (function () {
       var lit = dial.querySelector('.d-stick.on'); if (lit) lit.classList.remove('on');
       var cur = dial.querySelector('.d-stick[data-s="' + sec + '"]'); if (cur) cur.classList.add('on');
     }
+    var ccw = dial.querySelector('.dial-ccw');
+    if (ccw && (S.settings.reduceMotion || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches))) { ccw.style.animation = 'none'; ccw.style.transform = 'rotate(' + (-sec * 6) + 'deg)'; }
     timerRings(dial);
     var hand = dial.querySelector('.d-hand');
     if (hand) { var nd = nowMinutes() / 1440 * 360, n1 = polar(120, 120, 86, nd), n2 = polar(120, 120, 103, nd); hand.setAttribute('x1', n1[0].toFixed(1)); hand.setAttribute('y1', n1[1].toFixed(1)); hand.setAttribute('x2', n2[0].toFixed(1)); hand.setAttribute('y2', n2[1].toFixed(1)); }
@@ -4907,6 +4917,10 @@ var Sched = (function () {
     }
     parts.push('<line class="dial-sec-tail" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/>');
     parts.push('<line class="dial-sec" x1="120" y1="120" x2="120" y2="120" stroke-width="1.2" stroke-linecap="round"/><circle class="dial-sec-tip" cx="120" cy="120" r="1.8"/>');
+    // two counter lines: opposite each other, sweeping smoothly the other way round (counter-clockwise),
+    // one full turn a minute and synced to the real seconds, so they cross the seconds hand at :00 and :30
+    var nowD = new Date(), ccwAt = nowD.getSeconds() + nowD.getMilliseconds() / 1000;
+    parts.push('<g class="dial-ccw" style="animation-delay:-' + ccwAt.toFixed(3) + 's"><line x1="120" y1="84" x2="120" y2="63" stroke-width="1.1" stroke-linecap="round"/><line x1="120" y1="156" x2="120" y2="177" stroke-width="1.1" stroke-linecap="round"/><circle cx="120" cy="63" r="1.4"/><circle cx="120" cy="177" r="1.4"/></g>');
     // timer rings (outside the 24-hour labels): quick timer and focus session
     // countdown rings sit inside the drag ring: quick timer, then focus session
     [['qt', 126], ['fo', 119]].forEach(function (rr) {
@@ -5557,8 +5571,9 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.8.1';
+  var VERSION = '2.8.2';
   var WHATS_NEW = [
+    'Day overview: two orange counter lines now sweep the other way round the clock (counter-clockwise), one turn a minute, crossing the seconds hand at :00 and :30.',
     'Now playing has a live sound scope: it measures the real audio like an oscilloscope \u2013 orange for the whole mix, red for the lows, blue for the highs \u2013 with a level meter in dB and a beat lamp that flashes on every kick.',
     'Mission briefing: the first time you open the app each day you get a short briefing \u2013 today\u2019s tasks, what is left over from before and the first timed task.',
     'Evening debrief: from 19:00 a debrief shows what you finished, the XP you earned and your focus time, and asks one question for the daily log (+10 XP). Shift + B opens either one any time.',
