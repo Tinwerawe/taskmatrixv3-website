@@ -2772,8 +2772,8 @@ html.red #dial .dsr.now { stroke: #ffffff; stroke-width: 6.5; }
         <div class="audio-col">
         <div class="panel deck" id="deck-panel">
           <div class="panel-head"><h2 class="panel-title">Now playing</h2><small class="np-state" id="np-state"><span class="mini-bars np-bars paused" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="np-state-t">STOPPED</span></small></div>
-          <div class="spectrum wv-graph" id="wv-graph" title="Live measurement of the sound"><canvas id="wv-canvas" aria-hidden="true"></canvas></div>
-          <div class="sc-foot"><span class="sc-key"><i style="background:var(--orange)"></i>Mix</span><span class="sc-key"><i style="background:#ef4136"></i>Lows</span><span class="sc-key"><i style="background:#4f8fd6"></i>Highs</span><span class="sc-read" id="wv-read" aria-live="off"></span></div>
+          <div class="spectrum wv-graph" id="wv-graph" title="The real sound playing right now: all sound, lows, and notes &amp; effects"><canvas id="wv-canvas" aria-hidden="true"></canvas></div>
+          <div class="sc-foot"><span class="sc-key"><i style="background:#f59b45"></i>All sound</span><span class="sc-key"><i style="background:#d0605a"></i>Lows</span><span class="sc-key"><i style="background:#5b8fd0"></i>Notes &amp; effects</span><span class="sc-read" id="wv-read" aria-live="off"></span></div>
           <dl class="kv">
             <dt>Program</dt><dd><span id="np-name">Deep Space Drift</span><span class="badge" id="np-mod" hidden>Edited</span></dd>
             <dt>Key</dt><dd id="np-key">-</dd>
@@ -3288,12 +3288,32 @@ var PROG_GLYPHS = {
    ===================================================================== */
 var IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 var AC = { ctx: null, sfx: null, noiseBuf: null, unlocked: false, silentEl: null, keep: null, gen: 0, resets: 0, listeners: [], lastT: -1, lastWall: 0, stalls: 0 };
+/* One shared listening point for everything the app plays: the music and every sound effect are both
+   copied into it right before the speakers. It only feeds analysers (it is not connected to the speakers),
+   so playback is exactly the same; the Now playing waves read the real combined sound from here. */
+function visTap(c) {
+  if (AC.vis && AC.vis.ctx === c) return AC.vis;
+  var bus = c.createGain(), an = {}, buf = {};
+  var mk = function (key, size, filters) {
+    var node = bus;
+    filters.forEach(function (f) { var b = c.createBiquadFilter(); b.type = f[0]; b.frequency.value = f[1]; b.Q.value = f[2]; node.connect(b); node = b; });
+    var a = c.createAnalyser(); a.fftSize = size; a.smoothingTimeConstant = 0; node.connect(a);
+    an[key] = a; buf[key] = new Float32Array(size);
+  };
+  mk('all', 2048, []);                                                   // untouched: loudness readout
+  mk('mix', 4096, [['lowpass', 240, 0.707], ['lowpass', 240, 0.707]]);  // orange: the whole sound together (smoothed)
+  mk('lo', 4096, [['bandpass', 85, 1.3], ['bandpass', 85, 1.3]]);        // red: bass, kick, low drones (a narrow band)
+  mk('mid', 2048, [['bandpass', 600, 1.2], ['bandpass', 600, 1.2]]);     // blue: notes, chords, sound effects (a narrow band)
+  AC.vis = { ctx: c, bus: bus, an: an, buf: buf };
+  return AC.vis;
+}
 function buildBus(c0) {
   // Sound-effect bus: everything goes through one "ship console" chain so the sounds feel like one system.
   AC.sfx = c0.createGain(); AC.sfx.gain.value = S.settings.sfxVol;
   var hp = c0.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 90;
   var comp = c0.createDynamicsCompressor(); comp.threshold.value = -20; comp.knee.value = 10; comp.ratio.value = 3; comp.attack.value = 0.003; comp.release.value = 0.12;
   AC.sfx.connect(hp); hp.connect(comp); comp.connect(c0.destination);
+  comp.connect(visTap(c0).bus);   // sound effects -> shared analysis (listen only)
   // short metallic room echo (cockpit reflection)
   var dl = c0.createDelay(0.5), fb = c0.createGain(), tone = c0.createBiquadFilter(), wet = c0.createGain();
   dl.delayTime.value = 0.07; fb.gain.value = 0.15; tone.type = 'bandpass'; tone.frequency.value = 2400; tone.Q.value = 0.7; wet.gain.value = 0.07;
@@ -3320,7 +3340,7 @@ function wakeAudio() {
 }
 function dropAudio() {
   var old = AC.ctx;
-  AC.ctx = null; AC.sfx = null; AC.noiseBuf = null; AC.keep = null;
+  AC.ctx = null; AC.sfx = null; AC.noiseBuf = null; AC.keep = null; AC.vis = null;
   if (old && old.state !== 'closed') { try { old.close(); } catch (e) { /* noop */ } }
   AC.listeners.forEach(function (fn) { try { fn('reset'); } catch (e) { /* noop */ } });
 }
@@ -3516,6 +3536,7 @@ var SFX = (function () {
     c = AC.ctx;
     if (!c || !AC.sfx) return;
     try { fx[name](arg); } catch (e) { /* never let sound break the app */ }
+    if (AC.onSound) { try { AC.onSound(); } catch (e) { /* noop */ } }   // wake the waves on the Focus audio screen
   }
   function play(name, arg) {
     api.n++;
@@ -3737,6 +3758,7 @@ var Music = (function () {
     g.trim = c.createGain(); g.trim.gain.value = Math.tanh(1.25) / 1.25;
     g.master.connect(g.drive); g.drive.connect(g.trim); g.trim.connect(g.lowCut); g.lowCut.connect(g.warm); g.warm.connect(g.mud); g.mud.connect(g.presence); g.presence.connect(g.air); g.air.connect(g.comp);
     g.comp.connect(g.limit); g.limit.connect(g.analyser); g.analyser.connect(c.destination);
+    g.analyser.connect(visTap(c).bus);   // music -> shared analysis (listen only)
 
     g.tone = c.createGain();
     g.filter = c.createBiquadFilter(); g.filter.type = 'lowpass';
@@ -5653,10 +5675,10 @@ var App = (function () {
     { id: 'calendar', label: 'Calendar', ic: I.cal }
   ];
   var current = null;
-  var VERSION = '2.9.0';
+  var VERSION = '2.10.0';
   var WHATS_NEW = [
     'Music keeps playing in the background: when you switch tabs or leave the app open for a long time the beat no longer thins out and stops. It also comes back on the beat the moment you return.',
-    'Now playing locks to the rhythm: the screen is two bars wide, the line sweeps in exact time with the tempo, and every kick, snare and hat lights up as it plays. Works with every track.',
+    'Now playing shows three smooth waves made from the real sound: orange is everything playing together, red is the low end, blue is the notes and sound effects. Louder sound makes bigger waves, and when it is quiet they settle on the centre line.',
     'Day overview: brighter rings and marks, and a new outer ring that fills up one segment every second, like a loading circle.',
     'Day overview: two orange counter lines tick the other way round the clock (counter-clockwise), one step every second with the seconds hand, crossing it at :00 and :30.',
     'Mission briefing: the first time you open the app each day you get a short briefing \u2013 today\u2019s tasks, what is left over from before and the first timed task.',
@@ -6657,23 +6679,20 @@ var AudioUI = (function () {
   /* ---------- Now playing scope: a real measurement of the sound coming out, like an
      oscilloscope. Orange = the whole mix, red = the low end (bass and kick), blue = the
      highs (hats, arps). Everything you see is the actual audio, so it moves with the beat. ---------- */
-  var sc = { raf: 0, src: null, lo: null, hi: null, bm: null, bl: null, bh: null, g: { m: 4, l: 4, h: 8 }, rmsDb: -90, peakDb: -90, hold: -90, holdT: 0, loAvg: 0, beat: 0, last: 0, W: 0, H: 0, dpr: 1, txt: '' };
+  /* ---------- Now playing waves: three smooth lines drawn from the real sound (see visTap).
+     Orange = everything playing together, red = the low end, blue = the notes and sound effects.
+     Each line is the actual waveform of its band, held steady on a zero crossing and showing a few of
+     its own cycles, so a steady tone stands still and any change in the sound changes the shape.
+     The height is the real level (louder = bigger) and with no sound the lines settle on the centre. ---------- */
+  var WAVES = [
+    { k: 'mid', color: '#5b8fd0', cyc: 4.5 },
+    { k: 'lo', color: '#d0605a', cyc: 2.5 },
+    { k: 'mix', color: '#f59b45', cyc: 3 }
+  ];
+  var PTS = 160;
+  var sc = { raf: 0, last: 0, W: 0, H: 0, dpr: 1, txt: '', txtT: 0, rms: -100, peak: -100 };
+  WAVES.forEach(function (w) { w.d = new Float32Array(PTS); w.t = new Float32Array(PTS); w.win = 0; w.ldb = -100; });
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-  // band taps (a low-pass and a high-pass copy of the output), rebuilt if the audio engine restarts
-  function taps() {
-    var src = Music.isPlaying() ? Music.analyser() : null;
-    if (!src) return null;
-    if (sc.src !== src) {
-      var c = src.context, mk = function (type, f) {
-        var flt = c.createBiquadFilter(), an = c.createAnalyser();
-        flt.type = type; flt.frequency.value = f; flt.Q.value = 0.7; an.fftSize = src.fftSize; an.smoothingTimeConstant = 0;
-        src.connect(flt); flt.connect(an); return an;
-      };
-      sc.src = src; sc.lo = mk('lowpass', 160); sc.hi = mk('highpass', 2200);
-      sc.bm = new Float32Array(src.fftSize); sc.bl = new Float32Array(src.fftSize); sc.bh = new Float32Array(src.fftSize);
-    }
-    return sc;
-  }
   function scSize() {
     var c = $('#wv-canvas'); if (!c) return null;
     var r = c.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
@@ -6683,129 +6702,89 @@ var AudioUI = (function () {
     return c;
   }
   function db(v) { return v > 1e-5 ? 20 * Math.log10(v) : -100; }
-  /* The scope runs on the music's own clock: the screen is two bars wide (8 beats), the line sweeps
-     across in exact time with the tempo, and the sound level is painted behind it like a heart monitor.
-     Kicks, snares and hats light up on the lane below at the moment they play. */
+  // read one band and work out where its line should be (target values, -1..1)
+  // height follows the real level on a dB scale, like a level meter: -60 dB and below is flat,
+  // -10 dB fills the graph, and every step louder is bigger (quiet sound effects still show)
+  function heightOf(d) { return Math.pow(clamp((d + 60) / 50, 0, 1), 1.2); }
+  function readWave(w, V, dt) {
+    var an = V.an[w.k], b = V.buf[w.k], N = b.length;
+    an.getFloatTimeDomainData(b);
+    var pk = 0, i;
+    for (i = 0; i < N; i++) { var a = b[i] < 0 ? -b[i] : b[i]; if (a > pk) pk = a; }
+    var d = db(pk); w.ldb = d > w.ldb ? d : Math.max(d, w.ldb - dt * 24);
+    var hgt = heightOf(w.ldb);
+    if (pk < 0.0002 || hgt <= 0) { w.t.fill(0); return; }
+    // rising zero crossings (with a little hysteresis so noise does not count)
+    var h = pk * 0.12, armed = false, xs = [];
+    for (i = 1; i < N; i++) { if (b[i] < -h) armed = true; else if (armed && b[i - 1] < 0 && b[i] >= 0) { xs.push(i); armed = false; } }
+    var period = xs.length >= 2 ? (xs[xs.length - 1] - xs[0]) / (xs.length - 1) : N / (w.cyc + 1);
+    var want = clamp(period * w.cyc, 96, N * 0.75);
+    w.win = w.win ? w.win + (want - w.win) * 0.15 : want;
+    var win = Math.round(w.win), start = 0;
+    for (i = xs.length - 1; i >= 0; i--) if (xs[i] + win < N) { start = xs[i]; break; }
+    if (!xs.length) start = N - win - 1;
+    var step = win / (PTS - 1), half = Math.max(1, Math.floor(step / 2)), wp = 0;
+    for (var p = 0; p < PTS; p++) {
+      var at = Math.round(start + p * step), sum = 0, n = 0;
+      for (var j = Math.max(0, at - half); j <= Math.min(N - 1, at + half); j++) { sum += b[j]; n++; }
+      w.t[p] = sum / n; if (Math.abs(w.t[p]) > wp) wp = Math.abs(w.t[p]);
+    }
+    // the shape is the real waveform; its size is the real loudness (dB scale above)
+    w.wp = w.wp ? w.wp + (wp - w.wp) * 0.35 : wp;
+    for (p = 0; p < PTS; p++) w.t[p] = clamp(w.t[p] / Math.max(w.wp, 1e-6), -1, 1) * hgt;
+  }
+  function smoothPath(g, xs, ys) {
+    g.beginPath(); g.moveTo(xs[0], ys[0]);
+    for (var i = 0; i < xs.length - 1; i++) {
+      var x0 = xs[i - 1] !== undefined ? xs[i - 1] : xs[i], y0 = i ? ys[i - 1] : ys[i], x3 = xs[i + 2] !== undefined ? xs[i + 2] : xs[i + 1], y3 = ys[i + 2] !== undefined ? ys[i + 2] : ys[i + 1];
+      g.bezierCurveTo(xs[i] + (xs[i + 1] - x0) / 6, ys[i] + (ys[i + 1] - y0) / 6, xs[i + 1] - (x3 - xs[i]) / 6, ys[i + 1] - (y3 - ys[i]) / 6, xs[i + 1], ys[i + 1]);
+    }
+    g.stroke();
+  }
   function scDraw(now) {
     sc.raf = 0;
     var c = scSize(); if (!c) return;
-    var g = c.getContext('2d'), W = sc.W, H = sc.H, mW = 46, gw = W - mW, t = taps(), playing = !!t, P = playing ? Music.pos() : null;
-    if (!P) playing = false;
+    var g = c.getContext('2d'), W = sc.W, H = sc.H, mid = H / 2, amp = H * 0.42;
+    var V = AC.vis && AC.ctx && AC.vis.ctx === AC.ctx && AC.ctx.state === 'running' ? AC.vis : null;
     var dt = sc.last ? Math.min(0.1, (now - sc.last) / 1000) : 0.016; sc.last = now;
-    var tint = css('--tint-rgb'), hi = css('--hi'), orange = css('--orange') || '#f0803c', font = css('--font-ui');
-    var top = 18, laneH = 36, bot = H - laneH - 6, mid = (top + bot) / 2, amp = (bot - top) / 2 - 3, STEPS = 32;
-    var X = function (st) { return st / STEPS * gw; };
+    var tint = css('--tint-rgb'), hi = css('--hi');
     g.setTransform(sc.dpr, 0, 0, sc.dpr, 0, 0); g.clearRect(0, 0, W, H);
-    // where we are: step inside the 2-bar window, beat and bar numbers
-    var cur = P ? ((P.step % STEPS) + STEPS) % STEPS : -1, beat = P ? Math.floor(P.step / 4) : -1, bar = P ? Math.floor(P.step / 16) : -1;
-    if (P && beat !== sc.beatN) { sc.beatN = beat; sc.beat = now; }
-    // grid: a line every 16th note (faint), every beat, and every bar (strong)
+    // graph paper: square cells, a darker line every third one, and the two axes
+    var cell = H / 6.5, ax = Math.round(Math.min(18, cell * 0.3)) + 0.5, k, x, y;
     g.lineWidth = 1;
-    for (var k = 0; k <= STEPS; k++) {
-      var x = Math.round(X(k)) + 0.5, isBar = k % 16 === 0, isBeat = k % 4 === 0;
-      g.strokeStyle = 'rgba(' + tint + ',' + (isBar ? 0.5 : isBeat ? 0.22 : 0.07) + ')';
-      g.beginPath(); g.moveTo(x, isBeat ? top - 4 : top); g.lineTo(x, H - 3); g.stroke();
-    }
-    [0.5, 1].forEach(function (f) { g.strokeStyle = 'rgba(' + tint + ',0.07)'; g.beginPath(); g.moveTo(0, Math.round(mid - amp * f) + 0.5); g.lineTo(gw, Math.round(mid - amp * f) + 0.5); g.moveTo(0, Math.round(mid + amp * f) + 0.5); g.lineTo(gw, Math.round(mid + amp * f) + 0.5); g.stroke(); });
-    g.strokeStyle = 'rgba(' + tint + ',0.4)'; g.beginPath(); g.moveTo(0, Math.round(mid) + 0.5); g.lineTo(gw, Math.round(mid) + 0.5); g.stroke();
-    g.strokeStyle = 'rgba(' + tint + ',0.3)'; g.beginPath(); g.moveTo(0, bot + 3.5); g.lineTo(gw, bot + 3.5); g.stroke();
-    g.strokeRect(0.5, 0.5, gw - 1, H - 1);
-    // the beat we are on gets a soft highlight
-    if (P) { var bq = Math.floor(cur / 4) * 4, fl = clamp(1 - (now - sc.beat) / 260, 0, 1); g.fillStyle = 'rgba(' + tint + ',' + (0.04 + fl * 0.08) + ')'; g.fillRect(X(bq), top, X(4), H - top - 2); }
-    // beat numbers along the top: 1 2 3 4 | 1 2 3 4
-    g.font = '700 9px ' + font; g.textBaseline = 'middle'; g.textAlign = 'left';
-    for (var bn = 0; bn < 8; bn++) {
-      var on = P && Math.floor(cur / 4) === bn;
-      g.fillStyle = on ? (bn % 4 === 0 ? orange : hi) : 'rgba(' + tint + ',0.45)';
-      g.fillText(String(bn % 4 + 1), X(bn * 4) + 5, 9);
-    }
-    if (P) { g.textAlign = 'right'; g.fillStyle = 'rgba(' + tint + ',0.55)'; g.fillText('BAR ' + (bar + 1), gw - 6, 9); g.textAlign = 'left'; }
-    // ---- level, painted column by column at the sweep line
-    var n = Math.max(1, Math.floor(gw));
-    if (!sc.col || sc.col.length !== n * 3) { sc.col = new Float32Array(n * 3).fill(-1); sc.lx = -1; }
-    var rms = 0, peak = 0;
-    if (playing) {
-      t.src.getFloatTimeDomainData(t.bm); t.lo.getFloatTimeDomainData(t.bl); t.hi.getFloatTimeDomainData(t.bh);
-      var N = t.bm.length, pm = 0, pl = 0, ph = 0, sum = 0;
-      for (var i = 0; i < N; i++) { var m = Math.abs(t.bm[i]); if (m > pm) pm = m; sum += t.bm[i] * t.bm[i]; m = Math.abs(t.bl[i]); if (m > pl) pl = m; m = Math.abs(t.bh[i]); if (m > ph) ph = m; }
-      rms = Math.sqrt(sum / N); peak = pm;
-      // each band is shown in dB against its own recent loudest moment, so a kick is a clear bump
-      sc.mx = sc.mx || { m: -30, l: -30, h: -40 };
-      sc.ev = sc.ev || { m: 0, l: 0, h: 0 };
-      var lv = function (k, v, range) {   // instant rise, quick fall: like the needle of a real level meter
-        var d = db(v); sc.mx[k] = Math.max(d, sc.mx[k] - dt * 2.5);
-        var x = clamp((d - (sc.mx[k] - range)) / range, 0, 1);
-        sc.ev[k] = x > sc.ev[k] ? x : Math.max(x, sc.ev[k] - dt * 3.2);
-        return sc.ev[k];
-      };
-      var vm = lv('m', pm, 15), vl = lv('l', pl, 15), vh = lv('h', ph, 18);
-      var xn = Math.min(n - 1, Math.floor(X(cur))), lx = sc.lx, put = function (j) { sc.col[j * 3] = vm; sc.col[j * 3 + 1] = vl; sc.col[j * 3 + 2] = vh; };
-      if (lx < 0 || Math.abs(xn - lx) > n * 0.6 && !(lx > n * 0.8 && xn < n * 0.2)) { put(xn); }
-      else if (xn >= lx) { for (i = lx + 1; i <= xn; i++) put(i); }
-      else { for (i = lx + 1; i < n; i++) put(i); for (i = 0; i <= xn; i++) put(i); }
-      sc.lx = xn;
-      for (i = 1; i <= 10; i++) { var e = (xn + i) % n; sc.col[e * 3] = -1; }   // a small gap in front of the sweep
-    } else { sc.lx = -1; if (sc.col) sc.col.fill(-1); sc.mx = null; sc.ev = null; }
-    // draw: orange = whole mix (mirrored, like a recording), red = the low end inside it, blue edge = highs
-    var drawFill = function (o, color, alpha, scale) {
-      g.fillStyle = color; g.globalAlpha = alpha;
-      for (var j = 0; j < n; j++) { var v = sc.col[j * 3 + o]; if (sc.col[j * 3] < 0) continue; var hgt = clamp(v * scale, 0, 1) * amp; if (hgt > 0.4) g.fillRect(j, mid - hgt, 1, hgt * 2); }
-      g.globalAlpha = 1;
-    };
-    drawFill(0, orange, 0.42, 1);
-    var line = function (o, color, width, dir) {
-      g.strokeStyle = color; g.lineWidth = width; g.lineJoin = 'round'; g.beginPath(); var pen = false;
-      for (var j = 0; j < n; j++) { if (sc.col[j * 3] < 0) { pen = false; continue; } var yy = mid - dir * clamp(sc.col[j * 3 + o], 0, 1) * amp; if (pen) g.lineTo(j, yy); else { g.moveTo(j, yy); pen = true; } }
-      g.stroke();
-    };
-    line(0, orange, 1.4, 1); line(0, orange, 1.4, -1);
-    line(1, '#ef4136', 2.2, 1);     // lows on the top half
-    line(2, '#4f8fd6', 1.8, -1);    // highs on the bottom half
-    // ---- drum lane: the pattern for both bars; each hit lights up when it plays
-    var pat = Music.pattern(), rows = [['k', 'KICK', '#ef4136'], ['s', 'SNARE', orange], ['h', 'HAT', '#4f8fd6']], rh = (laneH - 6) / 3, ly = bot + 6;
-    g.font = '600 7.5px ' + font; g.textBaseline = 'middle';
-    rows.forEach(function (r, ri) {
-      var y0 = ly + ri * rh, list = pat ? pat[r[0]] : [];
-      for (var st = 0; st < STEPS; st++) {
-        if (list.indexOf(st % 16) < 0) continue;
-        var x0 = X(st) + 1.5, w = Math.max(3, X(1) - 3), passed = P && st <= cur, age = P ? (cur - st) * P.sd : 9;
-        if (passed) { g.fillStyle = r[2]; g.globalAlpha = age < 0.12 ? 1 : 0.55; g.fillRect(x0, y0 + 1, w, rh - 2); }
-        else { g.strokeStyle = r[2]; g.globalAlpha = 0.45; g.lineWidth = 1; g.strokeRect(x0 + 0.5, y0 + 1.5, w - 1, rh - 3); }
-        g.globalAlpha = 1;
-      }
+    for (k = 1; ax + k * cell < W; k++) { x = Math.round(ax + k * cell) + 0.5; g.strokeStyle = 'rgba(' + tint + ',' + (k % 3 === 0 ? 0.26 : 0.11) + ')'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+    for (k = 1; k * cell < H / 2 + cell; k++) [mid - k * cell, mid + k * cell].forEach(function (yy) { if (yy < 0 || yy > H) return; y = Math.round(yy) + 0.5; g.strokeStyle = 'rgba(' + tint + ',0.11)'; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); });
+    g.strokeStyle = hi; g.globalAlpha = 0.85; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(0, Math.round(mid)); g.lineTo(W, Math.round(mid)); g.moveTo(ax, 0); g.lineTo(ax, H); g.stroke(); g.globalAlpha = 1;
+    // the three waves
+    var ease = 1 - Math.exp(-dt * 16), moving = 0, xs = [];
+    for (k = 0; k < PTS; k++) xs.push(k / (PTS - 1) * W);
+    g.lineWidth = clamp(H / 80, 2.6, 4); g.lineCap = 'round'; g.lineJoin = 'round';
+    WAVES.forEach(function (w) {
+      if (V) readWave(w, V, dt); else { w.t.fill(0); w.ldb = -100; w.wp = 0; }
+      var ys = [];
+      for (var p = 0; p < PTS; p++) { w.d[p] += (w.t[p] - w.d[p]) * ease; var m = Math.abs(w.d[p]); if (m > moving) moving = m; if (Math.abs(w.t[p]) > moving) moving = Math.abs(w.t[p]); ys.push(mid - w.d[p] * amp); }
+      g.strokeStyle = w.color; g.globalAlpha = 0.9; smoothPath(g, xs, ys); g.globalAlpha = 1;
     });
-    if (!pat) { g.fillStyle = 'rgba(' + tint + ',0.4)'; g.textAlign = 'left'; g.fillText('NO DRUMS IN THIS TRACK · BEAT GRID ONLY', 8, ly + laneH / 2 - 3); }
-    // ---- the sweep line
-    if (P) {
-      var px = Math.round(X(cur)) + 0.5;
-      g.strokeStyle = hi; g.lineWidth = 1.5; g.beginPath(); g.moveTo(px, top - 6); g.lineTo(px, H - 2); g.stroke();
-      g.fillStyle = hi; g.beginPath(); g.moveTo(px - 4, top - 7); g.lineTo(px + 4, top - 7); g.lineTo(px, top - 2); g.closePath(); g.fill();
-    } else {
-      g.fillStyle = 'rgba(' + tint + ',0.55)'; g.font = '600 11px ' + font; g.textAlign = 'center'; g.fillText('NO SIGNAL · PRESS PLAY', gw / 2, mid); g.textAlign = 'left';
-    }
-    // ---- level meter on the right: RMS bar, peak line with hold, dB scale
-    var r = playing ? db(rms) : -100, pk = playing ? db(peak) : -100;
-    sc.rmsDb = r > sc.rmsDb ? r : sc.rmsDb - dt * 24; sc.peakDb = pk > sc.peakDb ? pk : sc.peakDb - dt * 30;
-    if (sc.peakDb >= sc.hold) { sc.hold = sc.peakDb; sc.holdT = 1.2; } else if ((sc.holdT -= dt) <= 0) sc.hold -= dt * 20;
-    var mx = gw + 10, mw = 12, yDb = function (v) { return clamp((-v) / 48, 0, 1) * (H - 8) + 4; };
-    g.fillStyle = 'rgba(' + tint + ',0.08)'; g.fillRect(mx, 4, mw, H - 8);
-    var mtop = yDb(Math.max(-48, sc.rmsDb));
-    if (sc.rmsDb > -48) {
-      var grad = g.createLinearGradient(0, H - 4, 0, 4); grad.addColorStop(0, '#3ddc84'); grad.addColorStop(0.62, '#f2c94c'); grad.addColorStop(0.85, orange); grad.addColorStop(1, '#ef4136');
-      g.fillStyle = grad; g.fillRect(mx, mtop, mw, H - 4 - mtop);
-    }
-    if (sc.hold > -48) { g.fillStyle = hi; g.fillRect(mx - 2, Math.round(yDb(sc.hold)), mw + 4, 2); }
-    g.fillStyle = 'rgba(' + tint + ',0.6)'; g.font = '600 9px ' + font; g.textAlign = 'left'; g.textBaseline = 'middle';
-    [0, -12, -24, -36, -48].forEach(function (v) { var yy2 = yDb(v); g.fillRect(mx + mw + 2, Math.round(yy2), 3, 1); g.fillText(String(v), mx + mw + 7, Math.min(H - 6, Math.max(6, yy2))); });
-    // ---- readout under the graph (a few times a second)
+    // real loudness of everything together, for the readout
+    if (V) {
+      var b = V.buf.all; V.an.all.getFloatTimeDomainData(b);
+      var sum = 0, pk = 0; for (k = 0; k < b.length; k++) { sum += b[k] * b[k]; var a = b[k] < 0 ? -b[k] : b[k]; if (a > pk) pk = a; }
+      var r = db(Math.sqrt(sum / b.length)), pd = db(pk);
+      sc.rms = r > sc.rms ? r : sc.rms - dt * 20; sc.peak = pd > sc.peak ? pd : sc.peak - dt * 15;
+    } else { sc.rms = -100; sc.peak = -100; }
     if (!sc.txtT || now - sc.txtT > 200) {
       sc.txtT = now;
-      var txt = P ? 'BAR <b>' + (bar + 1) + '</b> · BEAT <b>' + (Math.floor(cur / 4) % 4 + 1) + '</b> · <b>' + A.bpm + '</b> BPM · RMS <b>' + Math.round(Math.max(-60, sc.rmsDb)) + ' dB</b> · PEAK <b>' + Math.round(Math.max(-60, sc.hold)) + ' dB</b>' : 'Idle · ' + A.bpm + ' BPM';
+      var on = Music.isPlaying(), loud = sc.rms > -70;
+      var txt = (loud ? 'LEVEL <b>' + Math.round(Math.max(-60, sc.rms)) + ' dB</b> · PEAK <b>' + Math.round(Math.max(-60, sc.peak)) + ' dB</b> · ' : 'Silent · ') + (on ? '<b>' + A.bpm + '</b> BPM' : 'Music off');
       if (txt !== sc.txt) { sc.txt = txt; var rd = $('#wv-read'); if (rd) rd.innerHTML = txt; }
     }
-    if (spec.on && !document.hidden && (playing || sc.peakDb > -90 || sc.hold > -60)) sc.raf = requestAnimationFrame(scDraw);
+    // keep animating only while there is sound or the lines are still settling
+    if (spec.on && !document.hidden && V && (Music.isPlaying() || moving > 0.002 || sc.rms > -80)) sc.raf = requestAnimationFrame(scDraw);
+    else sc.last = 0;
   }
   function wvKick() { if (!sc.raf && spec.on && !document.hidden) sc.raf = requestAnimationFrame(scDraw); }
+  AC.onSound = function () { wvKick(); };
   function onTab(v) {
     spec.on = v;
     if (v) { renderNow(); wvKick(); }
@@ -9210,7 +9189,7 @@ function boot() {
       try { navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ }); } catch (e) { /* noop */ }
       sub('net', 'Offline copy registered');
     }
-    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, bus: function () { return AC.sfx; }, ctx: function () { return AC.ctx; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes, Stats: Stats, Brief: Brief, Share: Share };
+    if (DEBUG) window.TaskMatrix = { Wallpaper: Wallpaper, Scene: Scene, QTimer: QTimer, audio: { status: audioStatus, restart: restartAudio, bus: function () { return AC.sfx; }, ctx: function () { return AC.ctx; }, vis: function () { return AC.vis; }, keep: function () { return !!AC.keep; } }, S: S, Sched: Sched, Music: Music, Cal: Cal, App: App, AudioUI: AudioUI, Focus: Focus, SFX: SFX, Saver: Saver, Notes: Notes, Stats: Stats, Brief: Brief, Share: Share };
     // wait for the font (with a time limit), then wait for the player
     var fontsDone = false;
     function fonts() { if (fontsDone) return; fontsDone = true; sub('fonts', 'Eurostile ready'); waitForPlayer(); }
